@@ -1,0 +1,5 @@
+# LAMMPS SNAP parameters for W_X
+rcutfac 4.7
+twojmax 8
+rfac0 0.99363
+bzeroflag 1

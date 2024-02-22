@@ -1,0 +1,3 @@
+include README.md
+include lammps_implicit_der/data_files/*
+include lammps_implicit_der/tmp_files/*

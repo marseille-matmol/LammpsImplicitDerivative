@@ -10,10 +10,10 @@ import numpy as np
 from lammps import lammps
 
 # local imports
-from utils import mpi_print
-from timing import measure_runtime_and_calls
-from potential_tools import SNAP
-from implicit_der import LammpsImplicitDer
+from ..tools.utils import mpi_print
+from ..tools.timing import measure_runtime_and_calls
+from ..lmp_der.snap import SNAP
+from ..lmp_der.implicit_der import LammpsImplicitDer
 
 
 class BccVacancy(LammpsImplicitDer):

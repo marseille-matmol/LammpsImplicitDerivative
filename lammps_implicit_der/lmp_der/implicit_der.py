@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-import os
 from tqdm import tqdm
 
 from scipy.sparse.linalg import LinearOperator
-from scipy.sparse.linalg import lgmres, lsqr
+from scipy.sparse.linalg import lgmres
 import numpy as np
-import matplotlib.pyplot as plt
 
 from lammps import lammps
 from lammps import LMP_TYPE_SCALAR, LMP_STYLE_GLOBAL
 
 # local imports
-from utils import mpi_print, get_default_data_path
-from timing import TimingGroup, measure_runtime_and_calls
+from ..tools.utils import mpi_print, get_default_data_path
+from ..tools.timing import TimingGroup, measure_runtime_and_calls
 
 
 class LammpsImplicitDer:
@@ -730,3 +728,4 @@ class LammpsImplicitDer:
 
         if verbose:
             mpi_print(f"Coordinates saved to {filename}", comm=self.comm)
+

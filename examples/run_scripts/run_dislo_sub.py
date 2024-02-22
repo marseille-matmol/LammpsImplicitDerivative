@@ -4,10 +4,13 @@ import os
 import numpy as np
 
 # local imports
-from utils import mpi_print, get_default_data_path, initialize_mpi
-from dislo import DisloSub
-import error_tools
-from timing import TimingGroup
+from lammps_implicit_der.tools import mpi_print, \
+                                      get_default_data_path, \
+                                      initialize_mpi, \
+                                      error_tools, \
+                                      TimingGroup
+
+from lammps_implicit_der.systems import DisloSub
 
 
 def run_minimization(method,

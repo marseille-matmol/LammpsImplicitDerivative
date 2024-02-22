@@ -5,11 +5,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # local imports
-from utils import initialize_mpi, mpi_print, get_default_data_path
-import error_tools
-from bcc_vacancy import BccVacancy
-from plot_tools import plot_positions
-from timing import TimingGroup
+# local imports
+from lammps_implicit_der.tools import mpi_print, \
+                                      get_default_data_path, \
+                                      initialize_mpi, \
+                                      error_tools, \
+                                      TimingGroup
+
+from lammps_implicit_der.systems import BccVacancy
 
 
 def run_minimization(method,
@@ -82,8 +85,8 @@ def main():
     error_tol = 1e-3
 
     #method = 'inverse'
-    method = 'energy'
-    #method = 'sparse'
+    #method = 'energy'
+    method = 'sparse'
 
     step = 1e-2
     adaptive_step = True

@@ -730,3 +730,4 @@ class LammpsImplicitDer:
 
         if verbose:
             mpi_print(f"Coordinates saved to {filename}", comm=self.comm)
+

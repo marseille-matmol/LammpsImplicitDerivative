@@ -8,7 +8,7 @@ import numpy as np
 import datetime
 
 # local imports
-from utils import mpi_print
+from ..tools.utils import mpi_print
 
 
 class SNAP():

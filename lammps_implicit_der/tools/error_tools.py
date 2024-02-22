@@ -5,14 +5,13 @@ import os
 import time
 from tqdm import tqdm
 import copy
-import utils
 import numpy as np
 import pickle
 
 # local imports
-from utils import mpi_print, save_snap_coeff
-from timing import TimingGroup
-from bcc_vacancy import BccVacancy
+from .utils import mpi_print, save_snap_coeff, get_projection
+from .timing import TimingGroup
+from ..systems.bcc_vacancy import BccVacancy
 # from ase.io import read, write
 
 
@@ -431,7 +430,7 @@ def minimize_loss(  sim,
         if not hasattr(sim, 'A_hard'):
             raise ValueError('The system does not have hard constraints')
 
-        P_matrix = utils.get_projection(sim.A_hard, sim.Ndesc)
+        P_matrix = get_projection(sim.A_hard, sim.Ndesc)
 
     minim_dict = {}
 

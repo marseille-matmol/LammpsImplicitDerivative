@@ -5,11 +5,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # local imports
-from utils import mpi_print, get_default_data_path, initialize_mpi
-import error_tools
-from bcc_vacancy import BccBinaryVacancy
-from plot_tools import plot_positions
-from timing import TimingGroup
+from lammps_implicit_der.tools import mpi_print, \
+                                      get_default_data_path, \
+                                      initialize_mpi, \
+                                      error_tools, \
+                                      TimingGroup
+
+from lammps_implicit_der.systems import BccBinaryVacancy
 
 
 def run_minimization(method,

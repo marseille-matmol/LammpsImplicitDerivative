@@ -47,9 +47,14 @@ def mpi_print(*args, comm=None, verbose=True, **kwargs):
 
 def get_default_data_path():
 
+    # Directory of this file
     script_path = os.path.abspath(__file__)
-    script_dir = os.path.dirname(script_path)
-    data_path = os.path.join(script_dir, 'data_files')
+    utils_dir = os.path.dirname(script_path)
+
+    # One directory up
+    package_dir = os.path.dirname(utils_dir)
+
+    data_path = os.path.join(package_dir, 'data_files')
 
     return data_path
 

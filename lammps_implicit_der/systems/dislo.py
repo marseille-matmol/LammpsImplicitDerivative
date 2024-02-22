@@ -12,9 +12,9 @@ from scipy.sparse.linalg import lgmres, lsqr
 import numpy as np
 
 # local imports
-from timing import measure_runtime_and_calls
-from potential_tools import SNAP
-from implicit_der import LammpsImplicitDer
+from ..tools.timing import measure_runtime_and_calls
+from ..lmp_der.snap import SNAP
+from ..lmp_der.implicit_der import LammpsImplicitDer
 
 
 class Dislo(LammpsImplicitDer):

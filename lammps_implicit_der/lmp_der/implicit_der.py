@@ -3,6 +3,8 @@
 
 from tqdm import tqdm
 
+import copy
+
 from scipy.sparse.linalg import LinearOperator
 from scipy.sparse.linalg import lgmres
 import numpy as np
@@ -89,6 +91,12 @@ class LammpsImplicitDer:
         """Destructor"""
         pass
         #self.lmp.close()
+
+    def copy(self):
+        """Return a copy of the object.
+        Does not work because of the LAMMPS object.
+        """
+        return copy.deepcopy(self)
 
     def print_run_info(self):
         mpi_print(self.pot, verbose=self.verbose, comm=self.comm)

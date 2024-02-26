@@ -11,7 +11,7 @@ import pickle
 # local imports
 from .utils import mpi_print, save_snap_coeff, get_projection
 from .timing import TimingGroup
-from ..systems.bcc_vacancy import BccVacancy
+from ..systems.bcc_lattices import BccVacancy
 # from ase.io import read, write
 
 

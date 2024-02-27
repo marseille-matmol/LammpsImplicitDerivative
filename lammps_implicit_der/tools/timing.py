@@ -104,8 +104,12 @@ class Timing:
         #'└'
         #'──'
 
-        tag_text = self.tag
         lev = self.level
+
+        if self.tag == '__init__':
+            tag_text = 'initialization'
+        else:
+            tag_text = self.tag
 
         width = 40
         lmax = 4
@@ -135,8 +139,6 @@ class TimingGroup:
     -------
     add(tag, level=0)
         Add a new timing measurement with the given tag.
-    sort()
-        Sort the timings based on the total runtime.
 
     Examples
     --------
@@ -157,10 +159,11 @@ class TimingGroup:
         SVD    (s): Total Runtime: 1.000, Call Count: 1
         DIAGO  (s): Total Runtime: 2.000, Call Count: 1
     """
-    def __init__(self, name=None):
+    def __init__(self, name=None, sort=True):
         #self.timings = {}
         self.name = name
         self.timings = OrderedDict()
+        self.sort = sort
 
     def add(self, tag, level=0):
         """
@@ -174,12 +177,20 @@ class TimingGroup:
 
         return timing
 
-    def sort(self):
-        self.timings = dict(sorted(self.timings.items(), key=lambda x: x[1].total_runtime, reverse=True))
+    def levelup_that_t(self, method_name):
+        """
+        Increase the level of the timing measurement.
+        """
+        self.timings[method_name].level += 1
+
+    #def sort(self):
+    #    self.timings = dict(sorted(self.timings.items(), key=lambda x: x[1].total_runtime, reverse=True))
 
     def __str__(self):
 
-        self.sort()
+        if self.sort:
+            self.timings = dict(sorted(self.timings.items(), key=lambda x: x[1].total_runtime, reverse=True))
+
         width = 70
 
         output = ''
@@ -231,9 +242,10 @@ def measure_runtime_and_calls(method):
     def wrapper(self, *args, **kwargs):
         if not hasattr(self, 'timings'):
             # Create TimingGroup instance as an attribute
-            self.timings = TimingGroup()
+            self.timings = TimingGroup(sort=True)
         timings = self.timings
         with timings.add(method.__name__, level=1) as t:
             result = method(self, *args, **kwargs)
         return result
+
     return wrapper

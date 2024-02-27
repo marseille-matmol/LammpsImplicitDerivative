@@ -537,12 +537,10 @@ def minimize_loss(  sim,
             mpi_print(f'{"Largest dX":>30}: {np.max(np.abs(dX)):.3e}', comm=comm)
             mpi_print(f'{"Std Dev of dX":>30}: {np.std(dX):.3e}', comm=comm)
 
-
         # Update the LAMMPS system
         try:
             sim.X_coord += dX
-            sim.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(sim.X_coord))
-            sim.lmp.command("run 0")
+            sim.scatter_coord()
 
             # Update the potential
             sim.Theta += dTheta

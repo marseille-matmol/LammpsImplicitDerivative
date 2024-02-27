@@ -82,6 +82,7 @@ def run_minimization(method,
 
     trun.timings['total'].stop()
     mpi_print(trun, comm=comm)
+    mpi_print(binvac_non_perturb.timings, comm=comm)
 
 
 def main():

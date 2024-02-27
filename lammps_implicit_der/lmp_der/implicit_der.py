@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+import os
 from tqdm import tqdm
+
+import copy
 
 from scipy.sparse.linalg import LinearOperator
 from scipy.sparse.linalg import lgmres
@@ -25,6 +28,8 @@ class LammpsImplicitDer:
                  minimize=True,
                  minimize_algo='cg',
                  minimize_ftol=1e-8,
+                 minimize_maxiter=1000,
+                 minimize_maxeval=1000,
                  comm=None,
                  logname='none',
                  fix_cell='all',
@@ -42,9 +47,12 @@ class LammpsImplicitDer:
         self.comm = comm
         self.rank = 0 if comm is None else comm.Get_rank()
 
+        # Minimization parameters
         self.minimize = minimize
         self.minimize_algo = minimize_algo
         self.minimize_ftol = minimize_ftol
+        self.minimize_maxiter = minimize_maxiter
+        self.minimize_maxeval = minimize_maxeval
 
         self.snapcoeff_filename = snapcoeff_filename
         self.snapparam_filename = snapparam_filename
@@ -53,8 +61,13 @@ class LammpsImplicitDer:
         self.logname = logname
 
         self.verbose = verbose
-        self.timings = TimingGroup('ImplicitDer-LAMMPS')
-        self.timings.add('total', level=3).start()
+
+        if hasattr(self, 'timings'):
+            self.timings.name = 'ImplicitDer-LAMMPS'
+            self.timings.sort = True
+        else:
+            self.timings = TimingGroup('ImplicitDer-LAMMPS')
+        #self.timings.levelup_that_t('__init__')
 
         self.step = 0
         self.dX_dTheta = None
@@ -63,6 +76,9 @@ class LammpsImplicitDer:
         self.pot = None
         self.cell = None
         self.Natom = None
+
+        # Assume a unary system by default, change in the child class if needed
+        self.binary = False
 
         # Positions with pbc applied
         self._X_coord = None
@@ -90,6 +106,12 @@ class LammpsImplicitDer:
         pass
         #self.lmp.close()
 
+    def copy(self):
+        """Return a copy of the object.
+        Does not work because of the LAMMPS object.
+        """
+        return copy.deepcopy(self)
+
     def print_run_info(self):
         mpi_print(self.pot, verbose=self.verbose, comm=self.comm)
         mpi_print(f'Running LAMMPS with the following arguments:', verbose=self.verbose,
@@ -97,7 +119,7 @@ class LammpsImplicitDer:
         mpi_print(' '.join(self.cmdargs), verbose=self.verbose, comm=self.comm)
 
     def print_system_info(self):
-        mpi_print(f'Number of atoms: {self._X_coord.size//3}, largest force value: {np.abs(self.f0).max():.3e}, '
+        mpi_print(f'Number of atoms: {self.Natom}, largest force value: {np.abs(self.f0).max():.3e}, '
                   f'force norm: {np.linalg.norm(self.f0):.3e}', verbose=self.verbose, comm=self.comm)
 
     def to_dict(self):
@@ -141,6 +163,28 @@ class LammpsImplicitDer:
                                                       LMP_TYPE_SCALAR)
         return self._energy
 
+    @measure_runtime_and_calls
+    def minimize_energy(self, ftol=None, maxiter=None, maxeval=None, algo=None, verbose=True):
+        """Minimize the energy of the system"""
+
+        # Set the minimization parameters
+        ftol = self.minimize_ftol if ftol is None else ftol
+        maxiter = self.minimize_maxiter if maxiter is None else maxiter
+        maxeval = self.minimize_maxeval if maxeval is None else maxeval
+        algo = self.minimize_algo if algo is None else algo
+
+        if self.lmp is None:
+            raise RuntimeError('LAMMPS object lmp must be defined for minimization')
+
+        if verbose:
+            mpi_print(f'Minimizing energy with the following parameters:', comm=self.comm)
+            mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo}', comm=self.comm)
+
+        self.lmp.commands_string(f"""
+        min_style {algo}
+        minimize 0 {ftol} {maxiter} {maxeval}
+        """)
+
     def write_data(self, filename):
         """Write the current configuration to a data file"""
         self.lmp.command(f'write_data {filename}')
@@ -160,6 +204,13 @@ class LammpsImplicitDer:
         pair_coeff * * {self.pot.snapcoeff_path} {self.pot.snapparam_path} {self.pot.elements}
         run 0
         """)
+
+        self.Ndesc = self.pot.num_param
+
+    def scatter_coord(self):
+        """Send the coordinates to LAMMPS"""
+        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
+        self.lmp.command("run 0")
 
     @measure_runtime_and_calls
     def compute_D_dD(self):
@@ -193,13 +244,56 @@ class LammpsImplicitDer:
         run 0
         """)
 
-    def run_init(self):
+    @measure_runtime_and_calls
+    def gather_D_dD(self):
+        """Compute descriptors and their derivatives in LAMMPS and store them internally.
+        Wrapper for unary or binary systems.
+        TODO: general implementation for multi-component systems
+        """
+
+        if self.binary:
+            self.gather_D_dD_binary()
+
+        else:
+            self.gather_D_dD_unary()
+
+    def gather_D_dD_unary(self):
+        """Compute descriptors and their derivatives in LAMMPS and store them internally"""
+
+        dU_dTheta = self.lmp.gather("c_D", 1, self.Ndesc)
+        mixed_hessian = self.lmp.gather("c_dD", 1, 3*self.Ndesc)
+        self.dU_dTheta = np.ctypeslib.as_array(dU_dTheta).reshape((-1, self.Ndesc)).sum(axis=0)
+        self.mixed_hessian = np.ctypeslib.as_array(mixed_hessian).reshape((-1, self.Ndesc)).T
+
+    def gather_D_dD_binary(self):
+        """Compute descriptors and their derivatives in LAMMPS and store them internally, only for specie B
+        """
+
+        dU_dTheta = np.ctypeslib.as_array(self.lmp.gather("c_D", 1, self.Ndesc)).reshape((-1, self.Ndesc))
+
+        self.dU_dTheta = dU_dTheta[self.species == 2].sum(0)
+
+        dD = np.ctypeslib.as_array(
+                self.lmp.gather("c_dD", 1, 3*2*self.Ndesc)
+            ).reshape((-1, 2, 3, self.Ndesc))
+
+        self.mixed_hessian = dD[:, 1, :, :].reshape((-1, self.Ndesc)).T
+
+    @measure_runtime_and_calls
+    def run_init(self, setup_snap=True):
         """
         Initial LAMMPS run and initialization of basic properties
         """
 
-        # Run the simulation
         self.lmp.command("run 0")
+
+        if setup_snap:
+            self.setup_snap_potential()
+
+        if self.minimize:
+            self.minimize_energy()
+
+        self.compute_D_dD()
 
         self.f0 = np.ctypeslib.as_array(self.lmp.gather("f", 1, 3)).flatten()
 
@@ -220,6 +314,13 @@ class LammpsImplicitDer:
 
         # Initialize the simulation cell
         self.get_cell()
+
+        self.gather_D_dD()
+
+        # Setup hard constraints
+        hard_constraints_path = os.path.join(self.data_path, f'{self.pot.elmnts}_constraints.txt')
+        if os.path.exists(hard_constraints_path):
+            self.A_hard = np.loadtxt(hard_constraints_path)
 
         self.print_system_info()
 
@@ -251,14 +352,6 @@ class LammpsImplicitDer:
 
         return X_vector - (correction * self.periodicity).flatten()
 
-    @measure_runtime_and_calls
-    def gather_D_dD(self):
-        """Compute descriptors and their derivatives in LAMMPS and store them internally"""
-
-        dU_dTheta = self.lmp.gather("c_D", 1, self.Ndesc)
-        mixed_hessian = self.lmp.gather("c_dD", 1, 3*self.Ndesc)
-        self.dU_dTheta = np.ctypeslib.as_array(dU_dTheta).reshape((-1, self.Ndesc)).sum(axis=0)
-        self.mixed_hessian = np.ctypeslib.as_array(mixed_hessian).reshape((-1, self.Ndesc)).T
 
     @measure_runtime_and_calls
     def forces(self, dx, alpha=0.05):
@@ -365,7 +458,7 @@ class LammpsImplicitDer:
                                                    maxiter=maxiter)['dX_dTheta']
 
         elif method == 'sparse':
-            if alpha > 0.05:
+            if alpha > 0.05 and (not adaptive_alpha):
                 mpi_print(f'Warning: alpha={alpha} might be too large for sparse method.',
                           comm=self.comm)
 
@@ -382,7 +475,6 @@ class LammpsImplicitDer:
         else:
             raise ValueError(f'Unknown method for implicit derivative: {method}')
 
-    @measure_runtime_and_calls
     def implicit_derivative_sparse(self,
                                    alpha=0.001,
                                    atol=1e-5,
@@ -454,8 +546,6 @@ class LammpsImplicitDer:
         # return values
         return res_dict
 
-
-    @measure_runtime_and_calls
     def implicit_derivative_energy(self,
                                    alpha=0.5,
                                    adaptive_alpha=True,
@@ -634,7 +724,6 @@ class LammpsImplicitDer:
 
         return res_dict
 
-    @measure_runtime_and_calls
     def implicit_derivative_inverse(self):
         """Compute implicit derivative from Hessian inverse
 
@@ -652,7 +741,6 @@ class LammpsImplicitDer:
         # Matrix multiplication to get dX_dTheta
         return (H_inv @ self.mixed_hessian.T).T
 
-    @measure_runtime_and_calls
     def implicit_derivative_dense(self):
         """Compute implicit derivative from Hessian inverse
 
@@ -667,7 +755,6 @@ class LammpsImplicitDer:
 
         return dX_dTheta
 
-    @measure_runtime_and_calls
     def implicit_derivative_direct_sparse(self):
         """Compute implicit derivative from Hessian inverse
         by solving dX_dT @ H = -C
@@ -703,7 +790,7 @@ class LammpsImplicitDer:
         dE = self.dU_dTheta @ dTheta - 0.5 * np.dot(dTheta @ self.mixed_hessian, dX_dTheta)
 
         if return_X:
-            return dE,dX_dTheta
+            return dE, dX_dTheta
         else:
             return dE
 

@@ -21,7 +21,7 @@ def run_minimization(method,
                      error_tol=1e-6,
                      der_alpha=0.5,
                      der_adaptive_alpha=True,
-                     pickle_name=None,
+                     pickle_name='dislo.pickle',
                      minimize_at_iters=True,
                      apply_hard_constraints=True):
 
@@ -82,6 +82,7 @@ def run_minimization(method,
     trun.timings['total'].stop()
 
     mpi_print(trun, comm=comm)
+    mpi_print(dislo_easy.timings, comm=comm)
 
 
 def main():
@@ -100,13 +101,13 @@ def main():
     #der_alpha = 10.0
     der_adaptive_alpha = True
     minimize_at_iters = True
-    #apply_hard_constraints = True
-    apply_hard_constraints = False
+    apply_hard_constraints = True
+    #apply_hard_constraints = False
 
     adaptive_step = True
 
     run_minimization(method,
-                     maxiter=20,
+                     maxiter=40,
                      comm=comm,
                      step=step,
                      adaptive_step=adaptive_step,

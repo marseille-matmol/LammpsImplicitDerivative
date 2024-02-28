@@ -185,6 +185,8 @@ class LammpsImplicitDer:
         minimize 0 {ftol} {maxiter} {maxeval}
         """)
 
+        self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
+
     def write_data(self, filename):
         """Write the current configuration to a data file"""
         self.lmp.command(f'write_data {filename}')

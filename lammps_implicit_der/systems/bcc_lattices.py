@@ -79,7 +79,8 @@ class BccVacancy(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  num_cells=3,
-                 alat=3.13,
+                 #alat=3.13,
+                 alat=3.1855,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)

@@ -78,9 +78,10 @@ def main():
     }
 
     # Save to pickle
-    output_filename = f'HEA_NiMo_{method}_{delta:.2f}_{num_cells:03d}.pkl'
-    with open(output_filename, 'wb') as f:
-        pickle.dump(output_dict, f)
+    if rank == 0:
+        output_filename = f'HEA_NiMo_{method}_{delta:.2f}_{num_cells:03d}.pkl'
+        with open(output_filename, 'wb') as f:
+            pickle.dump(output_dict, f)
 
     mpi_print(trun, comm=comm)
     mpi_print(bcc_alloy_Ni_Mo.timings, comm=comm)

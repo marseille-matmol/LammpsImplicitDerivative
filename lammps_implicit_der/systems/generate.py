@@ -65,6 +65,11 @@ def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, s
         BccBinary instance of the perturbed alloy A-delta-B.
     """
 
+    if comm is None:
+        rank = 0
+    else:
+        rank = comm.Get_rank()
+
     # Create a normal bcc alloy of A and B elements from AB.snapcoeff
     # No minimization at this stage
     bcc_alloy_A_B_tmp = BccBinary(datafile=datafile,
@@ -90,11 +95,15 @@ def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, s
     delta_snapparam_filename = f'{element_A}_delta_{element_B}.snapparam'
 
     # Save the perturbed SNAP potential
-    bcc_alloy_A_B_tmp.pot.to_files(path='./',
-                                   snapcoeff_filename=delta_snapcoeff_filename,
-                                   snapparam_filename=delta_snapparam_filename,
-                                   overwrite=True,
-                                   verbose=True)
+    if rank == 0:
+        bcc_alloy_A_B_tmp.pot.to_files(path='./',
+                                       snapcoeff_filename=delta_snapcoeff_filename,
+                                       snapparam_filename=delta_snapparam_filename,
+                                       overwrite=True,
+                                       verbose=True)
+
+    if comm is not None:
+        comm.Barrier()
 
     # Setup a new instance of BccBinary with the perturbed SNAP potential
     bcc_alloy_A_delta_B = BccBinary(datafile=datafile,

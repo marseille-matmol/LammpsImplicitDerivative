@@ -20,6 +20,7 @@ class BccBinary(LammpsImplicitDer):
                  num_cells=3,
                  alat=3.13,
                  specie_B_concentration=0.5,
+                 setup_snap=True,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -72,7 +73,7 @@ class BccBinary(LammpsImplicitDer):
 
         self.lmp.commands_string(f'mass * 45.')
 
-        self.run_init()
+        self.run_init(setup_snap=setup_snap)
 
 
 class BccVacancy(LammpsImplicitDer):

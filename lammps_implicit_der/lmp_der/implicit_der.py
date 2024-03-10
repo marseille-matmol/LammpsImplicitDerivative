@@ -199,6 +199,8 @@ class LammpsImplicitDer:
         if self.pot is None:
             raise RuntimeError('Potential must be defined')
 
+        mpi_print(f'Setting up SNAP potential', comm=self.comm)
+
         self.lmp.commands_string(f"""
         pair_style snap
 

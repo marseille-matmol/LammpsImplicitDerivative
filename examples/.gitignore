@@ -1,1 +1,4 @@
 minim_output
+*.snapcoeff
+*.snapparam
+*.log

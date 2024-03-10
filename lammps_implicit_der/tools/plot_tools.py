@@ -11,10 +11,11 @@ import matplotlib.pyplot as plt
 def plot_coords(axes, X_coord, color_legend=None, **kwargs):
 
     # X_coords shape must be (N, 3)
-    if X_coord.shape[1] != 3:
-        raise ValueError('X_coord must have shape (N, 3)')
     if X_coord.ndim != 2:
         raise ValueError('X_coord must be 2D')
+    if X_coord.shape[1] != 3:
+        raise ValueError('X_coord must have shape (N, 3)')
+
 
     # Check the size of axes
     if len(axes) != 3:

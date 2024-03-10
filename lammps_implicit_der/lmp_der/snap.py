@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tools for atomic potentials.
+SNAP potential and related classes.
 """
 
 import os
@@ -177,7 +177,7 @@ class SNAP():
             f.write(f"\n")
             # num_param does not include beta0
             f.write(f"{self.num_el} {self.num_param+1}\n")
-
+            print('SUCHARA', self.elem_list)
             for elem in self.elem_list:
                 R_elem = self.Theta_dict[elem]['elem_params']['radius']
                 w_elem = self.Theta_dict[elem]['elem_params']['weight']

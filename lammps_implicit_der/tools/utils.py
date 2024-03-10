@@ -73,7 +73,6 @@ def get_memory_usage(yml_fname, runmode='cpu'):
         yaml.dump(info_dict, file)
 
 
-
 def get_ram_memory_usage():
 
     memory_info = psutil.virtual_memory()
@@ -121,8 +120,6 @@ def get_gpu_memory_usage():
     pynvml.nvmlShutdown()
 
     return memory_info
-
-    return info_dict
 
 
 def read_snap_coeff(filename,binary=False):

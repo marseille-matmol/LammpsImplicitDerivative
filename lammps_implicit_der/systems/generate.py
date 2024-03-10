@@ -27,7 +27,7 @@ def get_perturbed_Theta_alloy(Theta1, Theta2, delta):
     return delta * Theta1 + (1.0 - delta) * Theta2
 
 
-def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, specie_B_concentration=0.5, element_A='Ni', element_B='Mo'):
+def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, specie_B_concentration=0.5, element_A='Ni', element_B='Mo', comm=None):
     """
     Create a perturbed bcc alloy of A and B species.
     delta = 0 => A-B alloy
@@ -68,6 +68,7 @@ def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, s
     # Create a normal bcc alloy of A and B elements from AB.snapcoeff
     # No minimization at this stage
     bcc_alloy_A_B_tmp = BccBinary(datafile=datafile,
+                                  comm=comm,
                                   snapcoeff_filename=f'{element_A}{element_B}.snapcoeff',
                                   num_cells=num_cells,
                                   specie_B_concentration=specie_B_concentration,
@@ -97,6 +98,7 @@ def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, s
 
     # Setup a new instance of BccBinary with the perturbed SNAP potential
     bcc_alloy_A_delta_B = BccBinary(datafile=datafile,
+                                    comm=comm,
                                     logname='bcc_alloy_tmp.log',
                                     minimize_algo='cg', # 'sd', 'fire', 'hftn', 'cg'
                                     data_path='./',

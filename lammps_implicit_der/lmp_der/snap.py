@@ -19,10 +19,12 @@ class SNAP():
                  snapparam_dict,
                  snapcoeff_path=None,
                  snapparam_path=None,
+                 comm=None,
                  ):
 
         self.snapcoeff_path = snapcoeff_path
         self.snapparam_path = snapparam_path
+        self.comm = comm
 
         if isinstance(elem_list, str):
             elem_list = [elem_list]
@@ -54,6 +56,7 @@ class SNAP():
                    snapcoeff_filename,
                    data_path=None,
                    snapparam_filename=None,
+                   comm=None,
                    ):
 
         if data_path is None:
@@ -142,6 +145,7 @@ class SNAP():
                    snapparam_dict=snapparam_dict,
                    snapcoeff_path=snapcoeff_path,
                    snapparam_path=snapparam_path,
+                   comm=comm,
                    )
 
     def to_files(self,
@@ -165,7 +169,7 @@ class SNAP():
 
         if os.path.exists(snapcoeff_path):
             if overwrite:
-                mpi_print(f'Overwriting {snapcoeff_path}', verbose=verbose)
+                mpi_print(f'Overwriting {snapcoeff_path}', verbose=verbose, comm=self.comm)
             else:
                 raise RuntimeError(f'File {snapcoeff_path} already exists. '
                                    'To overwrite, set overwrite=True.')
@@ -177,7 +181,6 @@ class SNAP():
             f.write(f"\n")
             # num_param does not include beta0
             f.write(f"{self.num_el} {self.num_param+1}\n")
-            print('SUCHARA', self.elem_list)
             for elem in self.elem_list:
                 R_elem = self.Theta_dict[elem]['elem_params']['radius']
                 w_elem = self.Theta_dict[elem]['elem_params']['weight']
@@ -195,8 +198,8 @@ class SNAP():
                 f.write(f"{key} {value}\n")
 
         if verbose:
-            mpi_print(f'Saved SNAP coefficients to {snapcoeff_path}')
-            mpi_print(f'Saved SNAP parameters to {snapparam_path}')
+            mpi_print(f'Saved SNAP coefficients to {snapcoeff_path}', comm=self.comm)
+            mpi_print(f'Saved SNAP parameters to {snapparam_path}', comm=self.comm)
 
     def __str__(self):
         info = '\n'

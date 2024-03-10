@@ -36,7 +36,8 @@ class BccBinary(LammpsImplicitDer):
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,
                                    data_path=self.data_path,
-                                   snapparam_filename=self.snapparam_filename)
+                                   snapparam_filename=self.snapparam_filename, comm=self.comm)
+
 
         # Potential parameters: ONLY MOLYBDENUM
         self.Theta = self.pot.Theta_dict['Mo']['Theta']
@@ -95,7 +96,7 @@ class BccVacancy(LammpsImplicitDer):
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,
                                    data_path=self.data_path,
-                                   snapparam_filename=self.snapparam_filename)
+                                   snapparam_filename=self.snapparam_filename, comm=self.comm)
 
         # Potential parameters, hardcoded for tungsten
         self.Theta = self.pot.Theta_dict['W']['Theta']
@@ -160,7 +161,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,
                                    data_path=self.data_path,
-                                   snapparam_filename=self.snapparam_filename)
+                                   snapparam_filename=self.snapparam_filename, comm=self.comm)
 
         # Potential parameters: ONLY MOLYBDENUM
         self.Theta = self.pot.Theta_dict['Mo']['Theta']

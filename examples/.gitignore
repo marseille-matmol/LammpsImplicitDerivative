@@ -1,3 +1,4 @@
+*.pkl
 minim_output
 *.snapcoeff
 *.snapparam

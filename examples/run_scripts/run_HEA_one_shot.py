@@ -4,6 +4,7 @@ import os
 import sys
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
 
 from lammps_implicit_der.systems import BccBinary, get_bcc_alloy_A_delta_B
 from lammps_implicit_der.tools import mpi_print, initialize_mpi, TimingGroup
@@ -85,6 +86,43 @@ def main():
 
     mpi_print(trun, comm=comm)
     mpi_print(bcc_alloy_Ni_Mo.timings, comm=comm)
+
+    plot = True
+    #plot = False
+
+    if plot and rank == 0:
+        plot_results(dX_true, dX_pred, method, delta, num_cells)
+
+
+def plot_results(dX_true, dX_pred, method, delta, num_cells):
+
+    fig, ax = plt.subplots(1, 2, figsize=(14, 5))
+    plt.subplots_adjust(left=0.086, right=0.957, bottom=0.136)
+
+    fsize = 20
+    ax[0].plot(dX_true, dX_pred, 'o', label='energy', color='tab:blue')
+    ax[0].set_xlabel('True Position Changes', fontsize=fsize)
+    ax[0].set_ylabel('Predicted Position Changes', fontsize=fsize)
+    ax[0].set_title(f'method: {method}; number of cells: {num_cells}', fontsize=fsize)
+    ax[0].plot([dX_true.min(), dX_true.max()], [dX_true.min(), dX_true.max()], ls="--", c=".3")
+
+    xmin, xmax = -0.05, 0.05
+    bins = 50
+    hist, bin_edges = np.histogram(dX_true[ (dX_true > xmin) & (dX_true < xmax) ], bins=bins, density=True)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    ax[1].plot(bin_centers, hist, label='true', color='black', lw=3)
+
+    hist, bin_edges = np.histogram(dX_pred[ (dX_pred > xmin) & (dX_pred < xmax) ], bins=bins, density=True)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    ax[1].plot(bin_centers, hist, label='energy', color='tab:blue', lw=3)
+    ax[1].set_xlabel('Position Change', fontsize=fsize)
+    ax[1].set_ylabel('Frequency', fontsize=fsize)
+    ax[1].set_xlim(xmin, xmax)
+
+    ax[1].legend()
+
+    fig.savefig(f'HEA_NiMo_{method}_{delta:.2f}_{num_cells:03d}.pdf')
+    plt.show()
 
 
 if __name__ == '__main__':

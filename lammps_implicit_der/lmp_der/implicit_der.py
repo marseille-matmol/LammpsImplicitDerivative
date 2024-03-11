@@ -402,7 +402,7 @@ class LammpsImplicitDer:
         # iterate over 3N
 
         if self.verbose and self.rank == 0:
-            iterator = tqdm(range(self.N))
+            iterator = tqdm(range(self.N), desc='Hessian')
         else:
             iterator = range(self.N)
 
@@ -526,7 +526,7 @@ class LammpsImplicitDer:
         res_dict = {'dX_dTheta':[],'err':[],'calls':[]}
 
         if self.verbose and self.rank == 0:
-            iterator = tqdm(self.mixed_hessian)
+            iterator = tqdm(self.mixed_hessian, desc='Impl. Der. Sparse')
         else:
             iterator = self.mixed_hessian
 
@@ -615,7 +615,7 @@ class LammpsImplicitDer:
             iterator = self.mixed_hessian
         else:
             if self.verbose and self.rank == 0:
-                iterator = tqdm(self.mixed_hessian)
+                iterator = tqdm(self.mixed_hessian, desc='Impl. Der. Energy')
             else:
                 iterator = self.mixed_hessian
 

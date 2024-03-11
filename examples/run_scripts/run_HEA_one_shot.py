@@ -40,7 +40,20 @@ def main():
                                                    specie_B_concentration=0.5)
 
     # Compute the implicit derivative with respect to Mo parameters
-    dX_dTheta = bcc_alloy_Ni_Mo.implicit_derivative(method=method)
+    kwargs = {}
+    if method == 'sparse':
+        kwargs = {
+            'adaptive_alpha': True,
+            'alpha': 0.01,
+            'maxiter': 100,
+        }
+    elif method == 'energy':
+        kwargs = {
+            'adaptive_alpha': True,
+            'alpha': 0.01,
+        }
+
+    dX_dTheta = bcc_alloy_Ni_Mo.implicit_derivative(method=method, **kwargs)
 
     # Perturbed parameters
     Theta_Mo_pert = bcc_alloy_Ni_Mo_pert.pot.Theta_dict['Mo']['Theta'].copy()
@@ -100,7 +113,7 @@ def plot_results(dX_true, dX_pred, method, delta, num_cells):
     plt.subplots_adjust(left=0.086, right=0.957, bottom=0.136)
 
     fsize = 20
-    ax[0].plot(dX_true, dX_pred, 'o', label='energy', color='tab:blue')
+    ax[0].plot(dX_true, dX_pred, 'o', label=method, color='tab:blue')
     ax[0].set_xlabel('True Position Changes', fontsize=fsize)
     ax[0].set_ylabel('Predicted Position Changes', fontsize=fsize)
     ax[0].set_title(f'method: {method}; number of cells: {num_cells}', fontsize=fsize)
@@ -114,7 +127,7 @@ def plot_results(dX_true, dX_pred, method, delta, num_cells):
 
     hist, bin_edges = np.histogram(dX_pred[ (dX_pred > xmin) & (dX_pred < xmax) ], bins=bins, density=True)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    ax[1].plot(bin_centers, hist, label='energy', color='tab:blue', lw=3)
+    ax[1].plot(bin_centers, hist, label=method, color='tab:blue', lw=3)
     ax[1].set_xlabel('Position Change', fontsize=fsize)
     ax[1].set_ylabel('Frequency', fontsize=fsize)
     ax[1].set_xlim(xmin, xmax)

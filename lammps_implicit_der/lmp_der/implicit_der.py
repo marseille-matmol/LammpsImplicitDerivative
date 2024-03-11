@@ -32,7 +32,7 @@ class LammpsImplicitDer:
                  minimize_maxeval=1000,
                  comm=None,
                  logname='none',
-                 fix_cell='all',
+                 fix_sel='all',
                  verbose=True):
         """Set of methods for implicit derivative. Parent class.
 
@@ -92,7 +92,7 @@ class LammpsImplicitDer:
             self.data_path = data_path
 
         # For energy method, selection for addforce command
-        self.fix_sel = fix_cell
+        self.fix_sel = fix_sel
 
         # Command line arguments for LAMMPS
         self.cmdargs = ['-screen', 'none', '-log', self.logname]
@@ -358,7 +358,6 @@ class LammpsImplicitDer:
 
         return X_vector - (correction * self.periodicity).flatten()
 
-
     @measure_runtime_and_calls
     def forces(self, dx, alpha=0.05):
         """
@@ -458,19 +457,19 @@ class LammpsImplicitDer:
         """
 
         if method == 'energy':
-            return self.implicit_derivative_energy(alpha=alpha,
-                                                   adaptive_alpha=adaptive_alpha,
-                                                   ftol=ftol,
-                                                   maxiter=maxiter)['dX_dTheta']
+            res_dict = self.implicit_derivative_energy(alpha=alpha,
+                                                       adaptive_alpha=adaptive_alpha,
+                                                       ftol=ftol,
+                                                       maxiter=maxiter)
+            mpi_print(res_dict['calls'], comm=self.comm)
+            return res_dict['dX_dTheta']
 
         elif method == 'sparse':
-            if alpha > 0.05 and (not adaptive_alpha):
-                mpi_print(f'Warning: alpha={alpha} might be too large for sparse method.',
-                          comm=self.comm)
-
-            return self.implicit_derivative_sparse(alpha=alpha,
-                                                   atol=atol,
-                                                   maxiter=maxiter)['dX_dTheta']
+            res_dict = self.implicit_derivative_sparse(alpha=alpha,
+                                                       adaptive_alpha=adaptive_alpha,
+                                                       atol=atol,
+                                                       maxiter=maxiter)
+            return res_dict['dX_dTheta']
 
         elif method == 'inverse':
             return self.implicit_derivative_inverse()
@@ -482,11 +481,12 @@ class LammpsImplicitDer:
             raise ValueError(f'Unknown method for implicit derivative: {method}')
 
     def implicit_derivative_sparse(self,
-                                   alpha=0.001,
+                                   alpha=0.01,
                                    atol=1e-5,
                                    maxiter=100,
-                                   return_values=True):
-        """Evaluation of implicit position derivative
+                                   adaptive_alpha=True):
+        """
+        Evaluation of implicit position derivative
         via sparse linear methods.
 
         Parameters
@@ -511,19 +511,13 @@ class LammpsImplicitDer:
         """
         self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
 
-        # initial displacements: zero
+        # Compute the force at the initial position,
+        # Analytically, it must be zero, but for numerical reasons, it is small
         dX0 = np.zeros_like(self._X_coord)
-
-        # reinitialize LAMMPS
-        # ??? set alpha to zero here???
-        F0 = self.forces(dX0, alpha)
-
-        # define linear operator with matrix-vector product mv()
-        mv = lambda dx : (F0-self.forces(dx, alpha)) / alpha
-        linop = LinearOperator((self.N, self.N), matvec=mv, rmatvec=mv)
+        F0 = self.forces(dX0, alpha=0.0)
 
         # result holder
-        res_dict = {'dX_dTheta':[],'err':[],'calls':[]}
+        res_dict = {'dX_dTheta': [], 'err': [], 'calls': []}
 
         if self.verbose and self.rank == 0:
             iterator = tqdm(self.mixed_hessian, desc='Impl. Der. Sparse')
@@ -531,16 +525,27 @@ class LammpsImplicitDer:
             iterator = self.mixed_hessian
 
         # One linear solutions per parameter
-        for mix_hes_l in iterator:
+        for iCl, Cl in enumerate(iterator):
             # initialize step counter
             self.step = 0
 
-            # perform iterative linear solution routine
-            dX_dTheta = lgmres(linop, mix_hes_l, x0=dX0, atol=atol, maxiter=maxiter)[0]
+            # determine the alpha_factor
+            if adaptive_alpha:
+                alpha_factor = alpha / np.max(np.abs(Cl))
+            else:
+                alpha_factor = alpha
+
+            # define linear operator with matrix-vector product matvec()
+            matvec = lambda dx: (F0-self.forces(dx, alpha_factor)) / alpha_factor
+            linop = LinearOperator((self.N, self.N), matvec=matvec, rmatvec=matvec)
+
+            # perform iterative linear solution routine LGMRES: Ax = b, solve for x
+            # linop - linear operator which can produce Ax
+            dX_dTheta = lgmres(linop, Cl, x0=dX0, atol=atol, maxiter=maxiter)[0]
 
             # log results
             res_dict['dX_dTheta'] += [dX_dTheta]
-            res_dict['err'] += [np.linalg.norm(mv(dX_dTheta) - mix_hes_l)]
+            res_dict['err'] += [np.linalg.norm(matvec(dX_dTheta) - Cl)]
             res_dict['calls'] += [self.step]
 
         # convert to dictionary of numpy arrays
@@ -603,12 +608,13 @@ class LammpsImplicitDer:
             #min_style cg
         """)
 
-        res_dict = {'dX_dTheta': [],'err': [],'calls': [], 'alpha_array': []}
+        res_dict = {'dX_dTheta': [], 'err': [], 'calls': [], 'alpha_array': []}
 
         # iterate over columns of the mixed hessian obtained from LAMMPS SNAP potential
         # d/dT_i (dU/dX)
 
-        #print_iCl = True
+        # For debugging purposes
+        # print_iCl = True
         print_iCl = False
 
         if print_iCl:

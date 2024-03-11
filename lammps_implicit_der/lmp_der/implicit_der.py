@@ -113,10 +113,10 @@ class LammpsImplicitDer:
         return copy.deepcopy(self)
 
     def print_run_info(self):
-        mpi_print(self.pot, verbose=self.verbose, comm=self.comm)
-        mpi_print(f'Running LAMMPS with the following arguments:', verbose=self.verbose,
+        mpi_print('\n'+'-'*80)
+        mpi_print('Running LAMMPS with the following arguments:', verbose=self.verbose,
                   comm=self.comm)
-        mpi_print(' '.join(self.cmdargs), verbose=self.verbose, comm=self.comm)
+        mpi_print(' '.join(self.cmdargs)+'\n', verbose=self.verbose, comm=self.comm)
 
     def print_system_info(self):
         mpi_print(f'Number of atoms: {self.Natom}, largest force value: {np.abs(self.f0).max():.3e}, '
@@ -178,7 +178,7 @@ class LammpsImplicitDer:
 
         if verbose:
             mpi_print(f'Minimizing energy with the following parameters:', comm=self.comm)
-            mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo}', comm=self.comm)
+            mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo} \n', comm=self.comm)
 
         self.lmp.commands_string(f"""
         min_style {algo}
@@ -199,7 +199,7 @@ class LammpsImplicitDer:
         if self.pot is None:
             raise RuntimeError('Potential must be defined')
 
-        mpi_print(f'Setting up SNAP potential', comm=self.comm)
+        mpi_print(f'Setting SNAP potential', comm=self.comm)
 
         self.lmp.commands_string(f"""
         pair_style snap
@@ -210,6 +210,8 @@ class LammpsImplicitDer:
         """)
 
         self.Ndesc = self.pot.num_param
+
+        mpi_print(self.pot, verbose=self.verbose, comm=self.comm)
 
     def scatter_coord(self):
         """Send the coordinates to LAMMPS"""

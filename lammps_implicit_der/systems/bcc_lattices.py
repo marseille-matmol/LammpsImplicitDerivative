@@ -14,6 +14,68 @@ from ..lmp_der.snap import SNAP
 from ..lmp_der.implicit_der import LammpsImplicitDer
 
 
+class Bcc(LammpsImplicitDer):
+    @measure_runtime_and_calls
+    def __init__(self,
+                 num_cells=3,
+                 alat=3.1855,
+                 setup_snap=True,
+                 *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.binary = False
+        self.num_cells = num_cells
+        self.alat = alat
+
+        if self.snapcoeff_filename is None:
+            raise RuntimeError('snapcoeff_filename must be specified for Bcc')
+
+        # Load the SNAP potential instance
+        self.pot = SNAP.from_files(self.snapcoeff_filename,
+                                   data_path=self.data_path,
+                                   snapparam_filename=self.snapparam_filename, comm=self.comm)
+
+        if len(self.pot.elem_list) > 1:
+            raise RuntimeError('Bcc system must be a single element')
+
+        self.element = self.pot.elem_list[0]
+
+        self.Theta = self.pot.Theta_dict[self.element]['Theta']
+
+        self.lmp.commands_string(f"""
+        clear
+
+        atom_modify map array sort 0 0.0
+        boundary p p p
+
+        # Initialize simulation
+        units metal
+        lattice bcc {self.alat} origin 0.01 0.01 0.01
+        """)
+
+        # Setup the coordinates from scratch
+        if self.datafile is None:
+
+            self.lmp.commands_string(f"""
+            # create a block of atoms
+            region C block 0 {num_cells} 0 {num_cells} 0 {num_cells} units lattice
+            create_box 1 C
+            create_atoms 1 region C
+            """)
+
+        # Read from a datafile
+        else:
+            mpi_print(f'Reading datafile {self.datafile}', verbose=self.verbose, comm=self.comm)
+            self.lmp.commands_string(f"""
+            read_data {self.datafile}
+            """)
+
+        self.lmp.commands_string(f'mass * 45.')
+
+        self.run_init(setup_snap=setup_snap)
+
+
 class BccBinary(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
@@ -31,7 +93,7 @@ class BccBinary(LammpsImplicitDer):
         self.alat = alat
 
         if self.snapcoeff_filename is None:
-            raise RuntimeError('snapcoeff_filename must be specified for BccBinaryVacancy')
+            raise RuntimeError('snapcoeff_filename must be specified for BccBinary')
 
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,
@@ -81,7 +143,6 @@ class BccVacancy(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  num_cells=3,
-                 #alat=3.13,
                  alat=3.1855,
                  *args, **kwargs):
 

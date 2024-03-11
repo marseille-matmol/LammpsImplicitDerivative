@@ -215,7 +215,7 @@ class SNAP():
                     f'R = {self.Theta_dict[elem]["elem_params"]["radius"]:>7.4f} '\
                     f'w = {self.Theta_dict[elem]["elem_params"]["weight"]:>7.4f}\n'
 
-        info += self.Theta_dict['radii'] + '\n'
-        info += self.Theta_dict['weights'] + '\n'
+        #info += self.Theta_dict['radii'] + '\n'
+        #info += self.Theta_dict['weights'] + '\n'
 
         return info

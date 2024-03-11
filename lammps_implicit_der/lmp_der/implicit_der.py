@@ -113,7 +113,7 @@ class LammpsImplicitDer:
         return copy.deepcopy(self)
 
     def print_run_info(self):
-        mpi_print('\n'+'-'*80)
+        mpi_print('\n'+'-'*80, comm=self.comm)
         mpi_print('Running LAMMPS with the following arguments:', verbose=self.verbose,
                   comm=self.comm)
         mpi_print(' '.join(self.cmdargs)+'\n', verbose=self.verbose, comm=self.comm)

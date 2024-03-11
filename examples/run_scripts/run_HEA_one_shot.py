@@ -93,7 +93,7 @@ def main():
 
     # Save to pickle
     if rank == 0:
-        output_filename = f'HEA_NiMo_{method}_{delta:.2f}_{num_cells:03d}.pkl'
+        output_filename = f'HEA_NiMo_{method}_{delta:.4f}_{num_cells:03d}.pkl'
         with open(output_filename, 'wb') as f:
             pickle.dump(output_dict, f)
 
@@ -134,7 +134,7 @@ def plot_results(dX_true, dX_pred, method, delta, num_cells):
 
     ax[1].legend()
 
-    fig.savefig(f'HEA_NiMo_{method}_{delta:.2f}_{num_cells:03d}.pdf')
+    fig.savefig(f'HEA_NiMo_{method}_{delta:.4f}_{num_cells:03d}.pdf')
     plt.show()
 
 

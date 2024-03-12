@@ -22,6 +22,7 @@ def main():
 
     comm, rank = initialize_mpi()
 
+
     # Not-perturbed random alloy
     bcc_alloy_Ni_Mo = BccBinary(datafile=None,
                                 comm=comm,

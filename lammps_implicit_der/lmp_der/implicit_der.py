@@ -461,7 +461,6 @@ class LammpsImplicitDer:
                                                        adaptive_alpha=adaptive_alpha,
                                                        ftol=ftol,
                                                        maxiter=maxiter)
-            mpi_print(res_dict['calls'], comm=self.comm)
             return res_dict['dX_dTheta']
 
         elif method == 'sparse':

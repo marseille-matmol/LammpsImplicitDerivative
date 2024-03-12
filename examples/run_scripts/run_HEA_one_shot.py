@@ -22,13 +22,13 @@ def main():
 
     comm, rank = initialize_mpi()
 
-
+    specie_B_concentration = 0.1
     # Not-perturbed random alloy
     bcc_alloy_Ni_Mo = BccBinary(datafile=None,
                                 comm=comm,
                                 snapcoeff_filename='NiMo.snapcoeff',
                                 num_cells=num_cells,
-                                specie_B_concentration=0.5,
+                                specie_B_concentration=specie_B_concentration,
                                 verbose=True,
                                 minimize=True)
 
@@ -38,7 +38,7 @@ def main():
                                                    num_cells=num_cells,
                                                    minimize=True,
                                                    datafile=None,
-                                                   specie_B_concentration=0.5)
+                                                   specie_B_concentration=specie_B_concentration)
 
     # Compute the implicit derivative with respect to Mo parameters
     kwargs = {}
@@ -69,6 +69,9 @@ def main():
     X_true = bcc_alloy_Ni_Mo_pert.X_coord.copy()
     dX_true = bcc_alloy_Ni_Mo.minimum_image(X_true - bcc_alloy_Ni_Mo.X_coord)
 
+    energy0 = bcc_alloy_Ni_Mo.energy
+    energy_pert = bcc_alloy_Ni_Mo_pert.energy
+
     trun.timings['total'].stop()
 
     output_dict = {
@@ -87,9 +90,11 @@ def main():
         'X_pred': X_pred,
         'X_true': X_true,
         'X0': bcc_alloy_Ni_Mo.X_coord.copy(),
+        'energy0': energy0,
+        'energy_pert': energy_pert,
         'species': bcc_alloy_Ni_Mo.species.copy(),
         'timings_system': trun.to_dict(),
-        'timings_run': bcc_alloy_Ni_Mo.timings.to_dict()
+        'timings_run': bcc_alloy_Ni_Mo.timings.to_dict(),
     }
 
     # Save to pickle

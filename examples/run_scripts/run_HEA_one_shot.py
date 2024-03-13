@@ -84,7 +84,6 @@ def main():
         'Theta_Ni': bcc_alloy_Ni_Mo.pot.Theta_dict['Ni']['Theta'].copy(),
         'Theta_Mo': bcc_alloy_Ni_Mo.pot.Theta_dict['Mo']['Theta'].copy(),
         'Theta_Mo_pert': Theta_Mo_pert,
-        'dX_dTheta': dX_dTheta,
         'dX_pred': dX_pred,
         'dX_true': dX_true,
         'X_pred': X_pred,

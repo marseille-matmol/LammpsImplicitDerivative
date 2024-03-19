@@ -163,6 +163,30 @@ class LammpsImplicitDer:
                                                       LMP_TYPE_SCALAR)
         return self._energy
 
+    @property
+    @measure_runtime_and_calls
+    def stress(self):
+        """Energy getter.
+        Every time energy is requested, it is computed in LAMMPS and stored internally.
+        """
+
+        # Check if lmp is defined
+        if self.lmp is None:
+            raise RuntimeError('LAMMPS object lmp must be defined for stress calculation')
+
+        self.lmp.commands_string("""
+        compute PerAtomStress all stress/atom thermo_temp
+        run 0
+        """)
+
+        self._stress = self.lmp.numpy.extract_compute("PerAtomStress", 1, 1).sum()
+
+        #self._stress = self.lmp.numpy.extract_compute("SS",
+        #                                              1,
+        #                                              1).sum()
+
+        return self._stress
+
     @measure_runtime_and_calls
     def minimize_energy(self, ftol=None, maxiter=None, maxeval=None, algo=None, verbose=True):
         """Minimize the energy of the system"""

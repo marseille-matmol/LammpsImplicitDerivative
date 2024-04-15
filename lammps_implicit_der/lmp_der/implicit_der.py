@@ -33,6 +33,7 @@ class LammpsImplicitDer:
                  comm=None,
                  logname='none',
                  fix_sel='all',
+                 fix_box_relax=False,
                  verbose=True):
         """Set of methods for implicit derivative. Parent class.
 
@@ -53,6 +54,9 @@ class LammpsImplicitDer:
         self.minimize_ftol = minimize_ftol
         self.minimize_maxiter = minimize_maxiter
         self.minimize_maxeval = minimize_maxeval
+
+        # Apply an external pressure tensor with the "fix box/relax" command
+        self.fix_box_relax = fix_box_relax
 
         self.snapcoeff_filename = snapcoeff_filename
         self.snapparam_filename = snapparam_filename
@@ -202,9 +206,10 @@ class LammpsImplicitDer:
 
         if verbose:
             mpi_print(f'Minimizing energy with the following parameters:', comm=self.comm)
-            mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo} \n', comm=self.comm)
+            mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo}, fix_box_relax: {self.fix_box_relax} \n', comm=self.comm)
 
         self.lmp.commands_string(f"""
+        {'fix 1 all box/relax iso 0.0 vmax 0.001' if self.fix_box_relax else ''}
         min_style {algo}
         minimize 0 {ftol} {maxiter} {maxeval}
         """)

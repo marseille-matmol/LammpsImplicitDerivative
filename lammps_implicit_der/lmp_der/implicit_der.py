@@ -209,7 +209,8 @@ class LammpsImplicitDer:
             mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo}, fix_box_relax: {self.fix_box_relax} \n', comm=self.comm)
 
         self.lmp.commands_string(f"""
-        {'fix 1 all box/relax iso 0.0 vmax 0.001' if self.fix_box_relax else ''}
+        {'fix 1 all box/relax iso 0.0 vmax 0.001' if False else ''}
+        {'fix 1 all box/relax aniso 0.0 dilate partial' if self.fix_box_relax else ''}
         min_style {algo}
         minimize 0 {ftol} {maxiter} {maxeval}
         """)
@@ -723,6 +724,8 @@ class LammpsImplicitDer:
                 run 0
 
                 # minimize the energy
+                {'fix 1 all box/relax iso 0.0 vmax 0.001' if False else ''}
+                {'fix 1 all box/relax aniso 0.0 dilate partial' if self.fix_box_relax else ''}
                 minimize 0. {ftol} {maxiter} {maxiter}
             """)
 

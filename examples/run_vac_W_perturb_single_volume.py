@@ -19,8 +19,8 @@ def main():
 
     alat = 3.1855
 
-    #fix_box_relax = False
-    fix_box_relax = True
+    fix_box_relax = False
+    #fix_box_relax = True
 
     # Command line arguments
     num_cells = int(sys.argv[1])

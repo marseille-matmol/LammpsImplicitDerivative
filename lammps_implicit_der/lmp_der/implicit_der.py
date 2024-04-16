@@ -117,7 +117,7 @@ class LammpsImplicitDer:
         return copy.deepcopy(self)
 
     def print_run_info(self):
-        mpi_print('\n'+'-'*80, comm=self.comm)
+        mpi_print('\n'+'-'*80, comm=self.comm, verbose=self.verbose)
         mpi_print('Running LAMMPS with the following arguments:', verbose=self.verbose,
                   comm=self.comm)
         mpi_print(' '.join(self.cmdargs)+'\n', verbose=self.verbose, comm=self.comm)
@@ -229,7 +229,7 @@ class LammpsImplicitDer:
         if self.pot is None:
             raise RuntimeError('Potential must be defined')
 
-        mpi_print(f'Setting SNAP potential', comm=self.comm)
+        mpi_print(f'Setting SNAP potential', comm=self.comm, verbose=self.verbose)
 
         self.lmp.commands_string(f"""
         pair_style snap
@@ -250,8 +250,7 @@ class LammpsImplicitDer:
 
     @measure_runtime_and_calls
     def compute_D_dD(self):
-        """Set up the potential in LAMMPS
-        Currently implemented only for SNAP"""
+        """Compute descriptors and their derivatives in LAMMPS and store them internally"""
 
         # Check that pot must be defined
         if self.pot is None:
@@ -277,6 +276,30 @@ class LammpsImplicitDer:
         # potential energy per atom
         compute E all pe/atom
 
+        run 0
+        """)
+
+    @measure_runtime_and_calls
+    def compute_virial(self):
+        """Compute virial"""
+
+        # Check that pot must be defined
+        if self.pot is None:
+            raise RuntimeError('Potential must be defined')
+
+        # Read the potential parameters from the potential object
+        rcutfac, twojmax, rfac0 = \
+            self.pot.snapparam_dict['rcutfac'], \
+            self.pot.snapparam_dict['twojmax'], \
+            self.pot.snapparam_dict['rfac0']
+
+        radii, weights = \
+            self.pot.Theta_dict['radii'], \
+            self.pot.Theta_dict['weights']
+
+        self.lmp.commands_string(f"""
+        # descriptors
+        compute V all snav/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
         run 0
         """)
 

@@ -167,6 +167,18 @@ class LammpsImplicitDer:
                                                       LMP_TYPE_SCALAR)
         return self._energy
 
+    def apply_strain(self, epsilon=np.zeros((3, 3))):
+        """Apply strain to the system"""
+
+        # Update the self.cell matrix
+        self.get_cell()
+
+        C = np.dot(self.cell, (np.eye(3) + epsilon))
+        self.lmp.commands_string(f"""
+        change_box all x final 0.0 {C[0,0]} y final 0.0 {C[1,1]} z final 0.0 {C[2,2]} xy final {C[0,1]} xz final {C[0,2]} yz final {C[1,2]} remap units box
+        run 0
+        """)
+
     @property
     @measure_runtime_and_calls
     def stress(self):
@@ -391,7 +403,7 @@ class LammpsImplicitDer:
 
         self.periodicity = periodicity  # or define  e.g np.ones(3,bool)
 
-        self.cell = np.zeros((3,3))
+        self.cell = np.zeros((3, 3))
 
         for cell_j in range(3):
             self.cell[cell_j][cell_j] = boxhi[cell_j]-boxlo[cell_j]

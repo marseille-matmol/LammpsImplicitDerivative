@@ -8,6 +8,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+# Set common figure parameters
+plotparams = {'figure.figsize': (10, 8),
+                  'axes.grid': False,
+                  'lines.linewidth': 2.8,
+                  'axes.linewidth': 1.1,
+                  'lines.markersize': 10,
+                  'xtick.bottom': True,
+                  'xtick.top': True,
+                  'xtick.direction': 'in',
+                  'xtick.minor.visible': True,
+                  'ytick.left': True,
+                  'ytick.right': True,
+                  'ytick.direction': 'in',
+                  'ytick.minor.visible': True,
+                  'figure.autolayout': False,
+                  'mathtext.fontset': 'dejavusans', # 'cm' 'stix'
+                  'mathtext.default' : 'it',
+                  'xtick.major.size': 4.5,
+                  'ytick.major.size': 4.5,
+                  'xtick.minor.size': 2.5,
+                  'ytick.minor.size': 2.5,
+                  'legend.handlelength': 3.0,
+                  'legend.shadow'     : False,
+                  'legend.markerscale': 1.0 ,
+                  'font.size': 20}
+
+
 def plot_coords(axes, X_coord, color_legend=None, **kwargs):
 
     # X_coords shape must be (N, 3)

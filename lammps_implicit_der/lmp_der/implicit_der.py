@@ -76,6 +76,9 @@ class LammpsImplicitDer:
         self.step = 0
         self.dX_dTheta = None
 
+        self.Theta = None
+        self.virial = None
+
         self.lmp = None
         self.pot = None
         self.cell = None
@@ -89,6 +92,9 @@ class LammpsImplicitDer:
 
         # Energy of the system
         self._energy = None
+
+        # Volume
+        self._volume = None
 
         if data_path is None:
             self.data_path = get_default_data_path()
@@ -167,17 +173,16 @@ class LammpsImplicitDer:
                                                       LMP_TYPE_SCALAR)
         return self._energy
 
-    def apply_strain(self, epsilon=np.zeros((3, 3))):
-        """Apply strain to the system"""
+    @property
+    def volume(self):
+        """Volume getter.
+        Every time volume is requested, it is computed from the self.cell.
+        """
 
-        # Update the self.cell matrix
         self.get_cell()
+        self._volume = np.linalg.det(self.cell)
 
-        C = np.dot(self.cell, (np.eye(3) + epsilon))
-        self.lmp.commands_string(f"""
-        change_box all x final 0.0 {C[0,0]} y final 0.0 {C[1,1]} z final 0.0 {C[2,2]} xy final {C[0,1]} xz final {C[0,2]} yz final {C[1,2]} remap units box
-        run 0
-        """)
+        return self._volume
 
     @property
     @measure_runtime_and_calls
@@ -217,12 +222,12 @@ class LammpsImplicitDer:
             raise RuntimeError('LAMMPS object lmp must be defined for minimization')
 
         if verbose:
-            mpi_print(f'Minimizing energy with the following parameters:', comm=self.comm)
-            mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo}, fix_box_relax: {self.fix_box_relax} \n', comm=self.comm)
+            mpi_print(f'Minimizing energy with the following parameters:', verbose=self.verbose, comm=self.comm)
+            mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo}, fix_box_relax: {self.fix_box_relax} \n', verbose=self.verbose, comm=self.comm)
 
         self.lmp.commands_string(f"""
-        {'fix 1 all box/relax iso 0.0 vmax 0.001' if False else ''}
-        {'fix 1 all box/relax aniso 0.0 dilate partial' if self.fix_box_relax else ''}
+        {'fix 1 all box/relax iso 0.0 vmax 0.001' if self.fix_box_relax else ''}
+        {'fix 1 all box/relax aniso 0.0 dilate partial' if False else ''}
         min_style {algo}
         minimize 0 {ftol} {maxiter} {maxeval}
         """)
@@ -255,9 +260,14 @@ class LammpsImplicitDer:
 
         mpi_print(self.pot, verbose=self.verbose, comm=self.comm)
 
-    def scatter_coord(self):
-        """Send the coordinates to LAMMPS"""
-        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
+    def scatter_coord(self, X_coord=None):
+        """
+        Send the coordinates to LAMMPS
+        """
+        if X_coord is None:
+            X_coord = self._X_coord
+
+        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_coord))
         self.lmp.command("run 0")
 
     @measure_runtime_and_calls
@@ -278,42 +288,21 @@ class LammpsImplicitDer:
             self.pot.Theta_dict['radii'], \
             self.pot.Theta_dict['weights']
 
-        self.lmp.commands_string(f"""
-        # descriptors
-        compute D all sna/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
+        try:
+            self.lmp.commands_string(f"""
+            # descriptors
+            compute D all sna/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
 
-        # derivatives of descriptors
-        compute dD all snad/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
+            # derivatives of descriptors
+            compute dD all snad/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
 
-        # potential energy per atom
-        compute E all pe/atom
+            # potential energy per atom
+            compute E all pe/atom
 
-        run 0
-        """)
-
-    @measure_runtime_and_calls
-    def compute_virial(self):
-        """Compute virial"""
-
-        # Check that pot must be defined
-        if self.pot is None:
-            raise RuntimeError('Potential must be defined')
-
-        # Read the potential parameters from the potential object
-        rcutfac, twojmax, rfac0 = \
-            self.pot.snapparam_dict['rcutfac'], \
-            self.pot.snapparam_dict['twojmax'], \
-            self.pot.snapparam_dict['rfac0']
-
-        radii, weights = \
-            self.pot.Theta_dict['radii'], \
-            self.pot.Theta_dict['weights']
-
-        self.lmp.commands_string(f"""
-        # descriptors
-        compute V all snav/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
-        run 0
-        """)
+            run 0
+            """)
+        except Exception as e:
+            mpi_print(f'Error in compute_D_dD: {e}', verbose=self.verbose, comm=self.comm)
 
     @measure_runtime_and_calls
     def gather_D_dD(self):
@@ -349,6 +338,49 @@ class LammpsImplicitDer:
             ).reshape((-1, 2, 3, self.Ndesc))
 
         self.mixed_hessian = dD[:, 1, :, :].reshape((-1, self.Ndesc)).T
+
+    def compute_virial(self):
+        """Compute virial"""
+
+        # Check that pot must be defined
+        if self.pot is None:
+            raise RuntimeError('Potential must be defined')
+
+        # Read the potential parameters from the potential object
+        rcutfac, twojmax, rfac0 = \
+            self.pot.snapparam_dict['rcutfac'], \
+            self.pot.snapparam_dict['twojmax'], \
+            self.pot.snapparam_dict['rfac0']
+
+        radii, weights = \
+            self.pot.Theta_dict['radii'], \
+            self.pot.Theta_dict['weights']
+
+        try:
+            self.lmp.commands_string(f"""
+            # descriptors
+            compute virial all snav/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
+            run 0
+            """)
+        except Exception as e:
+            mpi_print(f'Error in compute_virial: {e}', verbose=self.verbose, comm=self.comm)
+
+    def gather_virial(self):
+        """Gather virial"""
+
+        virial = self.lmp.gather("c_virial", 1, 6 * self.Ndesc)
+        self.virial = np.ctypeslib.as_array(virial).reshape(-1, 6, self.Ndesc)
+
+    def get_pressure_from_virial(self):
+        """
+            Return pressure from virial as the trace of the virial tensor contracted with the potential parameters.
+        """
+
+        if self.Theta is None or self.virial is None:
+            raise RuntimeError('Theta and virial must be set to calculate pressure')
+
+        pressure_tensor = np.dot(np.sum(self.virial, axis=0), self.Theta)
+        self.pressure = np.sum(pressure_tensor[:3]) / 3.0
 
     @measure_runtime_and_calls
     def run_init(self, setup_snap=True):
@@ -412,6 +444,20 @@ class LammpsImplicitDer:
         self.cell[0][2] = xz
         self.cell[1][2] = yz
         self.inv_cell = np.linalg.inv(self.cell)
+
+    def apply_strain(self, cell):
+        """Apply strain to the system"""
+
+        # Update the self.cell matrix
+        #self.get_cell()
+        #C = np.dot(self.cell, (np.eye(3) + epsilon))
+
+        C = cell
+        self.lmp.commands_string(f"""
+        change_box all triclinic
+        change_box all x final 0.0 {C[0,0]} y final 0.0 {C[1,1]} z final 0.0 {C[2,2]} xy final {C[0,1]} xz final {C[0,2]} yz final {C[1,2]} remap units box
+        run 0
+        """)
 
     def minimum_image(self, X_vector):
         """Compute the minimum image of a vector X_vector (applying pbc)"""
@@ -511,7 +557,8 @@ class LammpsImplicitDer:
                             adaptive_alpha=True,
                             atol=1e-5,
                             ftol=1e-10,
-                            maxiter=500):
+                            maxiter=500,
+                            min_style='fire'):
         """A wrapper for implicit derivative calculation
 
         Returns
@@ -525,7 +572,8 @@ class LammpsImplicitDer:
             res_dict = self.implicit_derivative_energy(alpha=alpha,
                                                        adaptive_alpha=adaptive_alpha,
                                                        ftol=ftol,
-                                                       maxiter=maxiter)
+                                                       maxiter=maxiter,
+                                                       min_style=min_style)
             return res_dict['dX_dTheta']
 
         elif method == 'sparse':
@@ -624,6 +672,7 @@ class LammpsImplicitDer:
     def implicit_derivative_energy(self,
                                    alpha=0.5,
                                    adaptive_alpha=True,
+                                   min_style='fire',
                                    ftol=1e-10,
                                    maxiter=200):
         """Evaluation of implicit position derivative
@@ -660,16 +709,13 @@ class LammpsImplicitDer:
         # alphaClx = alpha * d/dT_l (dU/dx), N vector
         # alphaCly = alpha * d/dT_l (dU/dy)
         # The alphaClx, alphaCly, and alphaClz names are defined here
-        self.lmp.commands_string("""
+        self.lmp.commands_string(f"""
             fix mixedhessianrow all property/atom d_alphaClx d_alphaCly d_alphaClz
 
             #compute deltaX all displace/atom
 
-            # FIRE minimization algorithm
-            min_style fire
-            #min_style hftn
-            #min_style sd
-            #min_style cg
+            # minimization algorithm. Options: fire, cg, sd, htfn
+            min_style {min_style}
         """)
 
         res_dict = {'dX_dTheta': [], 'err': [], 'calls': [], 'alpha_array': []}
@@ -759,8 +805,8 @@ class LammpsImplicitDer:
                 run 0
 
                 # minimize the energy
-                {'fix 1 all box/relax iso 0.0 vmax 0.001' if False else ''}
-                {'fix 1 all box/relax aniso 0.0 dilate partial' if self.fix_box_relax else ''}
+                {'fix 1 all box/relax iso 0.0 vmax 0.001' if self.fix_box_relax else ''}
+                {'fix 1 all box/relax aniso 0.0 dilate partial' if False else ''}
                 minimize 0. {ftol} {maxiter} {maxiter}
             """)
 

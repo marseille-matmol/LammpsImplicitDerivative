@@ -23,7 +23,7 @@ def main():
     #fix_box_relax = True
 
     # Command line arguments
-    num_cells = int(sys.argv[1])
+    ncell_x = int(sys.argv[1])
     method = sys.argv[2]
     #sample = int(sys.argv[3])
 
@@ -46,7 +46,7 @@ def main():
                       data_path='.',
                       comm=comm,
                       minimize=True,
-                      num_cells=num_cells,
+                      ncell_x=ncell_x,
                       alat=alat,
                       logname='vac0.log',
                       fix_box_relax=fix_box_relax,
@@ -59,12 +59,12 @@ def main():
     print_coords = False
     if print_coords:
         if rank == 0:
-            vac0.write_xyz_file(filename=f"vac0_{num_cells}.xyz", verbose=True)
+            vac0.write_xyz_file(filename=f"vac0_{ncell_x}.xyz", verbose=True)
 
     energy0 = vac0.energy
     #stress0 = vac0.stress
     # Convert to MPa
-    #stress0 *= 0.1 / (num_cells * alat)**3
+    #stress0 *= 0.1 / (ncell_x * alat)**3
 
     # Implicit derivative
     dX_dTheta = vac0.implicit_derivative(method=method, **kwargs)
@@ -83,7 +83,7 @@ def main():
                                  data_path='.',
                                  comm=comm,
                                  minimize=True,
-                                 num_cells=num_cells,
+                                 ncell_x=ncell_x,
                                  alat=alat,
                                  logname='vac_perturb.log',
                                  fix_box_relax=fix_box_relax,
@@ -100,7 +100,7 @@ def main():
         energy_true = vac_perturb.energy
         #stress_true = vac_perturb.stress
         # Convert to MPa
-        #stress_true *= 0.1 / (num_cells * alat)**3
+        #stress_true *= 0.1 / (ncell_x * alat)**3
 
         # Compute the predicted energy stress: send coordinates to vac_perturb
         # and compute the energy and stress
@@ -109,7 +109,7 @@ def main():
         #energy_pred = vac_perturb.energy(compute_id='PredictedEnergy')
         #stress_pred = vac_perturb.stress
         # Convert to MPa
-        #stress_pred *= 0.1 / (num_cells * alat)**3
+        #stress_pred *= 0.1 / (ncell_x * alat)**3
 
         output_dict = {
             'Natom': vac0.Natom,
@@ -164,7 +164,7 @@ def main():
             plt.show()
 
         if rank == 0:
-            output_filename = f'vac_W_{num_cells:03d}_{method}_{sample:03d}.pkl'
+            output_filename = f'vac_W_{ncell_x:03d}_{method}_{sample:03d}.pkl'
             with open(output_filename, 'wb') as f:
                 pickle.dump(output_dict, f)
 

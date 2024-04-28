@@ -17,7 +17,7 @@ from ..lmp_der.implicit_der import LammpsImplicitDer
 class Bcc(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
-                 num_cells=3,
+                 ncell_x=3,
                  alat=3.1855,
                  setup_snap=True,
                  *args, **kwargs):
@@ -25,7 +25,7 @@ class Bcc(LammpsImplicitDer):
         super().__init__(*args, **kwargs)
 
         self.binary = False
-        self.num_cells = num_cells
+        self.ncell_x = ncell_x
         self.alat = alat
 
         if self.snapcoeff_filename is None:
@@ -59,7 +59,7 @@ class Bcc(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {num_cells} 0 {num_cells} 0 {num_cells} units lattice
+            region C block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x} units lattice
             create_box 1 C
             create_atoms 1 region C
             """)
@@ -79,7 +79,7 @@ class Bcc(LammpsImplicitDer):
 class BccBinary(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
-                 num_cells=3,
+                 ncell_x=3,
                  alat=3.13,
                  specie_B_concentration=0.5,
                  setup_snap=True,
@@ -89,7 +89,7 @@ class BccBinary(LammpsImplicitDer):
 
         self.binary = True
 
-        self.num_cells = num_cells
+        self.ncell_x = ncell_x
         self.alat = alat
 
         if self.snapcoeff_filename is None:
@@ -120,7 +120,7 @@ class BccBinary(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {num_cells} 0 {num_cells} 0 {num_cells} units lattice
+            region C block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x} units lattice
             create_box 2 C
             create_atoms 1 region C
 
@@ -142,13 +142,13 @@ class BccBinary(LammpsImplicitDer):
 class BccVacancy(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
-                 num_cells=3,
+                 ncell_x=3,
                  alat=3.1855,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
-        self.num_cells = num_cells
+        self.ncell_x = ncell_x
         self.alat = alat
 
         if self.snapcoeff_filename is None:
@@ -177,7 +177,7 @@ class BccVacancy(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {self.num_cells} 0 {self.num_cells} 0 {self.num_cells} units lattice
+            region C block 0 {self.ncell_x} 0 {self.ncell_x} 0 {self.ncell_x} units lattice
             create_box 1 C
 
             # add atoms
@@ -204,7 +204,7 @@ class BccVacancy(LammpsImplicitDer):
 class BccBinaryVacancy(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
-                 num_cells=3,
+                 ncell_x=3,
                  alat=3.13,
                  custom_create_script=None,
                  specie_B_concentration=0.5,
@@ -213,7 +213,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
         super().__init__(*args, **kwargs)
 
         self.binary = True
-        self.num_cells = num_cells
+        self.ncell_x = ncell_x
         self.alat = alat
 
         if self.snapcoeff_filename is None:
@@ -243,7 +243,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {num_cells} 0 {num_cells} 0 {num_cells} units lattice
+            region C block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x} units lattice
             create_box 2 C
             create_atoms 1 region C
             """)

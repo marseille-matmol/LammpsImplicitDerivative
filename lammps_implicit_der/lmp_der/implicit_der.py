@@ -445,19 +445,25 @@ class LammpsImplicitDer:
         self.cell[1][2] = yz
         self.inv_cell = np.linalg.inv(self.cell)
 
-    def apply_strain(self, cell):
-        """Apply strain to the system"""
+    def apply_strain(self, cell, update_system=True):
+        """
+        Apply strain to the system
+        """
 
         # Update the self.cell matrix
         #self.get_cell()
         #C = np.dot(self.cell, (np.eye(3) + epsilon))
 
-        C = cell
+        C = cell.copy()
         self.lmp.commands_string(f"""
         change_box all triclinic
         change_box all x final 0.0 {C[0,0]} y final 0.0 {C[1,1]} z final 0.0 {C[2,2]} xy final {C[0,1]} xz final {C[0,2]} yz final {C[1,2]} remap units box
         run 0
         """)
+
+        if update_system:
+            self.get_cell()
+            self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
 
     def minimum_image(self, X_vector):
         """Compute the minimum image of a vector X_vector (applying pbc)"""

@@ -59,10 +59,11 @@ def compute_energy_volume(system, epsilon_array):
 
 
 def create_perturbed_system(Theta_ens, delta, LammpsClass, snapcoeff_filename, snapparam_filename=None,
-                            data_path=None, sample=1, alat=3.185, ncell_x=2, logname='perturb.log', fix_box_relax=False, minimize=True):
+                            data_path=None, sample=1, alat=3.185, ncell_x=2, logname='perturb.log', fix_box_relax=False, minimize=True, verbose=False):
 
+    # system_tmp is created only to save the SNAP potential files
     system_tmp = LammpsClass(data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
-                             ncell_x=ncell_x, alat=alat, logname='tmp.log', minimize=minimize, verbose=False)
+                             ncell_x=ncell_x, alat=alat, logname='tmp.log', minimize=False, verbose=False)
 
     if len(system_tmp.pot.elem_list) > 1:
         raise RuntimeError('Implemented for single element systems only')
@@ -73,9 +74,10 @@ def create_perturbed_system(Theta_ens, delta, LammpsClass, snapcoeff_filename, s
 
     # Set the perturbed parameters
     system_tmp.pot.Theta_dict[element]['Theta'] = Theta_perturb
-    system_tmp.pot.to_files(path='.', overwrite=True, snapcoeff_filename='perturb.snapcoeff', snapparam_filename='perturb.snapparam', verbose=False)
+    system_tmp.pot.to_files(path='.', overwrite=True, snapcoeff_filename='perturb.snapcoeff', snapparam_filename='perturb.snapparam', verbose=verbose)
 
-    system_perturb = LammpsClass(ncell_x=ncell_x, alat=alat, logname=logname, minimize=False, verbose=False,
+    # Create the perturbed system with the new potential
+    system_perturb = LammpsClass(ncell_x=ncell_x, alat=alat, logname=logname, minimize=minimize, verbose=verbose,
                                  snapcoeff_filename='perturb.snapcoeff', snapparam_filename='perturb.snapparam', fix_box_relax=fix_box_relax,
                                  data_path='.')
 

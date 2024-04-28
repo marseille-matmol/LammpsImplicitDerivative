@@ -34,6 +34,7 @@ class LammpsImplicitDer:
                  logname='none',
                  fix_sel='all',
                  fix_box_relax=False,
+                 box_relax_vmax=0.001,
                  verbose=True):
         """Set of methods for implicit derivative. Parent class.
 
@@ -55,8 +56,16 @@ class LammpsImplicitDer:
         self.minimize_maxiter = minimize_maxiter
         self.minimize_maxeval = minimize_maxeval
 
+        # Implicit derivative parameters
+        self.dX_dTheta = None
+        self.Theta = None
+        self.virial = None
+        self.mixed_hessian = None
+        self.impl_der_stats = {}
+
         # Apply an external pressure tensor with the "fix box/relax" command
         self.fix_box_relax = fix_box_relax
+        self.box_relax_vmax = box_relax_vmax
 
         self.snapcoeff_filename = snapcoeff_filename
         self.snapparam_filename = snapparam_filename
@@ -73,12 +82,7 @@ class LammpsImplicitDer:
             self.timings = TimingGroup('ImplicitDer-LAMMPS')
         #self.timings.levelup_that_t('__init__')
 
-        self.step = 0
-        self.dX_dTheta = None
-
-        self.Theta = None
-        self.virial = None
-
+        self.force_call_counter = 0
         self.lmp = None
         self.pot = None
         self.cell = None
@@ -209,8 +213,11 @@ class LammpsImplicitDer:
         return self._stress
 
     @measure_runtime_and_calls
-    def minimize_energy(self, ftol=None, maxiter=None, maxeval=None, algo=None, verbose=True):
+    def minimize_energy(self, ftol=None, maxiter=None, maxeval=None, algo=None, update_system=True, verbose=True):
         """Minimize the energy of the system"""
+
+        if self.lmp is None:
+            raise RuntimeError('LAMMPS object lmp must be defined for minimization')
 
         # Set the minimization parameters
         ftol = self.minimize_ftol if ftol is None else ftol
@@ -218,21 +225,43 @@ class LammpsImplicitDer:
         maxeval = self.minimize_maxeval if maxeval is None else maxeval
         algo = self.minimize_algo if algo is None else algo
 
-        if self.lmp is None:
-            raise RuntimeError('LAMMPS object lmp must be defined for minimization')
+        mpi_print(f'Minimizing energy with the following parameters:', verbose=self.verbose, comm=self.comm)
+        mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo}, fix_box_relax: {self.fix_box_relax} \n',
+                  verbose=self.verbose, comm=self.comm)
 
-        if verbose:
-            mpi_print(f'Minimizing energy with the following parameters:', verbose=self.verbose, comm=self.comm)
-            mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo}, fix_box_relax: {self.fix_box_relax} \n', verbose=self.verbose, comm=self.comm)
+        self.lmp.command("reset_timestep 0")
 
+        #e0 = self.lmp.get_thermo("pe")
+        f0_max, f0_norm = self.lmp.get_thermo("fmax"), self.lmp.get_thermo("fnorm")
+
+        # Fix box relax if specified
+        # {'fix 1 all box/relax aniso 0.0 dilate partial' if False else ''}
+        if self.fix_box_relax:
+            self.lmp.commands_string(f"""
+            fix 1 all box/relax iso 0.0 vmax {self.box_relax_vmax}
+            """)
+
+        # Minimization
         self.lmp.commands_string(f"""
-        {'fix 1 all box/relax iso 0.0 vmax 0.001' if self.fix_box_relax else ''}
-        {'fix 1 all box/relax aniso 0.0 dilate partial' if False else ''}
         min_style {algo}
         minimize 0 {ftol} {maxiter} {maxeval}
         """)
 
-        self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
+        #e1 = self.lmp.get_thermo("pe")
+        f1_max, f1_norm = self.lmp.get_thermo("fmax"), self.lmp.get_thermo("fnorm")
+        nstep = int(self.lmp.get_thermo("step"))
+
+        mpi_print(f'Minimization finished in {nstep} steps', verbose=self.verbose, comm=self.comm)
+        #mpi_print(f'Initial energy: {e0:.3e}, final energy: {e1:.3e}', verbose=self.verbose, comm=self.comm)
+        mpi_print(f'Initial fmax: {f0_max:.3e}, final fmax: {f1_max:.3e}', verbose=self.verbose, comm=self.comm)
+        mpi_print(f'Initial fnorm: {f0_norm:.3e}, final fnorm: {f1_norm:.3e}', verbose=self.verbose, comm=self.comm)
+
+        if nstep >= maxiter - 1:
+            mpi_print(f'WARNING: Minimization maxed out at {nstep} steps', comm=self.comm)
+
+        if update_system:
+            self.get_cell()
+            self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
 
     def write_data(self, filename):
         """Write the current configuration to a data file"""
@@ -246,7 +275,7 @@ class LammpsImplicitDer:
         if self.pot is None:
             raise RuntimeError('Potential must be defined')
 
-        mpi_print(f'Setting SNAP potential', comm=self.comm, verbose=self.verbose)
+        mpi_print('Setting SNAP potential', comm=self.comm, verbose=self.verbose)
 
         self.lmp.commands_string(f"""
         pair_style snap
@@ -491,7 +520,7 @@ class LammpsImplicitDer:
         self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(x))
         self.lmp.command("run 0")
 
-        self.step += 1
+        self.force_call_counter += 1
 
         # get the forces from LAMMPS: "f" - forces, 1 - type, LAMMPS_DOUBLE, 3 - values per atom
         f = np.ctypeslib.as_array(self.lmp.gather("f", 1, 3)).flatten()
@@ -574,13 +603,14 @@ class LammpsImplicitDer:
             implicit derivative
         """
 
+        # TODO: adjust sparse return format similarly to energy
         if method == 'energy':
-            res_dict = self.implicit_derivative_energy(alpha=alpha,
-                                                       adaptive_alpha=adaptive_alpha,
-                                                       ftol=ftol,
-                                                       maxiter=maxiter,
-                                                       min_style=min_style)
-            return res_dict['dX_dTheta']
+            dX_dTheta = self.implicit_derivative_energy(alpha=alpha,
+                                                        adaptive_alpha=adaptive_alpha,
+                                                        ftol=ftol,
+                                                        maxiter=maxiter,
+                                                        min_style=min_style)
+            return dX_dTheta
 
         elif method == 'sparse':
             res_dict = self.implicit_derivative_sparse(alpha=alpha,
@@ -645,7 +675,7 @@ class LammpsImplicitDer:
         # One linear solutions per parameter
         for iCl, Cl in enumerate(iterator):
             # initialize step counter
-            self.step = 0
+            nstep = 0
 
             # determine the alpha_factor
             if adaptive_alpha:
@@ -664,7 +694,7 @@ class LammpsImplicitDer:
             # log results
             res_dict['dX_dTheta'] += [dX_dTheta]
             res_dict['err'] += [np.linalg.norm(matvec(dX_dTheta) - Cl)]
-            res_dict['calls'] += [self.step]
+            res_dict['calls'] += [nstep]
 
         # convert to dictionary of numpy arrays
         res_dict = {k: np.array(res_dict[k]) for k in res_dict}
@@ -694,20 +724,12 @@ class LammpsImplicitDer:
             force tolerance for  minimization, by default 1e-10
         maxiter : int, optional
             maximum iteration for , by default 200
-        return_values : bool, optional
-            return value or only store internally, by default True
 
         LAMMPS terminology:
         compute: run a simulation
         fix: do something to the system
-
-        Returns
-        -------
-        res_dict: dictionary
-            `dX_dTheta' : numpy array (Ndesc,3N) implicit derivative
-            `calls' : number of force calls during iteration
-            `err' : residue from lstsq fit
         """
+
         # declare an array of size N x 3 to be stored in the simulation
         # fix x all ... : add per atom property "x" to all atoms
         # "d_" means it is a float
@@ -724,7 +746,15 @@ class LammpsImplicitDer:
             min_style {min_style}
         """)
 
-        res_dict = {'dX_dTheta': [], 'err': [], 'calls': [], 'alpha_array': []}
+        self.dX_dTheta = np.zeros((self.Ndesc, self.Natom * 3))
+
+        self.impl_der_stats['energy'] = {}
+        self.impl_der_stats['energy']['alpha_array'] = np.zeros(self.Ndesc)
+        self.impl_der_stats['energy']['calls'] = np.zeros(self.Ndesc)
+        self.impl_der_stats['energy']['f0_max'] = np.zeros((self.Ndesc))
+        self.impl_der_stats['energy']['f0_norm'] = np.zeros((self.Ndesc))
+        self.impl_der_stats['energy']['f1_max'] = np.zeros((self.Ndesc))
+        self.impl_der_stats['energy']['f1_norm'] = np.zeros((self.Ndesc))
 
         # iterate over columns of the mixed hessian obtained from LAMMPS SNAP potential
         # d/dT_i (dU/dX)
@@ -760,7 +790,7 @@ class LammpsImplicitDer:
             else:
                 alpha_factor = alpha
 
-            res_dict['alpha_array'] += [alpha_factor]
+            self.impl_der_stats['energy']['alpha_array'] += [alpha_factor]
 
             # set up the C vector:
             # fix x, y, or z
@@ -809,28 +839,38 @@ class LammpsImplicitDer:
 
                 # blank iteration to make sure everything works
                 run 0
+            """)
 
-                # minimize the energy
-                {'fix 1 all box/relax iso 0.0 vmax 0.001' if self.fix_box_relax else ''}
-                {'fix 1 all box/relax aniso 0.0 dilate partial' if False else ''}
+            self.impl_der_stats['energy']['f0_max'][iCl] = self.lmp.get_thermo("fmax")
+            self.impl_der_stats['energy']['f0_norm'][iCl] = self.lmp.get_thermo("fnorm")
+
+            if self.fix_box_relax:
+                self.lmp.commands_string(f"""
+                    fix 1 all box/relax iso 0.0 vmax {self.box_relax_vmax}
+                """)
+
+            self.lmp.commands_string(f"""
                 minimize 0. {ftol} {maxiter} {maxiter}
             """)
+
+            f1_max, f1_norm = self.lmp.get_thermo("fmax"), self.lmp.get_thermo("fnorm")
 
             # extract the final positions
             X_new = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
 
             # apply pbc
-            #dX_tmp = x_new - self._X_coord
+            #dX_tmp = X_new - self._X_coord
             dX_tmp = self.minimum_image(X_new - self._X_coord)
 
             #mpi_print(iCl, Cl, np.max(np.abs(dX_tmp)), alpha_factor)
 
-            res_dict['dX_dTheta'] += [dX_tmp / alpha_factor]
+            # Store to iCl row of dX_dTheta
+            self.dX_dTheta[iCl, :] = dX_tmp / alpha_factor
 
-            res_dict['err'] += [ftol]
-
-            # number of force calls
-            res_dict['calls'] += [int(self.lmp.get_thermo("step"))]
+            # Stats
+            self.impl_der_stats['energy']['calls'][iCl] = int(self.lmp.get_thermo("step"))
+            self.impl_der_stats['energy']['f1_max'][iCl] = f1_max
+            self.impl_der_stats['energy']['f1_norm'][iCl] = f1_norm
 
             # disable commands
             self.lmp.commands_string("""
@@ -845,14 +885,8 @@ class LammpsImplicitDer:
             variable aClz delete
             unfix mixedhessianrow
         """)
-        res_dict = {k: np.array(res_dict[k]) for k in res_dict}
 
-        # store internally
-        self.dX_dTheta = res_dict['dX_dTheta'].copy()
-
-        self.alpha_array = res_dict['alpha_array'].copy()
-
-        return res_dict
+        return self.dX_dTheta
 
     def implicit_derivative_inverse(self):
         """Compute implicit derivative from Hessian inverse

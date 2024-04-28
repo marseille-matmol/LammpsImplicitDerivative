@@ -27,7 +27,7 @@ def get_perturbed_Theta_alloy(Theta1, Theta2, delta):
     return delta * Theta1 + (1.0 - delta) * Theta2
 
 
-def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, specie_B_concentration=0.5, element_A='Ni', element_B='Mo', comm=None):
+def get_bcc_alloy_A_delta_B(delta, ncell_x=2, minimize=False, datafile=None, specie_B_concentration=0.5, element_A='Ni', element_B='Mo', comm=None):
     """
     Create a perturbed bcc alloy of A and B species.
     delta = 0 => A-B alloy
@@ -41,7 +41,7 @@ def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, s
     delta : float
         Perturbation parameter. 0.0 <= delta <= 1.0
 
-    num_cells : int, optional
+    ncell_x : int, optional
         Number of unit cells in each direction.
 
     minimize : bool, optional
@@ -75,7 +75,7 @@ def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, s
     bcc_alloy_A_B_tmp = BccBinary(datafile=datafile,
                                   comm=comm,
                                   snapcoeff_filename=f'{element_A}{element_B}.snapcoeff',
-                                  num_cells=num_cells,
+                                  ncell_x=ncell_x,
                                   specie_B_concentration=specie_B_concentration,
                                   minimize=False)
 
@@ -113,7 +113,7 @@ def get_bcc_alloy_A_delta_B(delta, num_cells=2, minimize=False, datafile=None, s
                                     data_path='./',
                                     snapcoeff_filename=delta_snapcoeff_filename,
                                     snapparam_filename=delta_snapparam_filename,
-                                    num_cells=num_cells,
+                                    ncell_x=ncell_x,
                                     specie_B_concentration=specie_B_concentration,
                                     minimize=minimize)
 

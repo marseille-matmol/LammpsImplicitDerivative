@@ -6,8 +6,7 @@ from tqdm import tqdm
 
 import copy
 
-from scipy.sparse.linalg import LinearOperator
-from scipy.sparse.linalg import lgmres
+from scipy.sparse.linalg import LinearOperator, lgmres, spsolve
 import numpy as np
 
 from lammps import lammps
@@ -114,11 +113,32 @@ class LammpsImplicitDer:
         self.print_run_info()
         # Initialize LAMMPS simulation
         self.lmp = lammps(cmdargs=self.cmdargs, comm=self.comm)
+        self.lmp.commands_string("""
+        # Reset simulation state
+        clear
+        # Configure how atoms are mapped to store and access
+        atom_modify map array sort 0 0.0
+        # metal units: Angstroms, eV, ps, etc.
+        units metal
+        """)
 
     def __del__(self):
         """Destructor"""
         pass
         #self.lmp.close()
+
+    def __str__(self):
+
+        out_str = 'LAMMPSImplicitDer object:\n'
+        if self.Natom is not None:
+            out_str += f'Number of atoms: {self.Natom}\n'
+        if self.cell is not None:
+            out_str += f'Cell:\n{self.cell}\n'
+        if self.pot is not None:
+            out_str += 'Potential:\n'
+            out_str += f'{self.pot}\n'
+
+        return out_str
 
     def copy(self):
         """Return a copy of the object.
@@ -238,7 +258,7 @@ class LammpsImplicitDer:
         # {'fix 1 all box/relax aniso 0.0 dilate partial' if False else ''}
         if self.fix_box_relax:
             self.lmp.commands_string(f"""
-            fix 1 all box/relax iso 0.0 vmax {self.box_relax_vmax}
+            fix boxrelax all box/relax iso 0.0 vmax {self.box_relax_vmax}
             """)
 
         # Minimization
@@ -444,9 +464,10 @@ class LammpsImplicitDer:
         self.N = self._X_coord.size
         self.Natom = self.N//3
 
-        # Initialize the simulation cell
+        # Initialize the cell
         self.get_cell()
 
+        # Compute the descriptors and their derivatives
         self.gather_D_dD()
 
         # Setup hard constraints
@@ -574,6 +595,8 @@ class LammpsImplicitDer:
         T = T.T@T * epsilon
         H = np.add(H,T)
 
+        # This is for debugging purposes
+        # Sparse Hermitian should be implemented in a memory-efficient way
         if return_sparse:
             H[np.abs(H)<sparse_tol] = 0.0
             H_sparse = sparse.csr_matrix(H)
@@ -602,6 +625,11 @@ class LammpsImplicitDer:
         dX_dTheta : numpy array
             implicit derivative
         """
+
+        if self.mixed_hessian is None:
+            mpi_print('WARNING: mixed_hessian is not set, computing it now', comm=self.comm)
+            self.compute_D_dD()
+            self.gather_D_dD()
 
         # TODO: adjust sparse return format similarly to energy
         if method == 'energy':
@@ -673,7 +701,7 @@ class LammpsImplicitDer:
             iterator = self.mixed_hessian
 
         # One linear solutions per parameter
-        for iCl, Cl in enumerate(iterator):
+        for idesc, Cl in enumerate(iterator):
             # initialize step counter
             nstep = 0
 
@@ -738,7 +766,7 @@ class LammpsImplicitDer:
         # alphaCly = alpha * d/dT_l (dU/dy)
         # The alphaClx, alphaCly, and alphaClz names are defined here
         self.lmp.commands_string(f"""
-            fix mixedhessianrow all property/atom d_alphaClx d_alphaCly d_alphaClz
+            fix mixedHessianRow all property/atom d_alphaClx d_alphaCly d_alphaClz
 
             #compute deltaX all displace/atom
 
@@ -771,10 +799,10 @@ class LammpsImplicitDer:
             else:
                 iterator = self.mixed_hessian
 
-        for iCl, Cl in enumerate(iterator):
+        for idesc, Cl in enumerate(iterator):
 
             if print_iCl:
-                mpi_print(f'{"Parameter index iCl":>30}: {iCl:3d}', comm=self.comm)
+                mpi_print(f'{"Parameter index idesc":>30}: {idesc:3d}', comm=self.comm)
 
             # reset the positions to the initial minimum configuration
             self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
@@ -782,7 +810,7 @@ class LammpsImplicitDer:
             # count the number of force calls as the number of time steps
             self.lmp.command("reset_timestep 0")
 
-            # compute the 3N vector of displacements X - X0
+            # compute the 3N vector of displacements X - X0 taking into account pbc
             self.lmp.command("compute deltaX all displace/atom")
 
             if adaptive_alpha:
@@ -831,22 +859,22 @@ class LammpsImplicitDer:
                 # dot procuct C_l * dX
                 # v_ is variable
                 # NO SPACES ALLOWED in the expression
-                variable addE atom v_aClx*c_deltaX[1]+v_aCly*c_deltaX[2]+v_aClz*c_deltaX[3]
+                variable addEnergy atom v_aClx*c_deltaX[1]+v_aCly*c_deltaX[2]+v_aClz*c_deltaX[3]
 
                 # additional force to the system
                 # fx = alpha * d/dT_l dU/dx, etc
-                fix f {self.fix_sel} addforce v_aClx v_aCly v_aClz energy v_addE
+                fix addForce {self.fix_sel} addforce v_aClx v_aCly v_aClz energy v_addEnergy
 
                 # blank iteration to make sure everything works
                 run 0
             """)
 
-            self.impl_der_stats['energy']['f0_max'][iCl] = self.lmp.get_thermo("fmax")
-            self.impl_der_stats['energy']['f0_norm'][iCl] = self.lmp.get_thermo("fnorm")
+            self.impl_der_stats['energy']['f0_max'][idesc] = self.lmp.get_thermo("fmax")
+            self.impl_der_stats['energy']['f0_norm'][idesc] = self.lmp.get_thermo("fnorm")
 
             if self.fix_box_relax:
                 self.lmp.commands_string(f"""
-                    fix 1 all box/relax iso 0.0 vmax {self.box_relax_vmax}
+                    fix boxrelax all box/relax iso 0.0 vmax {self.box_relax_vmax}
                 """)
 
             self.lmp.commands_string(f"""
@@ -862,20 +890,20 @@ class LammpsImplicitDer:
             #dX_tmp = X_new - self._X_coord
             dX_tmp = self.minimum_image(X_new - self._X_coord)
 
-            #mpi_print(iCl, Cl, np.max(np.abs(dX_tmp)), alpha_factor)
+            #mpi_print(idesc, Cl, np.max(np.abs(dX_tmp)), alpha_factor)
 
-            # Store to iCl row of dX_dTheta
-            self.dX_dTheta[iCl, :] = dX_tmp / alpha_factor
+            # Store to idesc row of dX_dTheta
+            self.dX_dTheta[idesc, :] = dX_tmp / alpha_factor
 
             # Stats
-            self.impl_der_stats['energy']['calls'][iCl] = int(self.lmp.get_thermo("step"))
-            self.impl_der_stats['energy']['f1_max'][iCl] = f1_max
-            self.impl_der_stats['energy']['f1_norm'][iCl] = f1_norm
+            self.impl_der_stats['energy']['calls'][idesc] = int(self.lmp.get_thermo("step"))
+            self.impl_der_stats['energy']['f1_max'][idesc] = f1_max
+            self.impl_der_stats['energy']['f1_norm'][idesc] = f1_norm
 
             # disable commands
             self.lmp.commands_string("""
                 uncompute alphaCl
-                unfix f
+                unfix addForce
                 uncompute deltaX
             """)
 
@@ -883,7 +911,7 @@ class LammpsImplicitDer:
             variable aClx delete
             variable aCly delete
             variable aClz delete
-            unfix mixedhessianrow
+            unfix mixedHessianRow
         """)
 
         return self.dX_dTheta
@@ -925,12 +953,12 @@ class LammpsImplicitDer:
         using sparse solver
         """
 
-        dX_dTheta = sparse.linalg.spsolve(self.hessian(return_sparse=True),self.mixed_hessian.T).T
+        dX_dTheta = spsolve(self.hessian(return_sparse=True), self.mixed_hessian.T).T
 
         return dX_dTheta
 
     @measure_runtime_and_calls
-    def perturb(self, dTheta,return_X=True):
+    def perturb(self, dTheta, return_X=True):
         """Evaluate energy and position perturbations
 
         Parameters
@@ -946,7 +974,7 @@ class LammpsImplicitDer:
             mpi_print("Evaluating implicit derivative with default parameters", comm=self.comm)
             self.implicit_derivative_sparse(return_values=False)
 
-        # check if dThta dimension is correct
+        # check if dTheta dimension is correct
         assert dTheta.size == self.Ndesc
         dX_dTheta = dTheta @ self.dX_dTheta
 
@@ -979,4 +1007,3 @@ class LammpsImplicitDer:
 
         if verbose:
             mpi_print(f"Coordinates saved to {filename}", comm=self.comm)
-

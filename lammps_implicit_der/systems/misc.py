@@ -35,11 +35,6 @@ class VacW(LammpsImplicitDer):
         self.Theta = self.pot.Theta_dict['W']['Theta']
 
         self.lmp.commands_string(f"""
-        clear
-
-        units metal
-        atom_modify map array sort 0 0.0
-
         boundary p p p
 
         # Read the coordinates in .lmp format
@@ -77,12 +72,7 @@ class BccVacancyConcentration(LammpsImplicitDer):
         self.Theta = self.pot.Theta_dict['W']['Theta']
 
         self.lmp.commands_string(f"""
-        clear
         atom_style atomic
-        atom_modify map array sort 0 0.0
-        units metal
-
-        # generate the box and atom positions using a BCC lattice
         boundary p p p
         lattice bcc {alat}
         region box block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x}

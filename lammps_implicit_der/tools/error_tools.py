@@ -11,11 +11,24 @@ import pickle
 # local imports
 from .utils import mpi_print, save_snap_coeff, get_projection
 from .timing import TimingGroup
-from ..systems.bcc_lattices import BccVacancy
-# from ase.io import read, write
 
 
-def coord_error(X1, X2):
+def coord_error(X1, X2, remove_mean=True):
+    """
+    Error = ||X1 - X2|| / ||X1|| / N
+    """
+    #return np.linalg.norm(X1 - X2) / np.linalg.norm(X1) / X1.shape[0]
+    X1_tmp = X1.copy()
+    X2_tmp = X2.copy()
+
+    if remove_mean:
+        X1_tmp -= np.mean(X1, axis=0)
+        X2_tmp -= np.mean(X2, axis=0)
+
+    return np.linalg.norm(X1_tmp - X2_tmp)
+
+
+def coord_error_old(X1, X2):
     """
     Error = ||X1 - X2|| / ||X1|| / N
     """

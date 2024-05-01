@@ -128,11 +128,6 @@ class DisloSub(LammpsImplicitDer):
         self.Theta = self.pot.Theta_dict['X']['Theta']
 
         self.lmp.commands_string(f"""
-        clear
-
-        units metal
-        atom_modify map array sort 0 0.0
-
         boundary f f p
 
         # Read the easy core coordinates in .lmp format

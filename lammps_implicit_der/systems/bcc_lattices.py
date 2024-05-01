@@ -17,7 +17,7 @@ from ..lmp_der.implicit_der import LammpsImplicitDer
 class Bcc(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
-                 num_cells=3,
+                 ncell_x=3,
                  alat=3.1855,
                  setup_snap=True,
                  *args, **kwargs):
@@ -25,7 +25,7 @@ class Bcc(LammpsImplicitDer):
         super().__init__(*args, **kwargs)
 
         self.binary = False
-        self.num_cells = num_cells
+        self.ncell_x = ncell_x
         self.alat = alat
 
         if self.snapcoeff_filename is None:
@@ -44,13 +44,7 @@ class Bcc(LammpsImplicitDer):
         self.Theta = self.pot.Theta_dict[self.element]['Theta']
 
         self.lmp.commands_string(f"""
-        clear
-
-        atom_modify map array sort 0 0.0
         boundary p p p
-
-        # Initialize simulation
-        units metal
         lattice bcc {self.alat} origin 0.01 0.01 0.01
         """)
 
@@ -59,7 +53,7 @@ class Bcc(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {num_cells} 0 {num_cells} 0 {num_cells} units lattice
+            region C block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x} units lattice
             create_box 1 C
             create_atoms 1 region C
             """)
@@ -79,7 +73,7 @@ class Bcc(LammpsImplicitDer):
 class BccBinary(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
-                 num_cells=3,
+                 ncell_x=3,
                  alat=3.13,
                  specie_B_concentration=0.5,
                  setup_snap=True,
@@ -89,7 +83,7 @@ class BccBinary(LammpsImplicitDer):
 
         self.binary = True
 
-        self.num_cells = num_cells
+        self.ncell_x = ncell_x
         self.alat = alat
 
         if self.snapcoeff_filename is None:
@@ -105,13 +99,7 @@ class BccBinary(LammpsImplicitDer):
         self.Theta = self.pot.Theta_dict['Mo']['Theta']
 
         self.lmp.commands_string(f"""
-        clear
-
-        atom_modify map array sort 0 0.0
         boundary p p p
-
-        # Initialize simulation
-        units metal
         lattice bcc {self.alat} origin 0.01 0.01 0.01
         """)
 
@@ -120,7 +108,7 @@ class BccBinary(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {num_cells} 0 {num_cells} 0 {num_cells} units lattice
+            region C block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x} units lattice
             create_box 2 C
             create_atoms 1 region C
 
@@ -142,13 +130,13 @@ class BccBinary(LammpsImplicitDer):
 class BccVacancy(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
-                 num_cells=3,
+                 ncell_x=3,
                  alat=3.1855,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
-        self.num_cells = num_cells
+        self.ncell_x = ncell_x
         self.alat = alat
 
         if self.snapcoeff_filename is None:
@@ -163,12 +151,7 @@ class BccVacancy(LammpsImplicitDer):
         self.Theta = self.pot.Theta_dict['W']['Theta']
 
         self.lmp.commands_string(f"""
-        clear
-
-        atom_modify map array sort 0 0.0
-
-        # Initialize simulation
-        units metal
+        boundary p p p
         lattice bcc {self.alat} origin 0.01 0.01 0.01
         """)
 
@@ -177,13 +160,14 @@ class BccVacancy(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {self.num_cells} 0 {self.num_cells} 0 {self.num_cells} units lattice
+            region C block 0 {self.ncell_x} 0 {self.ncell_x} 0 {self.ncell_x} units lattice
             create_box 1 C
 
             # add atoms
             create_atoms 1 region C
 
             # delete one atom
+            # Create a group called 'del' with the atom to be deleted
             group del id 10
             delete_atoms group del
             """)
@@ -204,7 +188,7 @@ class BccVacancy(LammpsImplicitDer):
 class BccBinaryVacancy(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
-                 num_cells=3,
+                 ncell_x=3,
                  alat=3.13,
                  custom_create_script=None,
                  specie_B_concentration=0.5,
@@ -213,7 +197,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
         super().__init__(*args, **kwargs)
 
         self.binary = True
-        self.num_cells = num_cells
+        self.ncell_x = ncell_x
         self.alat = alat
 
         if self.snapcoeff_filename is None:
@@ -228,13 +212,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
         self.Theta = self.pot.Theta_dict['Mo']['Theta']
 
         self.lmp.commands_string(f"""
-        clear
-
-        atom_modify map array sort 0 0.0
         boundary p p p
-
-        # Initialize simulation
-        units metal
         lattice bcc {self.alat} origin 0.01 0.01 0.01
         """)
 
@@ -243,7 +221,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {num_cells} 0 {num_cells} 0 {num_cells} units lattice
+            region C block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x} units lattice
             create_box 2 C
             create_atoms 1 region C
             """)
@@ -251,6 +229,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
                 self.lmp.commands_string(f"""
                 set group all type/fraction 2 {specie_B_concentration} 12393
                 # delete one atom
+                # Create a group called 'del' with the atom to be deleted
                 group del id 10
                 delete_atoms group del
                 """)
@@ -265,5 +244,69 @@ class BccBinaryVacancy(LammpsImplicitDer):
             """)
 
         self.lmp.commands_string(f'mass * 45.')
+
+        self.run_init()
+
+
+class BccSIA(LammpsImplicitDer):
+    """
+    Self-interstitial atom in BCC lattice.
+    """
+    @measure_runtime_and_calls
+    def __init__(self,
+                 ncell_x=3,
+                 alat=3.1855,
+                 SIA_pos=None,
+                 origin_pos=0.01,
+                 *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.ncell_x = ncell_x
+        self.alat = alat
+
+        if self.snapcoeff_filename is None:
+            raise RuntimeError('snapcoeff_filename must be specified for BccVacancy')
+
+        # Load the SNAP potential instance
+        self.pot = SNAP.from_files(self.snapcoeff_filename,
+                                   data_path=self.data_path,
+                                   snapparam_filename=self.snapparam_filename, comm=self.comm)
+
+        # Potential parameters, hardcoded for tungsten
+        self.Theta = self.pot.Theta_dict['W']['Theta']
+
+        self.lmp.commands_string(f"""
+        boundary p p p
+        lattice bcc {self.alat} origin {origin_pos} {origin_pos} {origin_pos}
+        """)
+
+        if SIA_pos is None:
+            SIA_pos = 0.25 + origin_pos
+
+        # Setup the coordinates from scratch
+        if self.datafile is None:
+
+            self.lmp.commands_string(f"""
+            # create a block of atoms
+            region C block 0 {self.ncell_x} 0 {self.ncell_x} 0 {self.ncell_x} units lattice
+            create_box 1 C
+
+            # add atoms
+            create_atoms 1 region C
+
+            # create a self-interstitial atom
+            create_atoms 1 single {SIA_pos} {SIA_pos} {SIA_pos} units lattice
+            """)
+
+        # Read from a datafile
+        else:
+
+            self.lmp.commands_string(f"""
+            read_data {self.datafile}
+            """)
+
+        # W mass in a.m.u.
+        self.lmp.commands_string(f'mass * 184.')
 
         self.run_init()

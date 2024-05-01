@@ -35,11 +35,6 @@ class VacW(LammpsImplicitDer):
         self.Theta = self.pot.Theta_dict['W']['Theta']
 
         self.lmp.commands_string(f"""
-        clear
-
-        units metal
-        atom_modify map array sort 0 0.0
-
         boundary p p p
 
         # Read the coordinates in .lmp format
@@ -55,14 +50,14 @@ class VacW(LammpsImplicitDer):
 class BccVacancyConcentration(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
-                 num_cells=3,
+                 ncell_x=3,
                  alat=3.1855,
                  vac_conc=0.2,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
-        self.num_cells = num_cells
+        self.ncell_x = ncell_x
         self.alat = alat
 
         if self.snapcoeff_filename is None:
@@ -77,15 +72,10 @@ class BccVacancyConcentration(LammpsImplicitDer):
         self.Theta = self.pot.Theta_dict['W']['Theta']
 
         self.lmp.commands_string(f"""
-        clear
         atom_style atomic
-        atom_modify map array sort 0 0.0
-        units metal
-
-        # generate the box and atom positions using a BCC lattice
         boundary p p p
         lattice bcc {alat}
-        region box block 0 {num_cells} 0 {num_cells} 0 {num_cells}
+        region box block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x}
         """)
 
         # Setup the coordinates from scratch

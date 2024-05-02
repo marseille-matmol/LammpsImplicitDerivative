@@ -145,6 +145,7 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sa
     coord_error_inhom = coord_error(X_coord_true, s_pred_full.X_coord)
     s_pred_full.gather_D_dD()
     energy_inhom_pred = s_pred_full.energy
+    energy_inhom_pred2 = s_pred_full.dU_dTheta @ Theta_pert
 
     # Predict the volume change
     dV_pred = - np.dot(virial_trace, dTheta) / np.dot(virial_der0, Theta0)
@@ -158,6 +159,7 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sa
     s_pred_full.gather_D_dD()
     s_pred_hom.gather_D_dD()
     energy_hom_pred = s_pred_hom.energy
+    energy_hom_pred2 = s_pred_hom.dU_dTheta @ Theta_pert
     energy_full_pred = s_pred_full.energy
     energy_full_pred2 = s_pred_full.dU_dTheta @ Theta_pert
 
@@ -179,7 +181,9 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sa
         'energy_test': energy_test,
         'energy_pred0': energy_pred0,
         'energy_hom_pred': energy_hom_pred,
+        'energy_hom_pred2': energy_hom_pred2,
         'energy_inhom_pred': energy_inhom_pred,
+        'energy_inhom_pred2': energy_inhom_pred2,
         'energy_full_pred': energy_full_pred,
         'energy_full_pred2': energy_full_pred2,
         'coord_error_full': coord_error_full,

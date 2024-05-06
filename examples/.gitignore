@@ -1,3 +1,5 @@
+*.png
+*.pdf
 *.pkl
 minim_output
 *.snapcoeff

@@ -54,6 +54,7 @@ class LammpsImplicitDer:
         self.minimize_ftol = minimize_ftol
         self.minimize_maxiter = minimize_maxiter
         self.minimize_maxeval = minimize_maxeval
+        self.not_converged = False
 
         # Implicit derivative parameters
         self.dX_dTheta = None
@@ -276,10 +277,14 @@ class LammpsImplicitDer:
         mpi_print(f'Initial fmax: {f0_max:.3e}, final fmax: {f1_max:.3e}', verbose=self.verbose, comm=self.comm)
         mpi_print(f'Initial fnorm: {f0_norm:.3e}, final fnorm: {f1_norm:.3e}', verbose=self.verbose, comm=self.comm)
 
+        self.minimization_nstep = nstep
+
         if nstep >= maxiter - 1:
             mpi_print(f'WARNING: Minimization maxed out at {nstep} steps', comm=self.comm)
+            self.not_converged = True
 
         if update_system:
+            self.gather_D_dD()
             self.get_cell()
             self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
 
@@ -438,6 +443,7 @@ class LammpsImplicitDer:
         """
 
         self.lmp.command("run 0")
+        self.species = np.ctypeslib.as_array(self.lmp.gather("type", 0, 1)).flatten()
 
         if setup_snap:
             self.setup_snap_potential()
@@ -451,8 +457,6 @@ class LammpsImplicitDer:
 
         # Gather coordinates and apply minimum image
         self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
-
-        self.species = np.ctypeslib.as_array(self.lmp.gather("type", 0, 1)).flatten()
 
         self.atom_name_list = list(np.array(self.pot.elem_list)[self.species-1])
 
@@ -512,6 +516,7 @@ class LammpsImplicitDer:
         """)
 
         if update_system:
+            self.gather_D_dD()
             self.get_cell()
             self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
 

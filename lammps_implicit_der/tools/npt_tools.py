@@ -88,8 +88,13 @@ def create_perturbed_system(Theta_ens, delta, LammpsClass, snapcoeff_filename, s
 
     # Set the perturbed parameters
     system_tmp.pot.Theta_dict[element]['Theta'] = Theta_perturb
-    system_tmp.pot.to_files(path='.', overwrite=True, snapcoeff_filename='perturb.snapcoeff', snapparam_filename='perturb.snapparam', verbose=verbose)
 
+    if comm is None or comm.Get_rank() == 0:
+        system_tmp.pot.to_files(path='.', overwrite=True, snapcoeff_filename='perturb.snapcoeff', snapparam_filename='perturb.snapparam', verbose=verbose)
+
+    if comm is not None:
+        comm.Barrier()
+        
     # Create the perturbed system with the new potential
     system_perturb = LammpsClass(ncell_x=ncell_x, alat=alat, logname=logname, minimize=False, verbose=verbose, minimize_maxiter=500,
                                  snapcoeff_filename='perturb.snapcoeff', snapparam_filename='perturb.snapparam', fix_box_relax=fix_box_relax,

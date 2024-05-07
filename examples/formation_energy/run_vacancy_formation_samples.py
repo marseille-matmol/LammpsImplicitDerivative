@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import pickle
 import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -40,7 +41,9 @@ def main():
 
     comm, rank = initialize_mpi()
 
-    ncell_x = 3
+    ncell_x = int(sys.argv[1])
+    impl_der_method = sys.argv[2]
+
     alat0 = 3.18
     snapcoeff_filename = 'W_NEW.snapcoeff'
     snapparam_filename = 'W_NEW.snapparam'
@@ -122,8 +125,8 @@ def main():
         virial_trace_vac = np.sum(virial_vac[:3, :], axis=0) / 3.0
 
     with trun.add('dX_dTheta inhom'):
-        dX_dTheta_pure_inhom = bcc_pure.implicit_derivative(method='inverse')
-        dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method='inverse')
+        dX_dTheta_pure_inhom = bcc_pure.implicit_derivative(method=impl_der_method)
+        dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method=impl_der_method)
 
     with trun.add('sample loop', level=1):
 
@@ -146,7 +149,7 @@ def main():
 
         trun_npt = TimingGroup('NPT implicit derivative')
 
-        sample_list = list(range(1, 6))
+        sample_list = list(range(1, 101))
         #sample_list = [3]
         run_dict['sample_list'] = sample_list
 
@@ -158,11 +161,11 @@ def main():
             run_dict[s_str] = {}
 
             # delta values for converged box/relax
-            conv_delta_list = []
+            conv_idelta_list = []
 
-            for i, delta in enumerate(delta_array):
-                mpi_print(f'\n{i+1}/{len(delta_array)}, {delta=:.1f}', comm=comm)
-                d_str = f'delta_{i}'
+            for idelta, delta in enumerate(delta_array):
+                mpi_print(f'\n{idelta+1}/{len(delta_array)}, {delta=:.1f}', comm=comm)
+                d_str = f'delta_{idelta}'
                 run_dict[s_str][d_str] = {}
                 run_dict[s_str][d_str]['pure'] = {}
                 run_dict[s_str][d_str]['vac'] = {}
@@ -212,9 +215,9 @@ def main():
                 run_dict[s_str][d_str]['vac']['npt'] = vac_dict
 
                 if pure_dict is not None and vac_dict is not None:
-                    conv_delta_list.append(delta)
+                    conv_idelta_list.append(idelta)
 
-            run_dict[s_str]['conv_delta_list'] = conv_delta_list
+            run_dict[s_str]['conv_idelta_list'] = conv_idelta_list
 
     mpi_print(trun_npt, comm=comm)
 

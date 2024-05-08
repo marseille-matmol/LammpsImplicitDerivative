@@ -149,7 +149,8 @@ def main():
 
         trun_npt = TimingGroup('NPT implicit derivative')
 
-        sample_list = list(range(1, 101))
+        #sample_list = list(range(0, 100))
+        sample_list = list(range(0, 10))
         #sample_list = [3]
         run_dict['sample_list'] = sample_list
 

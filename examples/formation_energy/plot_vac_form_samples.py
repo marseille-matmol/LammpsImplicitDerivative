@@ -93,18 +93,20 @@ def plot_lattice_constant(ax, run_dict, sample):
     ax.yaxis.set_major_locator(MultipleLocator(0.05))
 
 
-def plot_energy_volume_deltas(ax, run_dict, sample, label_pad=-10, fsize_bar=None, second_xaxis=False):
+def plot_energy_volume_deltas(ax, run_dict, sample, cmap_name='coolwarm', label_pad=-10, fsize_bar=None, second_xaxis=False):
 
     s_str = f'sample_{sample}'
     delta_array = run_dict['delta_array']
     ndelta = len(delta_array)
-    idelta_en_vol_list = [i for i in range(ndelta) if run_dict[s_str][f'delta_{i}']['pure'] is not None]
+    #idelta_en_vol_list = [i for i in range(ndelta) if run_dict[s_str][f'delta_{i}']['pure'] is not None]
+    idelta_conv_list = run_dict[s_str]['conv_idelta_list']
 
-    cmap = plt.get_cmap('coolwarm')
+    cmap = plt.get_cmap(cmap_name)
     epsilon_array_en_vol = run_dict['epsilon_array_en_vol']
-    color_array = cmap(np.linspace(0, 1, len(idelta_en_vol_list)))
+    color_array = cmap(np.linspace(0, 1, len(delta_array)))
 
-    for i, idelta in enumerate(idelta_en_vol_list):
+    #for i, idelta in enumerate(idelta_en_vol_list):
+    for i, idelta in enumerate(idelta_conv_list):
         delta = delta_array[idelta]
         d_str = f'delta_{idelta}'
         energy_array_delta_pure = run_dict[s_str][d_str]['pure']['en_vol']['energy_array']
@@ -114,14 +116,14 @@ def plot_energy_volume_deltas(ax, run_dict, sample, label_pad=-10, fsize_bar=Non
             lw = 4.0
         else:
             lw = 2.0
-            color = color_array[i]
+            #color = color_array[i]
+            color = color_array[idelta]
 
         ax.plot(100.0 * epsilon_array_en_vol, energy_array_delta_pure, c=color, lw=lw)
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
     norm = plt.Normalize(vmin=np.min(delta_array), vmax=np.max(delta_array))
-    cmap = plt.get_cmap('coolwarm')
     cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), cax=cax, orientation='vertical', format='%.0f', shrink=0.2)
     cbar.set_label('$\delta$')
 
@@ -326,7 +328,7 @@ def plot_formation_volume(ax, run_dict, sample):
     ax.legend()
 
 
-def trim_data(run_dict, abs_threshold=1e5, rel_threshold=10.0, rel_form_en_thr=50.0, verbose=False):
+def trim_data(run_dict, abs_threshold=1e5, rel_threshold=10.0, rel_form_en_thr=100.0, verbose=False):
 
     error_func = lambda x, y: np.abs(x - y) / np.abs(y) * 100.0
 
@@ -471,6 +473,32 @@ def cut_data(run_dict, delta_min=-50.0, delta_max=50.0, verbose=False):
     return run_dict
 
 
+def trim_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=10.0, verbose=False):
+
+    delta_array = run_dict['delta_array']
+    delta0_idx = np.argmin(np.abs(delta_array))
+    print(f'Trimming based on E-V with abs. energy threshold {abs_threshold:.1e} eV and relative threshold {rel_threshold:.1f}%...')
+    for sample in run_dict['sample_list']:
+        s_str = f'sample_{sample}'
+        # Only the filtered deltas
+        delta_sample_list = run_dict[s_str]['conv_idelta_list'].copy()
+        energy_array_delta0_pure = run_dict[s_str][f'delta_{delta0_idx}']['pure']['en_vol']['energy_array']
+        idx_nonzero = np.where(np.abs(energy_array_delta0_pure) > abs_threshold)[0]
+        for delta in delta_sample_list:
+            d_str = f'delta_{delta}'
+            energy_array_delta_pure = run_dict[s_str][d_str]['pure']['en_vol']['energy_array']
+
+            diff_abs = np.abs(energy_array_delta_pure[idx_nonzero] - energy_array_delta0_pure[idx_nonzero])
+            diff_rel = np.abs(diff_abs / energy_array_delta0_pure[idx_nonzero]) * 100.0
+
+            if np.max(diff_rel) > rel_threshold:
+                run_dict[s_str]['conv_idelta_list'].remove(delta)
+                run_dict[s_str][d_str]['pure'] = None
+                run_dict[s_str][d_str]['vac'] = None
+
+    return run_dict
+
+
 def main():
 
     # Read the pickle file: run_dict.pkl
@@ -490,6 +518,7 @@ def main():
 
     # Trim data
     run_dict = trim_data(run_dict)
+    run_dict = trim_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=50.0)
 
     # Hard-remove deltas from -50.0 to 50.0
     #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
@@ -564,7 +593,7 @@ def main():
         plt.subplots_adjust(left=0.08, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
 
         # Energy-volume
-        plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True)
+        plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='jet')#'coolwarm')
 
         # Formation volume
         plot_formation_volume(axes[1, 1], run_dict, sample)
@@ -578,8 +607,8 @@ def main():
 
         plt.show()
 
-    plot_samples = False
-    #plot_samples = True
+    #plot_samples = False
+    plot_samples = True
     if plot_samples:
         plot_dir = 'plots'
         os.makedirs(plot_dir, exist_ok=True)
@@ -589,7 +618,7 @@ def main():
             plt.subplots_adjust(left=0.07, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
 
             # Energy-volume
-            plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True)
+            plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='jet')
 
             # Formation volume
             plot_formation_volume(axes[1, 1], run_dict, sample)

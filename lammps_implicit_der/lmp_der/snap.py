@@ -81,6 +81,7 @@ class SNAP():
 
         # Read the potential coefficients
         Theta_dict = {}
+
         with open(snapcoeff_path, 'r') as f:
             # Ignore all lines starting with # and all empty lines
             lines = [line.strip() for line in f

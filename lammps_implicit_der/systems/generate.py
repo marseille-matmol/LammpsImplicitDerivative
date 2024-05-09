@@ -21,6 +21,8 @@ def get_perturbed_Theta_alloy(Theta1, Theta2, delta):
 
     delta : float
         Perturbation parameter. 0.0 <= delta <= 1.0
+        delta = 0 => Theta2
+        delta = 1 => Theta1
     """
 
     # delta = 0.0 -> Theta2

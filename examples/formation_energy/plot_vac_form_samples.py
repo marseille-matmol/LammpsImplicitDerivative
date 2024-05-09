@@ -452,6 +452,25 @@ def average_data(run_dict):
     return average_dict
 
 
+def cut_data(run_dict, delta_min=-50.0, delta_max=50.0, verbose=False):
+
+    print(f'Cutting data with delta_min={delta_min} and delta_max={delta_max}...')
+    delta_array = run_dict['delta_array']
+    for sample in run_dict['sample_list']:
+        s_str = f'sample_{sample}'
+        delta_remove_list = []
+        for idelta in range(len(delta_array)):
+            delta = delta_array[idelta]
+            if (delta < delta_min or delta > delta_max) and (idelta in run_dict[s_str]['conv_idelta_list']):
+                delta_remove_list.append(delta_array[idelta])
+                run_dict[s_str]['conv_idelta_list'].remove(idelta)
+
+        if verbose and len(delta_remove_list) > 0:
+            print(f'   Sample: {sample:3d} | Removed deltas: {delta_remove_list}')
+
+    return run_dict
+
+
 def main():
 
     # Read the pickle file: run_dict.pkl
@@ -460,6 +479,7 @@ def main():
     #pickle_filename = 'run_dict_ncellx_2_step_20_samples_010.pkl'
     #pickle_filename = './NERSC/ncell_x_3_energy/run_dict.pkl'
     pickle_filename = './NERSC/ncell_x_4_energy/run_dict.pkl'
+    #pickle_filename = './NERSC/ncell_x_5_energy/run_dict.pkl'
 
     print(f'Reading {pickle_filename}...')
     with open(pickle_filename, 'rb') as f:
@@ -470,6 +490,9 @@ def main():
 
     # Trim data
     run_dict = trim_data(run_dict)
+
+    # Hard-remove deltas from -50.0 to 50.0
+    #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
 
     # Plot success_matrix
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
@@ -538,7 +561,7 @@ def main():
     plot_2x2_new = True
     if plot_2x2_new:
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-        plt.subplots_adjust(left=0.07, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
+        plt.subplots_adjust(left=0.08, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
 
         # Energy-volume
         plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True)
@@ -582,13 +605,14 @@ def main():
             plt.close()
 
     plot_average_data = True
+    #plot_average_data = False
     if plot_average_data:
         average_dict = average_data(run_dict)
         delta_array = average_dict['detla_array']
         sample_list = run_dict['sample_list']
 
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-        plt.subplots_adjust(left=0.07, right=0.96, bottom=0.09, top=0.95, wspace=0.22, hspace=0.01)
+        plt.subplots_adjust(left=0.08, right=0.96, bottom=0.09, top=0.95, wspace=0.22, hspace=0.01)
 
         # Energies
         en_key_list = ['energy_pred0', 'energy_hom_pred', 'energy_inhom_pred', 'energy_full_pred']
@@ -617,7 +641,7 @@ def main():
 
         axes[0, 0].set_xticklabels([])
         axes[0, 0].set_ylabel('Energy Error (eV)')
-        axes[0, 0].set_ylim(-0.1, 2.7)
+        #axes[0, 0].set_ylim(-0.1, 2.7)
 
         axes[1, 0].set_xlabel('Perturbation Magnitude $\delta$')
         axes[1, 0].set_ylabel('Formation Energy Error (eV)')
@@ -655,6 +679,7 @@ def main():
 
         for ax in axes.flatten():
             ax.legend()
+            #ax.set_xlim(-32, 32)
 
         axes[0, 1].set_title(f'AVERAGE OVER {len(sample_list)} samples; ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}', y=1.01, x=-0.2, fontsize=25)
 

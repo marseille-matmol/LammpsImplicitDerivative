@@ -67,27 +67,27 @@ def main():
         en_vol_pure_dict = compute_energy_volume(bcc_pure, epsilon_array)
         en_vol_vac_dict = compute_energy_volume(bcc_vac, epsilon_array)
 
-        energy_pure_min, volume_pure_min, pressure_pure_min, alat = \
+        energy_pure_min, volume_pure_min, pressure_pure_min, alat1 = \
             get_min(en_vol_pure_dict, ncell_x)
 
-        mpi_print('Pure bcc:', comm=comm)
-        mpi_print(f'{bcc_pure.Natom=}', comm=comm)
-        mpi_print(f'{energy_pure_min=:.3e}', comm=comm)
-        mpi_print(f'{volume_pure_min=:.3f}', comm=comm)
-        mpi_print(f'{pressure_pure_min=:.5f}', comm=comm)
-        mpi_print(f'{alat=:.5f}', comm=comm)
-        mpi_print('', comm=comm)
-
-        energy_vac_min, volume_vac_min, pressure_vac_min, alat_vac = \
+        energy_vac_min, volume_vac_min, pressure_vac_min, alat_vac1 = \
             get_min(en_vol_vac_dict, ncell_x)
 
-        mpi_print('Vacancy bcc:', comm=comm)
-        mpi_print(f'{bcc_vac.Natom=}', comm=comm)
-        mpi_print(f'{energy_vac_min=:.3e}', comm=comm)
-        mpi_print(f'{volume_vac_min=:.3f}', comm=comm)
-        mpi_print(f'{pressure_vac_min=:.5f}', comm=comm)
-        mpi_print(f'{alat_vac=:.5f}', comm=comm)
+        # Find alat from fix box/relax
+        bcc_pure_box_relax = Bcc(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc.log',
+                                 snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
+                                 verbose=False, fix_box_relax=True)
 
+        bcc_vac_box_relax = BccVacancy(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc_vac.log',
+                                       snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
+                                       verbose=False, fix_box_relax=True)
+
+        volume_pure_true = bcc_pure_box_relax.volume
+        volume_vac_true = bcc_vac_box_relax.volume
+
+        alat = volume_pure_true**(1/3) / ncell_x
+        alat_vac = volume_vac_true**(1/3) / ncell_x
+ 
         run_dict['alat'] = alat
         run_dict['alat_vac'] = alat_vac
         run_dict['Natom pure'] = bcc_pure.Natom

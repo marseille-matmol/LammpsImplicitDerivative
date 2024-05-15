@@ -504,9 +504,9 @@ def main():
     # Read the pickle file: run_dict.pkl
     #pickle_filename = 'run_dict.pkl'
     #pickle_filename = 'run_dict_ncellx_3_subset.pkl'
-    #pickle_filename = 'run_dict_ncellx_2_step_20_samples_010.pkl'
+    pickle_filename = 'run_dict_ncellx_2_step_20_samples_010.pkl'
     #pickle_filename = './NERSC/ncell_x_3_energy/run_dict.pkl'
-    pickle_filename = './NERSC/ncell_x_4_energy/run_dict.pkl'
+    #pickle_filename = './NERSC/ncell_x_4_energy/run_dict.pkl'
     #pickle_filename = './NERSC/ncell_x_5_energy/run_dict.pkl'
 
     print(f'Reading {pickle_filename}...')
@@ -518,7 +518,7 @@ def main():
 
     # Trim data
     run_dict = trim_data(run_dict)
-    run_dict = trim_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=50.0)
+    #run_dict = trim_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=50.0)
 
     # Hard-remove deltas from -50.0 to 50.0
     #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
@@ -530,7 +530,7 @@ def main():
     #
     # Plotting physical data
     #
-    sample = 0
+    sample = 1
     #sample = 62
 
     #
@@ -607,8 +607,8 @@ def main():
 
         plt.show()
 
-    #plot_samples = False
-    plot_samples = True
+    plot_samples = False
+    #plot_samples = True
     if plot_samples:
         plot_dir = 'plots'
         os.makedirs(plot_dir, exist_ok=True)
@@ -618,7 +618,7 @@ def main():
             plt.subplots_adjust(left=0.07, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
 
             # Energy-volume
-            plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='jet')
+            plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='Paired') # jet
 
             # Formation volume
             plot_formation_volume(axes[1, 1], run_dict, sample)

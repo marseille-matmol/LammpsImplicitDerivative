@@ -502,9 +502,9 @@ def trim_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=10.0, ve
 def main():
 
     # Read the pickle file: run_dict.pkl
-    #pickle_filename = 'run_dict.pkl'
+    pickle_filename = 'run_dict.pkl'
     #pickle_filename = 'run_dict_ncellx_3_subset.pkl'
-    pickle_filename = 'run_dict_ncellx_2_step_20_samples_010.pkl'
+    #pickle_filename = 'run_dict_ncellx_2_step_20_samples_010.pkl'
     #pickle_filename = './NERSC/ncell_x_3_energy/run_dict.pkl'
     #pickle_filename = './NERSC/ncell_x_4_energy/run_dict.pkl'
     #pickle_filename = './NERSC/ncell_x_5_energy/run_dict.pkl'
@@ -530,7 +530,7 @@ def main():
     #
     # Plotting physical data
     #
-    sample = 1
+    sample = 37
     #sample = 62
 
     #

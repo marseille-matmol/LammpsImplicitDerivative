@@ -55,25 +55,10 @@ def main():
 
     mpi_print('Computing lattice parameters for Bcc and BccVacancy systems...', comm=comm)
     with trun.add('find alat min'):
-        bcc_pure = Bcc(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc.log',
-                       snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
-                       verbose=False)
 
-        bcc_vac = BccVacancy(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc_vac.log',
-                             snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
-                             verbose=False)
-
-        epsilon_array = np.linspace(-0.03, 0.03, 101)
-        en_vol_pure_dict = compute_energy_volume(bcc_pure, epsilon_array)
-        en_vol_vac_dict = compute_energy_volume(bcc_vac, epsilon_array)
-
-        energy_pure_min, volume_pure_min, pressure_pure_min, alat1 = \
-            get_min(en_vol_pure_dict, ncell_x)
-
-        energy_vac_min, volume_vac_min, pressure_vac_min, alat_vac1 = \
-            get_min(en_vol_vac_dict, ncell_x)
 
         # Find alat from fix box/relax
+
         bcc_pure_box_relax = Bcc(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc.log',
                                  snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
                                  verbose=False, fix_box_relax=True)
@@ -87,7 +72,26 @@ def main():
 
         alat = volume_pure_true**(1/3) / ncell_x
         alat_vac = volume_vac_true**(1/3) / ncell_x
- 
+
+        bcc_pure = Bcc(alat=alat, ncell_x=ncell_x, minimize=True, logname='bcc.log', # alat=alat0
+                       snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
+                       verbose=False)
+
+        bcc_vac = BccVacancy(alat=alat_vac, ncell_x=ncell_x, minimize=True, logname='bcc_vac.log', # alat=alat0
+                             snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
+                             verbose=False)
+
+        epsilon_array = np.linspace(-0.03, 0.03, 101)
+        en_vol_pure_dict = compute_energy_volume(bcc_pure, epsilon_array)
+        en_vol_vac_dict = compute_energy_volume(bcc_vac, epsilon_array)
+
+        # We keep alat computed from fix box/relax, alat from E-V curves is not used
+        energy_pure_min, volume_pure_min, pressure_pure_min, alat_tmp = \
+            get_min(en_vol_pure_dict, ncell_x)
+
+        energy_vac_min, volume_vac_min, pressure_vac_min, alat_vac_tmp = \
+            get_min(en_vol_vac_dict, ncell_x)
+
         run_dict['alat'] = alat
         run_dict['alat_vac'] = alat_vac
         run_dict['Natom pure'] = bcc_pure.Natom
@@ -133,7 +137,8 @@ def main():
         with open('Theta_ens.pkl', 'rb') as file:
             Theta_ens = pickle.load(file)
 
-        delta_array = np.linspace(-100.0, 100.0, 11)
+        #delta_array = np.linspace(-100.0, 100.0, 11)
+        delta_array = np.linspace(-10.0, 10.0, 3)
 
         # For energy-volume curves
         epsilon_array_en_vol = np.linspace(-0.05, 0.05, 15)
@@ -150,8 +155,8 @@ def main():
         trun_npt = TimingGroup('NPT implicit derivative')
 
         #sample_list = list(range(0, 100))
-        sample_list = list(range(0, 10))
-        #sample_list = [3]
+        #sample_list = list(range(0, 10))
+        sample_list = [37]
         run_dict['sample_list'] = sample_list
 
         for sample in sample_list:

@@ -12,6 +12,7 @@ from scipy.interpolate import CubicSpline
 from lammps_implicit_der import LammpsImplicitDer, SNAP
 from lammps_implicit_der.tools import mpi_print, initialize_mpi, TimingGroup, plot_tools, \
                                       compute_energy_volume, create_perturbed_system, run_npt_implicit_derivative
+from lammps_implicit_der.tools.npt_tools import run_npt_implicit_derivative2
 from lammps_implicit_der.tools.error_tools import coord_error
 from lammps_implicit_der.systems import BccVacancy, Bcc
 #from lammps_implicit_der.tools.error_tools import coord_error
@@ -155,8 +156,8 @@ def main():
         trun_npt = TimingGroup('NPT implicit derivative')
 
         #sample_list = list(range(0, 100))
-        #sample_list = list(range(0, 10))
-        sample_list = [37]
+        sample_list = list(range(0, 5))
+        #sample_list = [37]
         run_dict['sample_list'] = sample_list
 
         for sample in sample_list:
@@ -200,30 +201,37 @@ def main():
                     run_dict[s_str][d_str]['vac']['en_vol'] = en_vol_vac_dict
 
                 mpi_print('   NPT minimization...', comm=comm)
+                with trun.add('npt'):
+                    pure_dict = run_npt_implicit_derivative(Bcc, alat, ncell_x, Theta_ens, delta, sample,
+                                                            snapcoeff_filename, snapparam_filename,
+                                                            virial_trace_pure, virial_der_pure0, descriptor_array_pure, volume_array_pure,
+                                                            dX_dTheta_pure_inhom, comm=comm, trun=trun_npt)
 
-                pure_dict = run_npt_implicit_derivative(Bcc, alat, ncell_x, Theta_ens, delta, sample,
-                                                        snapcoeff_filename, snapparam_filename,
-                                                        virial_trace_pure, virial_der_pure0, descriptor_array_pure, volume_array_pure,
-                                                        dX_dTheta_pure_inhom, dX_dTheta_full=None, comm=comm, trun=trun_npt)
+                    if comm is not None:
+                        comm.Barrier()
 
-                if comm is not None:
-                    comm.Barrier()
+                    """
+                    vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
+                                                           snapcoeff_filename, snapparam_filename,
+                                                           virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
+                                                           dX_dTheta_vac_inhom, comm=comm, trun=trun_npt)
+                    """
 
-                vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
-                                                       snapcoeff_filename, snapparam_filename,
-                                                       virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
-                                                       dX_dTheta_vac_inhom, dX_dTheta_full=None, comm=comm, trun=trun_npt)
+                    vac_dict = run_npt_implicit_derivative2(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
+                                                            snapcoeff_filename, snapparam_filename,
+                                                            virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
+                                                            impl_der_method=impl_der_method, comm=comm, trun=trun_npt)
 
-                if comm is not None:
-                    comm.Barrier()
+                    if comm is not None:
+                        comm.Barrier()
 
-                run_dict[s_str][d_str]['pure']['npt'] = pure_dict
-                run_dict[s_str][d_str]['vac']['npt'] = vac_dict
+                    run_dict[s_str][d_str]['pure']['npt'] = pure_dict
+                    run_dict[s_str][d_str]['vac']['npt'] = vac_dict
 
-                if pure_dict is not None and vac_dict is not None:
-                    conv_idelta_list.append(idelta)
+                    if pure_dict is not None and vac_dict is not None:
+                        conv_idelta_list.append(idelta)
 
-            run_dict[s_str]['conv_idelta_list'] = conv_idelta_list
+                run_dict[s_str]['conv_idelta_list'] = conv_idelta_list
 
     mpi_print(trun_npt, comm=comm)
 

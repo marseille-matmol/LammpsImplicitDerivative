@@ -328,11 +328,11 @@ def plot_formation_volume(ax, run_dict, sample):
     ax.legend()
 
 
-def trim_data(run_dict, abs_threshold=1e5, rel_threshold=10.0, rel_form_en_thr=100.0, verbose=False):
+def filter_data(run_dict, abs_threshold=1e5, rel_threshold=10.0, rel_form_en_thr=100.0, verbose=False):
 
     error_func = lambda x, y: np.abs(x - y) / np.abs(y) * 100.0
 
-    print(f'Trimming data with abs. energy threshold {abs_threshold:.1e} eV and relative threshold {rel_threshold:.1f}%...')
+    print(f'Filtering data with abs. energy threshold {abs_threshold:.1e} eV and relative threshold {rel_threshold:.1f}%...')
     delta_array = run_dict['delta_array']
     for sample in run_dict['sample_list']:
         s_str = f'sample_{sample}'
@@ -473,11 +473,11 @@ def cut_data(run_dict, delta_min=-50.0, delta_max=50.0, verbose=False):
     return run_dict
 
 
-def trim_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=10.0, verbose=False):
+def filter_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=10.0, verbose=False):
 
     delta_array = run_dict['delta_array']
     delta0_idx = np.argmin(np.abs(delta_array))
-    print(f'Trimming based on E-V with abs. energy threshold {abs_threshold:.1e} eV and relative threshold {rel_threshold:.1f}%...')
+    print(f'Filtering based on E-V with abs. energy threshold {abs_threshold:.1e} eV and relative threshold {rel_threshold:.1f}%...')
     for sample in run_dict['sample_list']:
         s_str = f'sample_{sample}'
         # Only the filtered deltas
@@ -501,13 +501,13 @@ def trim_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=10.0, ve
 
 def main():
 
+    plot_dir = 'plots'
+    os.makedirs(plot_dir, exist_ok=True)
+
     # Read the pickle file: run_dict.pkl
-    pickle_filename = 'run_dict.pkl'
-    #pickle_filename = 'run_dict_ncellx_3_subset.pkl'
-    #pickle_filename = 'run_dict_ncellx_2_step_20_samples_010.pkl'
-    #pickle_filename = './NERSC/ncell_x_3_energy/run_dict.pkl'
+    #pickle_filename = 'run_dict.pkl'
+    pickle_filename = './ncell_x_3_dense_npt2/run_dict.pkl'
     #pickle_filename = './NERSC/ncell_x_4_energy/run_dict.pkl'
-    #pickle_filename = './NERSC/ncell_x_5_energy/run_dict.pkl'
 
     print(f'Reading {pickle_filename}...')
     with open(pickle_filename, 'rb') as f:
@@ -516,9 +516,9 @@ def main():
     print(f'Number of atoms in pure system: {run_dict["Natom pure"]}')
     print(f'Number of atoms in vacancy system: {run_dict["Natom vac"]}')
 
-    # Trim data
-    run_dict = trim_data(run_dict)
-    #run_dict = trim_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=50.0)
+    # filter data
+    run_dict = filter_data(run_dict)
+    run_dict = filter_data_energy_volume(run_dict, abs_threshold=0.001, rel_threshold=50.0)
 
     # Hard-remove deltas from -50.0 to 50.0
     #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
@@ -526,11 +526,13 @@ def main():
     # Plot success_matrix
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
     plot_success_matrix(ax, run_dict)
+    fig.savefig(os.path.join('plots', 'success_matrix.pdf'))
 
     #
     # Plotting physical data
     #
-    sample = 37
+    sample = 1
+    #sample = 37
     #sample = 62
 
     #
@@ -593,7 +595,7 @@ def main():
         plt.subplots_adjust(left=0.08, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
 
         # Energy-volume
-        plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='jet')#'coolwarm')
+        plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='Paired')#'coolwarm')
 
         # Formation volume
         plot_formation_volume(axes[1, 1], run_dict, sample)
@@ -607,11 +609,9 @@ def main():
 
         plt.show()
 
-    plot_samples = False
-    #plot_samples = True
+    #plot_samples = False
+    plot_samples = True
     if plot_samples:
-        plot_dir = 'plots'
-        os.makedirs(plot_dir, exist_ok=True)
 
         for sample in tqdm(run_dict['sample_list']):
             fig, axes = plt.subplots(2, 2, figsize=(14, 10))
@@ -711,6 +711,7 @@ def main():
             #ax.set_xlim(-32, 32)
 
         axes[0, 1].set_title(f'AVERAGE OVER {len(sample_list)} samples; ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}', y=1.01, x=-0.2, fontsize=25)
+        fig.savefig(os.path.join(plot_dir, 'average_data.pdf'))
 
         plt.show()
 

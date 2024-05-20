@@ -361,8 +361,12 @@ def run_npt_implicit_derivative2(LammpsClass, alat, ncell_x, Theta_ens, delta, s
         dX_dTheta_inhom = s_pred.implicit_derivative(method=impl_der_method)
         dX_inhom_pred = dTheta @ dX_dTheta_inhom
         s_pred.X_coord += dX_inhom_pred
-        s_pred.scatter_coord()
-        s_pred.gather_D_dD()
+        try:
+            s_pred.scatter_coord()
+            s_pred.gather_D_dD()
+        except Exception as e:
+            mpi_print(f'Error in scatter_coord and gather_D_dD: {e}', comm=comm)
+            return None
 
         energy_full_pred = s_pred.dU_dTheta @ Theta_pert
         coord_error_full = coord_error(X_coord_true, s_pred.X_coord)

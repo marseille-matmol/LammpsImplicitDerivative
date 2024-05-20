@@ -321,8 +321,11 @@ class LammpsImplicitDer:
         if X_coord is None:
             X_coord = self._X_coord
 
-        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_coord))
-        self.lmp.command("run 0")
+        try:
+            self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_coord))
+            self.lmp.command("run 0")
+        except Exception as e:
+            mpi_print(f'Error in scatter_coord: {e}', verbose=self.verbose, comm=self.comm)
 
     @measure_runtime_and_calls
     def compute_D_dD(self):
@@ -690,6 +693,7 @@ class LammpsImplicitDer:
             `calls' : number of force calls during iteration
             `err' : residue from lstsq fit
         """
+        #self.scatter_coord()
         self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
 
         # Compute the force at the initial position,

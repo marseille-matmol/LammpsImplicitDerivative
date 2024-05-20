@@ -45,6 +45,9 @@ class LammpsImplicitDer:
 
         """
 
+        if logname is None:
+            logname = 'none'
+
         self.comm = comm
         self.rank = 0 if comm is None else comm.Get_rank()
 

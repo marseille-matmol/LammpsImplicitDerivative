@@ -372,15 +372,20 @@ def run_npt_implicit_derivative2(LammpsClass, alat, ncell_x, Theta_ens, delta, s
         coord_error_full = coord_error(X_coord_true, s_pred.X_coord)
 
         # SCALE THE SYSTEM BACK TO cell0 to COMPUTE THE INHOMOGENEOUS-ONLY CONTRIBUTION
-        s_pred.apply_strain(cell0, update_system=True)
-        energy_inhom_pred = s_pred.dU_dTheta @ Theta_pert
-        coord_error_inhom = coord_error(X_coord_true, s_pred.X_coord)
+        try:
+            s_pred.apply_strain(cell0, update_system=True)
+            energy_inhom_pred = s_pred.dU_dTheta @ Theta_pert
+            coord_error_inhom = coord_error(X_coord_true, s_pred.X_coord)
 
-        # argmin volume prediction
-        s_pred.apply_strain(cell_pred_DT, update_system=True)
-        energy_full_pred_DT = s_pred.dU_dTheta @ Theta_pert
-        coord_error_full_DT = coord_error(X_coord_true, s_pred.X_coord)
-        s_pred.apply_strain(cell0, update_system=True)
+            # argmin volume prediction
+            s_pred.apply_strain(cell_pred_DT, update_system=True)
+            energy_full_pred_DT = s_pred.dU_dTheta @ Theta_pert
+            coord_error_full_DT = coord_error(X_coord_true, s_pred.X_coord)
+            s_pred.apply_strain(cell0, update_system=True)
+
+        except Exception as e:
+            mpi_print(f'Error in applying strain: {e}', comm=comm)
+            return None
 
     trun.timings[total_tag].stop()
 

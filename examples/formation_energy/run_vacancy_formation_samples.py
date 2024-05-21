@@ -13,6 +13,7 @@ from lammps_implicit_der import LammpsImplicitDer, SNAP
 from lammps_implicit_der.tools import mpi_print, initialize_mpi, TimingGroup, plot_tools, \
                                       compute_energy_volume, create_perturbed_system, run_npt_implicit_derivative
 from lammps_implicit_der.tools.npt_tools import run_npt_implicit_derivative2
+from lammps_implicit_der.tools.npt_tools import run_npt_implicit_derivative3
 from lammps_implicit_der.tools.error_tools import coord_error
 from lammps_implicit_der.systems import BccVacancy, Bcc
 #from lammps_implicit_der.tools.error_tools import coord_error
@@ -142,7 +143,8 @@ def main():
         #delta_array = np.linspace(-10.0, 10.0, 3)
 
         # For energy-volume curves
-        epsilon_array_en_vol = np.linspace(-0.05, 0.05, 15)
+        #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 15)
+        epsilon_array_en_vol = np.linspace(-0.05, 0.05, 25)
 
         run_dict['delta_array'] = delta_array
 
@@ -202,7 +204,7 @@ def main():
 
                 mpi_print('   NPT minimization...', comm=comm)
                 with trun.add('npt'):
-                    pure_dict = run_npt_implicit_derivative(Bcc, alat, ncell_x, Theta_ens, delta, sample,
+                    pure_dict = run_npt_implicit_derivative3(Bcc, alat, ncell_x, Theta_ens, delta, sample,
                                                             snapcoeff_filename, snapparam_filename,
                                                             virial_trace_pure, virial_der_pure0, descriptor_array_pure, volume_array_pure,
                                                             dX_dTheta_pure_inhom, comm=comm, trun=trun_npt)
@@ -210,13 +212,21 @@ def main():
                     if comm is not None:
                         comm.Barrier()
 
+                    """
                     vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
+                                                           snapcoeff_filename, snapparam_filename,
+                                                           virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
+                                                           dX_dTheta_vac_inhom, comm=comm, trun=trun_npt)
+                    """
+
+                    vac_dict = run_npt_implicit_derivative3(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
                                                            snapcoeff_filename, snapparam_filename,
                                                            virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
                                                            dX_dTheta_vac_inhom, comm=comm, trun=trun_npt)
 
                     """
                     vac_dict = run_npt_implicit_derivative2(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
+>>>>>>> 115525e65cf58a76c497af0e06f5b3fe4f0ac0e0
                                                             snapcoeff_filename, snapparam_filename,
                                                             virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
                                                             impl_der_method=impl_der_method, comm=comm, trun=trun_npt)

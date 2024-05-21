@@ -157,8 +157,8 @@ def main():
 
         trun_npt = TimingGroup('NPT implicit derivative')
 
-        #sample_list = list(range(0, 100))
-        sample_list = list(range(0, 10))
+        sample_list = list(range(0, 100))
+        #sample_list = list(range(0, 10))
         #sample_list = [37]
         run_dict['sample_list'] = sample_list
 
@@ -204,7 +204,7 @@ def main():
 
                 mpi_print('   NPT minimization...', comm=comm)
                 with trun.add('npt'):
-                    pure_dict = run_npt_implicit_derivative3(Bcc, alat, ncell_x, Theta_ens, delta, sample,
+                    pure_dict = run_npt_implicit_derivative(Bcc, alat, ncell_x, Theta_ens, delta, sample,
                                                             snapcoeff_filename, snapparam_filename,
                                                             virial_trace_pure, virial_der_pure0, descriptor_array_pure, volume_array_pure,
                                                             dX_dTheta_pure_inhom, comm=comm, trun=trun_npt)
@@ -212,14 +212,7 @@ def main():
                     if comm is not None:
                         comm.Barrier()
 
-                    """
                     vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
-                                                           snapcoeff_filename, snapparam_filename,
-                                                           virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
-                                                           dX_dTheta_vac_inhom, comm=comm, trun=trun_npt)
-                    """
-
-                    vac_dict = run_npt_implicit_derivative3(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
                                                            snapcoeff_filename, snapparam_filename,
                                                            virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
                                                            dX_dTheta_vac_inhom, comm=comm, trun=trun_npt)

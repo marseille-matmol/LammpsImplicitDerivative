@@ -257,6 +257,23 @@ def plot_absolute_energy(ax, run_dict, sample):
     ax.legend()
 
 
+def plot_coord_error(ax, run_dict, sample):
+
+    s_str = f'sample_{sample}'
+    delta_array = run_dict['delta_array']
+    delta_array_sample = [delta_array[i] for i in run_dict[s_str]['conv_idelta_list']]
+
+    ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'pure', 'coord_erro_full'), label='Pure Hom. + Inhom.', marker='s')
+
+    ax.plot(delta_array_sample, coord_error_pure, label='Pure', marker='s')
+    ax.plot(delta_array_sample, coord_error_vac, label='Vacancy', marker='o')
+
+    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_ylabel('Coordination Error')
+    ax.legend()
+
+
+
 def plot_energy_error(ax, run_dict, sample, error_type='abs'):
 
     if error_type == 'abs':
@@ -505,8 +522,8 @@ def main():
     os.makedirs(plot_dir, exist_ok=True)
 
     # Read the pickle file: run_dict.pkl
-    #pickle_filename = 'run_dict.pkl'
-    pickle_filename = './ncell_x_3_dense_npt2/run_dict.pkl'
+    pickle_filename = 'run_dict.pkl'
+    #pickle_filename = './ncell_x_3_dense_npt2/run_dict.pkl'
     #pickle_filename = './NERSC/ncell_x_4_energy/run_dict.pkl'
 
     print(f'Reading {pickle_filename}...')
@@ -518,7 +535,7 @@ def main():
 
     # filter data
     run_dict = filter_data(run_dict)
-    run_dict = filter_data_energy_volume(run_dict, abs_threshold=0.001, rel_threshold=50.0)
+    #run_dict = filter_data_energy_volume(run_dict, abs_threshold=0.001, rel_threshold=50.0)
 
     # Hard-remove deltas from -50.0 to 50.0
     #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
@@ -609,8 +626,8 @@ def main():
 
         plt.show()
 
-    #plot_samples = False
-    plot_samples = True
+    plot_samples = False
+    #plot_samples = True
     if plot_samples:
 
         for sample in tqdm(run_dict['sample_list']):

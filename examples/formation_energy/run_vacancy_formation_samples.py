@@ -226,7 +226,6 @@ def main():
 
                     """
                     vac_dict = run_npt_implicit_derivative2(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
->>>>>>> 115525e65cf58a76c497af0e06f5b3fe4f0ac0e0
                                                             snapcoeff_filename, snapparam_filename,
                                                             virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
                                                             impl_der_method=impl_der_method, comm=comm, trun=trun_npt)

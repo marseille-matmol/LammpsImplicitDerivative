@@ -147,7 +147,7 @@ def plot_energy_volume_deltas(ax, run_dict, sample, cmap_name='coolwarm', label_
         ax2.set_xlabel('Volume ($\mathrm{\AA}^3$)')
 
 
-def plot_formation_energy(ax, run_dict, sample):
+def plot_formation_energy(ax, run_dict, method_plot_dict, sample):
 
     s_str = f'sample_{sample}'
     delta_array = run_dict['delta_array']
@@ -160,18 +160,18 @@ def plot_formation_energy(ax, run_dict, sample):
 
     delta_array_sample = [delta_array[i] for i in run_dict[s_str]['conv_idelta_list']]
 
-    ax.plot(delta_array_sample, E_form_pred0, label='No position change', marker='o', c='purple')
-    ax.plot(delta_array_sample, E_form_hom_pred, label='Homogeneous', marker='o', c='goldenrod')
-    ax.plot(delta_array_sample, E_form_inhom_pred, label='Inhomogeneous', marker='o', c='blue')
-    ax.plot(delta_array_sample, E_form_full_pred, label='Hom. + Inhom.', marker='o', c='red')
-    ax.plot(delta_array_sample, E_form_true, label='True', marker='o', c='black')
+    ax.plot(delta_array_sample, E_form_pred0, **method_plot_dict['formation']['energy_pred0'])
+    ax.plot(delta_array_sample, E_form_hom_pred, **method_plot_dict['formation']['energy_hom_pred'])
+    ax.plot(delta_array_sample, E_form_inhom_pred, **method_plot_dict['formation']['energy_inhom_pred'])
+    ax.plot(delta_array_sample, E_form_full_pred, **method_plot_dict['formation']['energy_full_pred'])
+    ax.plot(delta_array_sample, E_form_true, **method_plot_dict['formation']['energy_true'])
 
     ax.set_xlabel('Perturbation Magnitude $\delta$')
     ax.set_ylabel('Formation Energy (eV)')
     ax.legend()
 
 
-def plot_formation_energy_error(ax, run_dict, sample, error_type='abs', legend=True):
+def plot_formation_energy_error(ax, run_dict, method_plot_dict, sample, error_type='abs', legend=True):
 
     if error_type == 'abs':
         error_func = lambda x, y: np.abs(x - y)
@@ -190,10 +190,10 @@ def plot_formation_energy_error(ax, run_dict, sample, error_type='abs', legend=T
     E_form_inhom_pred_error = error_func(compute_formation_property(run_dict, sample, 'energy_inhom_pred'), E_form_true)
     E_form_pred0_error = error_func(compute_formation_property(run_dict, sample, 'energy_pred0'), E_form_true)
 
-    ax.plot(delta_array_sample, E_form_pred0_error, label='No position change', marker='o', c='purple')
-    ax.plot(delta_array_sample, E_form_hom_pred_error, label='Homogeneous', marker='o', c='goldenrod')
-    ax.plot(delta_array_sample, E_form_inhom_pred_error, label='Inhomogeneous', marker='o', c='blue')
-    ax.plot(delta_array_sample, E_form_full_pred_error, label='Hom. + Inhom.', marker='o', c='red')
+    ax.plot(delta_array_sample, E_form_pred0_error, **method_plot_dict['formation']['energy_pred0'])
+    ax.plot(delta_array_sample, E_form_hom_pred_error, **method_plot_dict['formation']['energy_hom_pred'])
+    ax.plot(delta_array_sample, E_form_inhom_pred_error, **method_plot_dict['formation']['energy_inhom_pred'])
+    ax.plot(delta_array_sample, E_form_full_pred_error, **method_plot_dict['formation']['energy_full_pred'])
 
     ax.set_xlabel('Perturbation Magnitude $\delta$')
 
@@ -257,24 +257,30 @@ def plot_absolute_energy(ax, run_dict, sample):
     ax.legend()
 
 
-def plot_coord_error(ax, run_dict, sample):
+def plot_coord_error(ax, run_dict, method_plot_dict, sample):
 
     s_str = f'sample_{sample}'
     delta_array = run_dict['delta_array']
     delta_array_sample = [delta_array[i] for i in run_dict[s_str]['conv_idelta_list']]
 
-    ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'pure', 'coord_erro_full'), label='Pure Hom. + Inhom.', marker='s')
+    # coord_error_full, coord_error_hom, coord_error_inhom, coord_error_hom_DT
 
-    ax.plot(delta_array_sample, coord_error_pure, label='Pure', marker='s')
-    ax.plot(delta_array_sample, coord_error_vac, label='Vacancy', marker='o')
+    ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'pure', 'coord_error_hom'), **method_plot_dict['pure']['energy_hom_pred'])
+    ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'pure', 'coord_error_inhom'), **method_plot_dict['pure']['energy_inhom_pred'])
+    ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'pure', 'coord_error_full'), **method_plot_dict['pure']['energy_full_pred'])
+
+    ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'vac', 'coord_error_hom'), **method_plot_dict['vac']['energy_hom_pred'])
+    ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'vac', 'coord_error_inhom'), **method_plot_dict['vac']['energy_inhom_pred'])
+    ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'vac', 'coord_error_full'), **method_plot_dict['vac']['energy_full_pred'])
+
+    #ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'pure', 'coord_error_full'), label='Pure Hom. + Inhom.', marker='s')
 
     ax.set_xlabel('Perturbation Magnitude $\delta$')
-    ax.set_ylabel('Coordination Error')
+    ax.set_ylabel(r"Coordinate Error, $\mathrm{\AA}$")
     ax.legend()
 
 
-
-def plot_energy_error(ax, run_dict, sample, error_type='abs'):
+def plot_energy_error(ax, run_dict, method_plot_dict, sample, error_type='abs'):
 
     if error_type == 'abs':
         error_func = lambda x, y: np.abs(x - y)
@@ -290,31 +296,31 @@ def plot_energy_error(ax, run_dict, sample, error_type='abs'):
     true_pure = get_prop_array(run_dict, sample, 'pure', 'energy_true')
 
     error_pred0 = error_func(get_prop_array(run_dict, sample, 'pure', 'energy_pred0'), true_pure)
-    ax.plot(delta_array_sample, error_pred0, label='Pure No pos. change', marker='s', c='purple')
+    ax.plot(delta_array_sample, error_pred0, **method_plot_dict['pure']['energy_pred0'])
 
     error_hom = error_func(get_prop_array(run_dict, sample, 'pure', 'energy_hom_pred'), true_pure)
-    ax.plot(delta_array_sample, error_hom, label='Pure Hom.', marker='s', c='goldenrod')
+    ax.plot(delta_array_sample, error_hom, **method_plot_dict['pure']['energy_hom_pred'])
 
     error_inhom = error_func(get_prop_array(run_dict, sample, 'pure', 'energy_inhom_pred'), true_pure)
-    ax.plot(delta_array_sample, error_inhom, label='Pure Inhom.', marker='s', c='blue')
+    ax.plot(delta_array_sample, error_inhom, **method_plot_dict['pure']['energy_inhom_pred'])
 
     error_full = error_func(get_prop_array(run_dict, sample, 'pure', 'energy_full_pred'), true_pure)
-    ax.plot(delta_array_sample, error_full, label='Pure Hom. + Inhom.', marker='s', c='red')
+    ax.plot(delta_array_sample, error_full, **method_plot_dict['pure']['energy_full_pred'])
 
     # Vacancy
     vac_true = get_prop_array(run_dict, sample, 'vac', 'energy_true')
 
     error_pred0 = error_func(get_prop_array(run_dict, sample, 'vac', 'energy_pred0'), vac_true)
-    ax.plot(delta_array_sample, error_pred0, label='Vac. No pos. change', marker='o', c='purple')
+    ax.plot(delta_array_sample, error_pred0, **method_plot_dict['vac']['energy_pred0'])
 
     error_hom = error_func(get_prop_array(run_dict, sample, 'vac', 'energy_hom_pred'), vac_true)
-    ax.plot(delta_array_sample, error_hom, label='Vac. Hom.', marker='o', c='goldenrod')
+    ax.plot(delta_array_sample, error_hom, **method_plot_dict['vac']['energy_hom_pred'])
 
     error_inhom = error_func(get_prop_array(run_dict, sample, 'vac', 'energy_inhom_pred'), vac_true)
-    ax.plot(delta_array_sample, error_inhom, label='Vac. Inhom.', marker='o', c='blue')
+    ax.plot(delta_array_sample, error_inhom, **method_plot_dict['vac']['energy_inhom_pred'])
 
     error_full = error_func(get_prop_array(run_dict, sample, 'vac', 'energy_full_pred'), vac_true)
-    ax.plot(delta_array_sample, error_full, label='Vac. Hom. + Inhom.', marker='o', c='red')
+    ax.plot(delta_array_sample, error_full, **method_plot_dict['vac']['energy_full_pred'])
 
     ax.set_xlabel('Perturbation Magnitude $\delta$')
 
@@ -535,7 +541,7 @@ def main():
 
     # filter data
     run_dict = filter_data(run_dict)
-    #run_dict = filter_data_energy_volume(run_dict, abs_threshold=0.001, rel_threshold=50.0)
+    run_dict = filter_data_energy_volume(run_dict, abs_threshold=0.001, rel_threshold=50.0)
 
     # Hard-remove deltas from -50.0 to 50.0
     #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
@@ -545,12 +551,43 @@ def main():
     plot_success_matrix(ax, run_dict)
     fig.savefig(os.path.join('plots', 'success_matrix.pdf'))
 
+    method_plot_dict = {
+        'formation': {
+            'energy_true': {'label': 'True', 'marker': 'o', 'c': 'black'},
+            'energy_pred0': {'label': 'No pos. change', 'marker': 'o', 'c': 'purple', 'ms': 12},
+            'energy_hom_pred': {'label': 'Hom.', 'marker': 'o', 'c': 'goldenrod'},
+            'energy_inhom_pred': {'label': 'Inhom.', 'marker': 'o', 'c': 'blue', 'ms': 12},
+            'energy_full_pred': {'label': 'Hom. + Inhom.', 'marker': 'o', 'c': 'red'}
+        },
+        'pure': {
+            'energy_true': {'label': 'Bulk True', 'marker': 's', 'c': 'black'},
+            'energy_pred0': {'label': 'Bulk No pos. change', 'marker': 's', 'c': 'purple', 'ms': 12},
+            'energy_hom_pred': {'label': 'Bulk Hom.', 'marker': 's', 'c': 'goldenrod'},
+            'energy_inhom_pred': {'label': 'Bulk Inhom.', 'marker': 's', 'c': 'blue', 'ms': 12},
+            'energy_full_pred': {'label': 'Bulk Hom. + Inhom.', 'marker': 's', 'c': 'red'}
+        },
+        'vac': {
+            'energy_true': {'label': 'Vac. True', 'marker': 'o', 'c': 'black'},
+            'energy_pred0': {'label': 'Vac. No pos. change', 'marker': 'o', 'c': 'purple', 'ms': 12},
+            'energy_hom_pred': {'label': 'Vac. Hom.', 'marker': 'o', 'c': 'goldenrod'},
+            'energy_inhom_pred': {'label': 'Vac. Inhom.', 'marker': 'o', 'c': 'blue', 'ms': 12},
+            'energy_full_pred': {'label': 'Vac. Hom. + Inhom.', 'marker': 'o', 'c': 'red'}
+        }
+    }
+
     #
     # Plotting physical data
     #
     sample = 1
     #sample = 37
     #sample = 62
+
+    plot_coordinate_error = True
+    if plot_coordinate_error:
+        fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+        plot_coord_error(ax, run_dict, method_plot_dict, sample)
+        fig.savefig(os.path.join(plot_dir, f'coord_error_sample_{sample:03d}.pdf'))
+        plt.show()
 
     #
     # Layout 2x2
@@ -567,7 +604,7 @@ def main():
         plot_energy_volume_deltas(ax_inset, run_dict, sample, fsize_bar=12)
 
         # Formation energies
-        plot_formation_energy(axes[1, 0], run_dict, sample)
+        plot_formation_energy(axes[1, 0], run_dict, method_plot_dict, sample)
 
         # Absolute volume
         plot_absolute_volume(axes[0, 1], run_dict, sample)
@@ -595,7 +632,7 @@ def main():
         plot_energy_volume_deltas(axes[0], run_dict, sample)
 
         # Formation energies
-        plot_formation_energy(axes[1], run_dict, sample)
+        plot_formation_energy(axes[1], run_dict, method_plot_dict, sample)
         axes[1].set_title(f'ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}; sample {sample}')
 
         # Formation volume
@@ -618,11 +655,11 @@ def main():
         plot_formation_volume(axes[1, 1], run_dict, sample)
 
         # Formation energies
-        plot_formation_energy(axes[0, 0], run_dict, sample)
+        plot_formation_energy(axes[0, 0], run_dict, method_plot_dict, sample)
         axes[0, 1].set_title(f'ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}; sample {sample}', y=1.15, x=-0.2, fontsize=25)
 
         # Formation energies error
-        plot_formation_energy_error(axes[1, 0], run_dict, sample, legend=False)
+        plot_formation_energy_error(axes[1, 0], run_dict, method_plot_dict, sample, legend=False)
 
         plt.show()
 
@@ -641,14 +678,23 @@ def main():
             plot_formation_volume(axes[1, 1], run_dict, sample)
 
             # Formation energies
-            plot_formation_energy(axes[0, 0], run_dict, sample)
+            plot_formation_energy(axes[0, 0], run_dict, method_plot_dict, sample)
             axes[0, 1].set_title(f'ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}; sample {sample}', y=1.15, x=-0.2, fontsize=25)
 
             # Formation energies error
-            plot_formation_energy_error(axes[1, 0], run_dict, sample, legend=False, error_type='rel')
+            plot_formation_energy_error(axes[1, 0], run_dict, method_plot_dict, sample, legend=False, error_type='rel')
 
             plt.savefig(os.path.join(plot_dir, f'sample_{sample:03d}.pdf'))
             plt.close()
+
+            # coord error
+            plot_coordinate_error = True
+            if plot_coordinate_error:
+                fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+                plot_coord_error(ax, run_dict, method_plot_dict, sample)
+                ax.set_title(f'ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}; sample {sample}', fontsize=20)
+                fig.savefig(os.path.join(plot_dir, f'coord_error_sample_{sample:03d}.pdf'))
+                plt.close()
 
     plot_average_data = True
     #plot_average_data = False

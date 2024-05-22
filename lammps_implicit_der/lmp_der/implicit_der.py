@@ -515,11 +515,15 @@ class LammpsImplicitDer:
         #C = np.dot(self.cell, (np.eye(3) + epsilon))
 
         C = cell.copy()
-        self.lmp.commands_string(f"""
-        change_box all triclinic
-        change_box all x final 0.0 {C[0,0]} y final 0.0 {C[1,1]} z final 0.0 {C[2,2]} xy final {C[0,1]} xz final {C[0,2]} yz final {C[1,2]} remap units box
-        run 0
-        """)
+
+        try:
+            self.lmp.commands_string(f"""
+            change_box all triclinic
+            change_box all x final 0.0 {C[0,0]} y final 0.0 {C[1,1]} z final 0.0 {C[2,2]} xy final {C[0,1]} xz final {C[0,2]} yz final {C[1,2]} remap units box
+            run 0
+            """)
+        except Exception as e:
+            mpi_print(f'Error in apply_strain: {e}', verbose=self.verbose, comm=self.comm)
 
         if update_system:
             self.gather_D_dD()

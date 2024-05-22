@@ -496,25 +496,29 @@ def cut_data(run_dict, delta_min=-50.0, delta_max=50.0, verbose=False):
     return run_dict
 
 
-def filter_data_energy_volume(run_dict, abs_threshold=0.01, rel_threshold=10.0, verbose=False):
+def filter_data_energy_volume(run_dict, atol=1e-7, rtol=50.0, verbose=False):
 
     delta_array = run_dict['delta_array']
     delta0_idx = np.argmin(np.abs(delta_array))
-    print(f'Filtering based on E-V with abs. energy threshold {abs_threshold:.1e} eV and relative threshold {rel_threshold:.1f}%...')
+    print(f'Filtering based on E-V with abs. energy threshold {atol:.1e} eV and relative threshold {rtol:.1f}%...')
     for sample in run_dict['sample_list']:
         s_str = f'sample_{sample}'
         # Only the filtered deltas
         delta_sample_list = run_dict[s_str]['conv_idelta_list'].copy()
         energy_array_delta0_pure = run_dict[s_str][f'delta_{delta0_idx}']['pure']['en_vol']['energy_array']
-        idx_nonzero = np.where(np.abs(energy_array_delta0_pure) > abs_threshold)[0]
+        #idx_nonzero = np.where(np.abs(energy_array_delta0_pure) > atol)[0]
         for delta in delta_sample_list:
             d_str = f'delta_{delta}'
             energy_array_delta_pure = run_dict[s_str][d_str]['pure']['en_vol']['energy_array']
 
-            diff_abs = np.abs(energy_array_delta_pure[idx_nonzero] - energy_array_delta0_pure[idx_nonzero])
-            diff_rel = np.abs(diff_abs / energy_array_delta0_pure[idx_nonzero]) * 100.0
+            #diff_abs = np.abs(energy_array_delta_pure[idx_nonzero] - energy_array_delta0_pure[idx_nonzero])
+            #diff_rel = np.abs(diff_abs / energy_array_delta0_pure[idx_nonzero]) * 100.0
 
-            if np.max(diff_rel) > rel_threshold:
+            # atol + rtol * abs(desired) for each element of energy_array_delta0_pure and energy_array_delta_pure
+
+            diff_abs = np.abs(energy_array_delta_pure - energy_array_delta0_pure)
+
+            if np.any(diff_abs > atol + (rtol / 100.0) * np.abs(energy_array_delta0_pure)):
                 run_dict[s_str]['conv_idelta_list'].remove(delta)
                 run_dict[s_str][d_str]['pure'] = None
                 run_dict[s_str][d_str]['vac'] = None
@@ -541,7 +545,7 @@ def main():
 
     # filter data
     run_dict = filter_data(run_dict)
-    run_dict = filter_data_energy_volume(run_dict, abs_threshold=0.001, rel_threshold=50.0)
+    run_dict = filter_data_energy_volume(run_dict, atol=1e-2, rtol=50.0)
 
     # Hard-remove deltas from -50.0 to 50.0
     #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
@@ -663,8 +667,8 @@ def main():
 
         plt.show()
 
-    plot_samples = False
-    #plot_samples = True
+    #plot_samples = False
+    plot_samples = True
     if plot_samples:
 
         for sample in tqdm(run_dict['sample_list']):

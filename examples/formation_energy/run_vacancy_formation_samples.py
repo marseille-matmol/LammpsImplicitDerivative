@@ -217,13 +217,6 @@ def main():
                                                            virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
                                                            dX_dTheta_vac_inhom, comm=comm, trun=trun_npt)
 
-                    """
-                    vac_dict = run_npt_implicit_derivative2(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
-                                                            snapcoeff_filename, snapparam_filename,
-                                                            virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
-                                                            impl_der_method=impl_der_method, comm=comm, trun=trun_npt)
-                    """
-
                     if comm is not None:
                         comm.Barrier()
 

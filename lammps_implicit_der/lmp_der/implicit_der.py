@@ -196,6 +196,11 @@ class LammpsImplicitDer:
         """Energy getter.
         Every time energy is requested, it is computed in LAMMPS and stored internally.
         """
+
+        # Check if lmp is defined
+        if self.lmp is None:
+            raise RuntimeError('LAMMPS object lmp must be defined for energy calculation')
+
         self._energy = self.lmp.numpy.extract_compute("thermo_pe",
                                                       LMP_STYLE_GLOBAL,
                                                       LMP_TYPE_SCALAR)
@@ -211,30 +216,6 @@ class LammpsImplicitDer:
         self._volume = np.linalg.det(self.cell)
 
         return self._volume
-
-    @property
-    @measure_runtime_and_calls
-    def stress(self):
-        """Energy getter.
-        Every time energy is requested, it is computed in LAMMPS and stored internally.
-        """
-
-        # Check if lmp is defined
-        if self.lmp is None:
-            raise RuntimeError('LAMMPS object lmp must be defined for stress calculation')
-
-        self.lmp.commands_string("""
-        compute PerAtomStress all stress/atom thermo_temp
-        run 0
-        """)
-
-        self._stress = self.lmp.numpy.extract_compute("PerAtomStress", 1, 1).sum()
-
-        #self._stress = self.lmp.numpy.extract_compute("SS",
-        #                                              1,
-        #                                              1).sum()
-
-        return self._stress
 
     @measure_runtime_and_calls
     def minimize_energy(self, ftol=None, maxiter=None, maxeval=None, algo=None, update_system=True, verbose=True):
@@ -322,7 +303,9 @@ class LammpsImplicitDer:
         Send the coordinates to LAMMPS
         """
         if X_coord is None:
-            X_coord = self._X_coord
+            X_coord = self.X_coord.copy()
+        else:
+            self.X_coord = X_coord
 
         try:
             self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_coord))
@@ -559,8 +542,8 @@ class LammpsImplicitDer:
         self.force_call_counter += 1
 
         # get the forces from LAMMPS: "f" - forces, 1 - type, LAMMPS_DOUBLE, 3 - values per atom
-        f = np.ctypeslib.as_array(self.lmp.gather("f", 1, 3)).flatten()
-        return f
+        force = np.ctypeslib.as_array(self.lmp.gather("f", 1, 3)).flatten()
+        return force
 
     @measure_runtime_and_calls
     def hessian(self, dx=0.001, return_sparse=False, sparse_tol=1e-6):

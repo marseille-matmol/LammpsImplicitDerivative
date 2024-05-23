@@ -78,63 +78,39 @@ def test_apply_strain(bcc_system):
     bcc_system.apply_strain(cell0, update_system=True)
 
 
-def test_D_unary(comm):
-
-    bcc_system_tmp = Bcc(alat=3.163, ncell_x=2, minimize=False, logname=None,
-                         data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
-
-    X_coord_test = bcc_system_tmp.X_coord.copy()
-    X_coord_test[4] = 0.5
-
-    bcc_system_tmp.scatter_coord(X_coord=X_coord_test)
-    bcc_system_tmp.compute_D_dD()
-    bcc_system_tmp.gather_D_dD()
+def test_D_unary(bcc_system):
 
     dU_dTheta_desired = np.load('./refs/test_system_props_dU_dTheta.npy')
 
-    np.testing.assert_allclose(bcc_system_tmp.dU_dTheta, dU_dTheta_desired, atol=1e-8)
+    np.testing.assert_allclose(bcc_system.dU_dTheta, dU_dTheta_desired, atol=1e-8)
 
 
-def test_dD_unary(comm):
-    """
-    Does not work with ntasks 4 and 8, works with others!
-    Maybe, the system is too small.
-    """
-
-    bcc_system_tmp = Bcc(alat=3.163, ncell_x=2, minimize=False, logname=None,
-                         data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
-
-    X_coord_test = bcc_system_tmp.X_coord.copy()
-    X_coord_test[4] = 0.5
-
-    bcc_system_tmp.scatter_coord(X_coord=X_coord_test)
-    bcc_system_tmp.compute_D_dD()
-    bcc_system_tmp.gather_D_dD()
+def test_dD_unary(bcc_system):
 
     mixed_hessian_desired = np.load('./refs/test_system_props_mixed_hessian.npy')
 
-    np.testing.assert_allclose(bcc_system_tmp.mixed_hessian, mixed_hessian_desired, atol=1e-8)
+    np.testing.assert_allclose(bcc_system.mixed_hessian, mixed_hessian_desired, atol=1e-8)
 
 
 def test_D_dD_binary(comm):
 
-    #if comm is not None and comm.Get_size() > 1:
-    #    pytest.skip("Test is disabled when run with MPI. Wrong species generation.")
+    if comm is not None and comm.Get_size() > 1:
+        pytest.skip("Test is disabled when run with MPI. Wrong species generation.")
 
-    bcc_binary = BccBinary(alat=3.13, ncell_x=1, minimize=True, logname=None,
+    bcc_binary = BccBinary(alat=3.13, ncell_x=2, minimize=True, logname=None,
                            data_path='./refs/', snapcoeff_filename='NiMo.snapcoeff', verbose=False, comm=comm)
-
-    X_coord_test = bcc_binary.X_coord.copy()
-    X_coord_test[4] = 0.5
-    bcc_binary.scatter_coord(X_coord=X_coord_test)
-    bcc_binary.compute_D_dD()
-    bcc_binary.gather_D_dD()
 
     dU_dTheta_desired = np.load('./refs/test_system_props_dU_dTheta_binary.npy')
     mixed_hessian_desired = np.load('./refs/test_system_props_mixed_hessian_binary.npy')
 
     np.testing.assert_allclose(bcc_binary.dU_dTheta, dU_dTheta_desired, atol=1e-8)
     np.testing.assert_allclose(bcc_binary.mixed_hessian, mixed_hessian_desired, atol=1e-8)
+
+
+def test_scatter_coord(comm):
+
+    bcc_system_tmp = Bcc(alat=3.163, ncell_x=1, minimize=False, logname=None,
+                         data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
 
 def test_forces(comm):

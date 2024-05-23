@@ -36,8 +36,8 @@ def test_bcc_vacancy(comm):
 
 def test_bcc_binary(comm):
 
-    #if comm is not None and comm.Get_size() > 1:
-    #    pytest.skip("Test is disabled when run with MPI. Wrong species generation.")
+    if comm is not None and comm.Get_size() > 1:
+        pytest.skip("Test is disabled when run with MPI. Wrong species generation.")
 
     system = BccBinary(alat=3.13, ncell_x=2, minimize=True, logname=None,
                        data_path='./refs/', snapcoeff_filename='NiMo.snapcoeff', verbose=False, comm=comm)
@@ -52,8 +52,8 @@ def test_bcc_binary(comm):
 
 def test_bcc_binary_vacancy(comm):
 
-    #if comm is not None and comm.Get_size() > 1:
-    #    pytest.skip("Test is disabled when run with MPI. Wrong species generation.")
+    if comm is not None and comm.Get_size() > 1:
+        pytest.skip("Test is disabled when run with MPI. Wrong species generation.")
 
     system = BccBinaryVacancy(alat=3.13, ncell_x=2, minimize=True, logname=None,
                               data_path='./refs/', snapcoeff_filename='NiMo.snapcoeff', verbose=False, comm=comm)

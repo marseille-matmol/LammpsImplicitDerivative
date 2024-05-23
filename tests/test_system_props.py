@@ -80,7 +80,7 @@ def test_apply_strain(bcc_system):
 
 def test_D_unary(comm):
 
-    bcc_system_tmp = Bcc(alat=3.163, ncell_x=1, minimize=False, logname=None,
+    bcc_system_tmp = Bcc(alat=3.163, ncell_x=2, minimize=False, logname=None,
                          data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     X_coord_test = bcc_system_tmp.X_coord.copy()
@@ -101,7 +101,7 @@ def test_dD_unary(comm):
     Maybe, the system is too small.
     """
 
-    bcc_system_tmp = Bcc(alat=3.163, ncell_x=1, minimize=False, logname=None,
+    bcc_system_tmp = Bcc(alat=3.163, ncell_x=2, minimize=False, logname=None,
                          data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     X_coord_test = bcc_system_tmp.X_coord.copy()

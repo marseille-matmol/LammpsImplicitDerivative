@@ -3,6 +3,7 @@ Test the properties of the LammpsImplicitDer child classes.
 """
 import pytest
 import numpy as np
+import os
 
 from lammps_implicit_der.systems import BccVacancy, BccBinary, Bcc
 
@@ -136,3 +137,34 @@ def test_hessian(comm):
     desired_hessian = np.load('./refs/test_system_props_hessian.npy')
 
     np.testing.assert_allclose(bcc_system_tmp.hessian(), desired_hessian, atol=1e-12)
+
+
+def test_write_data(comm):
+
+    bcc_system_tmp = Bcc(alat=4.0, ncell_x=1, minimize=False, logname=None,
+                         data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
+
+    bcc_system_tmp.write_data('bcc.data')
+
+    assert os.path.isfile('bcc.data')
+
+    bcc_from_data = Bcc(datafile='bcc.data', minimize=False, logname=None,
+                        data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
+
+    np.testing.assert_allclose(bcc_system_tmp.energy, bcc_from_data.energy)
+    np.testing.assert_allclose(bcc_system_tmp.X_coord, bcc_from_data.X_coord)
+
+    if comm is None or comm.Get_rank() == 0:
+        os.remove('bcc.data')
+
+
+def test_pressure(comm):
+
+    bcc_system = Bcc(alat=3.163, ncell_x=2, minimize=False, logname=None,
+                     data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
+
+    bcc_system.compute_virial()
+    bcc_system.gather_virial()
+    bcc_system.get_pressure_from_virial()
+
+    np.testing.assert_allclose(bcc_system.pressure, 13.510282306996439)

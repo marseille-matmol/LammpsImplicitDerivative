@@ -471,6 +471,8 @@ def average_data(run_dict):
 
             # Replace the list of values with the average
             average_dict['error']['pure'][prop_key][d_str] = [np.mean(pure_array), np.std(pure_array)]
+            # TODO: percentile -> 33, 66
+            #average_dict['error']['pure'][prop_key][d_str] = [np.mean(pure_array), np.percentile(pure_array, 33, 66)]
             average_dict['error']['vac'][prop_key][d_str] = [np.mean(vac_array), np.std(vac_array)]
             average_dict['error']['formation'][prop_key][d_str] = [np.mean(form_array), np.std(form_array)]
 
@@ -545,7 +547,7 @@ def main():
 
     # filter data
     run_dict = filter_data(run_dict)
-    run_dict = filter_data_energy_volume(run_dict, atol=1e-2, rtol=50.0)
+    #run_dict = filter_data_energy_volume(run_dict, atol=1e-2, rtol=50.0)
 
     # Hard-remove deltas from -50.0 to 50.0
     #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
@@ -667,8 +669,8 @@ def main():
 
         plt.show()
 
-    #plot_samples = False
-    plot_samples = True
+    plot_samples = False
+    #plot_samples = True
     if plot_samples:
 
         for sample in tqdm(run_dict['sample_list']):

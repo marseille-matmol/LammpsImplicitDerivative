@@ -18,6 +18,8 @@ class Bcc(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,
+                 ncell_y=None,
+                 ncell_z=None,
                  alat=3.1855,
                  setup_snap=True,
                  *args, **kwargs):
@@ -27,6 +29,9 @@ class Bcc(LammpsImplicitDer):
         self.binary = False
         self.ncell_x = ncell_x
         self.alat = alat
+
+        self.ncell_y = ncell_y if ncell_y is not None else ncell_x
+        self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
             raise RuntimeError('snapcoeff_filename must be specified for Bcc')
@@ -53,7 +58,7 @@ class Bcc(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x} units lattice
+            region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
             create_box 1 C
             create_atoms 1 region C
             """)
@@ -74,6 +79,8 @@ class BccBinary(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,
+                 ncell_y=None,
+                 ncell_z=None,
                  alat=3.13,
                  specie_B_concentration=0.5,
                  setup_snap=True,
@@ -85,6 +92,9 @@ class BccBinary(LammpsImplicitDer):
 
         self.ncell_x = ncell_x
         self.alat = alat
+
+        self.ncell_y = ncell_y if ncell_y is not None else ncell_x
+        self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
             raise RuntimeError('snapcoeff_filename must be specified for BccBinary')
@@ -108,7 +118,7 @@ class BccBinary(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x} units lattice
+            region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
             create_box 2 C
             create_atoms 1 region C
 
@@ -131,7 +141,11 @@ class BccVacancy(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,
+                 ncell_y=None,
+                 ncell_z=None,
                  alat=3.1855,
+                 del_coord=None,
+                 id_del=None,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -139,8 +153,15 @@ class BccVacancy(LammpsImplicitDer):
         self.ncell_x = ncell_x
         self.alat = alat
 
+        self.ncell_y = ncell_y if ncell_y is not None else ncell_x
+        self.ncell_z = ncell_z if ncell_z is not None else ncell_x
+
         if self.snapcoeff_filename is None:
             raise RuntimeError('snapcoeff_filename must be specified for BccVacancy')
+
+        if del_coord is not None and id_del is not None:
+            raise RuntimeError('BccVacancy: id_del and del_coord cannot be both specified')
+
 
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,
@@ -155,29 +176,29 @@ class BccVacancy(LammpsImplicitDer):
         lattice bcc {self.alat} origin 0.01 0.01 0.01
         """)
 
-        # Setup the coordinates from scratch
-        if self.datafile is None:
+        self.lmp.commands_string(f"""
+        # create a block of atoms
+        region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
+        create_box 1 C
 
-            self.lmp.commands_string(f"""
-            # create a block of atoms
-            region C block 0 {self.ncell_x} 0 {self.ncell_x} 0 {self.ncell_x} units lattice
-            create_box 1 C
+        # add atoms
+        create_atoms 1 region C
+        """)
 
-            # add atoms
-            create_atoms 1 region C
-
-            # delete one atom
-            # Create a group called 'del' with the atom to be deleted
-            group del id 10
-            delete_atoms group del
-            """)
-
-        # Read from a datafile
+        if del_coord is not None:
+            assert len(del_coord) == 3
+            X_3D = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).reshape(-1, 3)
+            id_del = np.argmin(np.linalg.norm(X_3D-del_coord, axis=1))+1
         else:
+            id_del = 10
 
-            self.lmp.commands_string(f"""
-            read_data {self.datafile}
-            """)
+        self.id_del = id_del
+        self.lmp.commands_string(f"""
+        # delete one atom
+        # Create a group called 'del' with the atom to be deleted
+        group del id {id_del}
+        delete_atoms group del
+        """)
 
         # W mass in a.m.u.
         self.lmp.commands_string(f'mass * 184.')
@@ -189,9 +210,12 @@ class BccBinaryVacancy(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,
+                 ncell_y=None,
+                 ncell_z=None,
                  alat=3.13,
                  custom_create_script=None,
                  specie_B_concentration=0.5,
+                 id_del=10,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -199,6 +223,9 @@ class BccBinaryVacancy(LammpsImplicitDer):
         self.binary = True
         self.ncell_x = ncell_x
         self.alat = alat
+
+        self.ncell_y = ncell_y if ncell_y is not None else ncell_x
+        self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
             raise RuntimeError('snapcoeff_filename must be specified for BccBinaryVacancy')
@@ -221,7 +248,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {ncell_x} 0 {ncell_x} 0 {ncell_x} units lattice
+            region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
             create_box 2 C
             create_atoms 1 region C
             """)
@@ -230,7 +257,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
                 set group all type/fraction 2 {specie_B_concentration} 12393
                 # delete one atom
                 # Create a group called 'del' with the atom to be deleted
-                group del id 10
+                group del id {id_del}
                 delete_atoms group del
                 """)
             else:
@@ -255,6 +282,8 @@ class BccSIA(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,
+                 ncell_y=None,
+                 ncell_z=None,
                  alat=3.1855,
                  SIA_pos=None,
                  origin_pos=0.01,
@@ -264,6 +293,9 @@ class BccSIA(LammpsImplicitDer):
 
         self.ncell_x = ncell_x
         self.alat = alat
+
+        self.ncell_y = ncell_y if ncell_y is not None else ncell_x
+        self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
             raise RuntimeError('snapcoeff_filename must be specified for BccVacancy')
@@ -289,7 +321,7 @@ class BccSIA(LammpsImplicitDer):
 
             self.lmp.commands_string(f"""
             # create a block of atoms
-            region C block 0 {self.ncell_x} 0 {self.ncell_x} 0 {self.ncell_x} units lattice
+            region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
             create_box 1 C
 
             # add atoms

@@ -377,7 +377,6 @@ def plot_formation_energy_error_bins(ax, bin_dict, method_plot_dict, spline_fill
             ax.fill_between(dE_bin_centers, bin_perc_33, bin_perc_66, alpha=0.2,
                             color=method_plot_dict['formation'][en_key]['c'])
 
-    ax.set_xticklabels([])
     ax.set_ylabel('Energy Error (eV)')
 
     ax.set_xlabel('Formation Energy Change (eV)')
@@ -407,7 +406,6 @@ def plot_formation_volume_error_bins(ax, bin_dict, method_plot_dict, spline_fill
         else:
             ax.fill_between(dV_bin_centers, bin_perc_33, bin_perc_66, color=method_plot_dict['formation'][vol_key]['c'], alpha=0.2)
 
-    ax.set_xticklabels([])
     ax.set_ylabel('Volume Error ($\mathrm{\AA}^3$)')
 
     ax.set_xlabel('Formation Volume Change ($\mathrm{\AA}^3$)')
@@ -504,19 +502,6 @@ def interpolate(x_data, y_data, npoints=1000):
     cs = CubicSpline(x_data, y_data)
     x_grid = np.linspace(x_data.min(), x_data.max(), npoints)
     return x_grid, cs(x_grid)
-
-
-def plot_average_data_bins(axes, bin_dict, run_dict, method_plot_dict, spline_fill=True):
-
-    sample_list = run_dict['sample_list']
-
-    plot_formation_energy_bins(axes[1, 0], bin_dict, method_plot_dict, spline_fill=True)
-    plot_formation_volume_bins(axes[1, 1], bin_dict, method_plot_dict, spline_fill=True)
-
-    for ax in axes.flatten():
-        ax.legend()
-
-    axes[0, 1].set_title(f'AVERAGE OVER {len(sample_list)} samples; ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}', y=1.01, x=-0.2, fontsize=25)
 
 
 def filter_data(run_dict, abs_threshold=1e5, rel_threshold=10.0, rel_form_en_thr=100.0, verbose=False):
@@ -902,8 +887,8 @@ def main():
     #
     # Plotting physical data
     #
-    sample = 1
-    #sample = 37
+    #sample = 1
+    sample = 80
     #sample = 62
 
     #plot_coordinate_error = True
@@ -974,7 +959,7 @@ def main():
         plt.subplots_adjust(left=0.08, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
 
         # Energy-volume
-        plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='Paired')#'coolwarm')
+        plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='Paired') # 'coolwarm')
 
         # Formation volume
         plot_formation_volume(axes[1, 1], run_dict, sample)
@@ -1022,8 +1007,8 @@ def main():
                 fig.savefig(os.path.join(plot_dir, f'coord_error_sample_{sample:03d}.pdf'))
                 plt.close()
 
-    plot_av_data = True
-    #plot_av_data = False
+    #plot_av_data = True
+    plot_av_data = False
     if plot_av_data:
         average_dict = average_data(run_dict)
 
@@ -1053,18 +1038,24 @@ def main():
         average_dict = average_data(run_dict)
         bin_dict = compute_error_bins(run_dict, E_range=(-1, 1), V_range=(-3, 3))
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-        plt.subplots_adjust(left=0.08, right=0.96, bottom=0.09, top=0.95, wspace=0.22, hspace=0.01)
+        #plt.subplots_adjust(left=0.08, right=0.96, bottom=0.09, top=0.95, wspace=0.22, hspace=0.01)
+        plt.subplots_adjust(left=0.07, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
 
         sample_list = run_dict['sample_list']
 
+        plot_formation_energy(axes[0, 0], run_dict, method_plot_dict, sample)
+        plot_formation_volume(axes[0, 1], run_dict, sample)
         plot_formation_energy_error_bins(axes[1, 0], bin_dict, method_plot_dict, spline_fill=True)
         plot_formation_volume_error_bins(axes[1, 1], bin_dict, method_plot_dict, spline_fill=True)
 
         for ax in axes.flatten():
             ax.legend()
 
-        axes[0, 1].set_title(f'AVERAGE OVER {len(sample_list)} samples; ncell_x={run_dict["ncell_x"]};'
-                             f' Natom={run_dict["Natom pure"]}', y=1.01, x=-0.2, fontsize=25)
+        #axes[0, 1].set_title(f'AVERAGE OVER {len(sample_list)} samples; ncell_x={run_dict["ncell_x"]};'
+        #                     f' Natom={run_dict["Natom pure"]}', y=1.01, x=-0.2, fontsize=25)
+
+        #axes[0, 1].set_xticklabels([])
+        #axes[1, 1].set_xticklabels([])
 
         fig.savefig(os.path.join(plot_dir, 'average_data_bins.pdf'))
 

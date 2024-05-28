@@ -22,11 +22,63 @@ plotparams = plot_tools.plotparams.copy()
 plotparams['figure.figsize'] = (9, 6)
 plotparams['font.size'] = 16
 plotparams['figure.subplot.wspace'] = 0.2
-
-# font size for x and y axis labels
-plotparams['axes.labelsize'] = 22
+plotparams['axes.labelsize'] = 20 #22
 
 plt.rcParams.update(plotparams)
+
+
+def setup_method_plot_dict():
+
+    method_plot_dict = {
+        'formation': {
+            'energy_true': {'label': 'True', 'marker': 'o', 'c': 'black'},
+            'energy_pred0': {'label': 'No pos. change', 'marker': 'o', 'c': 'purple'},
+            'energy_hom_pred': {'label': 'Hom.', 'marker': 'o', 'c': 'goldenrod'},
+            'energy_inhom_pred': {'label': 'Inhom.', 'marker': 'o', 'c': 'blue'},
+            'energy_full_pred': {'label': 'Hom. + Inhom.', 'marker': 'o', 'c': 'red', 'ms': 12},
+            'volume_true': {'label': 'True', 'marker': 'o', 'c': 'black'},
+            'volume_pred': {'label': 'Predicted', 'marker': 'o', 'c': 'tab:blue', 'ms': 12},
+            'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange'},
+        },
+        'pure': {
+            'energy_true': {'label': 'Bulk True', 'marker': 's', 'c': 'black', 'ls': '--'},
+            'energy_pred0': {'label': 'Bulk No pos. change', 'marker': 's', 'c': 'purple', 'ms': 12, 'ls': '--'},
+            'energy_hom_pred': {'label': 'Bulk Hom.', 'marker': 's', 'c': 'goldenrod', 'ls': '--'},
+            'energy_inhom_pred': {'label': 'Bulk Inhom.', 'marker': 's', 'c': 'blue', 'ms': 12, 'ls': '--'},
+            'energy_full_pred': {'label': 'Bulk Hom. + Inhom.', 'marker': 's', 'c': 'red', 'ls': '--'},
+            'volume_pred': {'label': 'From dP/dV', 'marker': 'o', 'c': 'tab:blue', 'ls': '--'},
+            'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange', 'ls': '--'},
+        },
+        'vac': {
+            'energy_true': {'label': 'Vac. True', 'marker': 'o', 'c': 'black'},
+            'energy_pred0': {'label': 'Vac. No pos. change', 'marker': 'o', 'c': 'purple', 'ms': 12},
+            'energy_hom_pred': {'label': 'Vac. Hom.', 'marker': 'o', 'c': 'goldenrod'},
+            'energy_inhom_pred': {'label': 'Vac. Inhom.', 'marker': 'o', 'c': 'blue', 'ms': 12},
+            'energy_full_pred': {'label': 'Vac. Hom. + Inhom.', 'marker': 'o', 'c': 'red'},
+            'volume_pred': {'label': 'From dP/dV', 'marker': 'o', 'c': 'tab:blue'},
+            'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange'},
+        }
+    }
+
+    return method_plot_dict
+
+
+def setup_method_plot_dict2():
+
+    method_plot_dict2 = setup_method_plot_dict()
+
+    for k in method_plot_dict2:
+        for kk in method_plot_dict2[k]:
+
+            if 'full_pred' in kk:
+                method_plot_dict2[k][kk]['ms'] = 10
+                method_plot_dict2[k][kk]['lw'] = 8
+            else:
+                method_plot_dict2[k][kk]['ms'] = 8
+                method_plot_dict2[k][kk]['lw'] = 6
+
+    return method_plot_dict2
+
 
 
 def compute_formation_property(run_dict, sample, property_name_pure, property_name_vac=None):
@@ -147,7 +199,7 @@ def plot_energy_volume_deltas(ax, run_dict, sample, cmap_name='coolwarm', label_
         ax2.set_xlabel('Volume ($\mathrm{\AA}^3$)')
 
 
-def plot_formation_energy(ax, run_dict, method_plot_dict, sample):
+def plot_formation_energy(ax, run_dict, sample, method_plot_dict):
 
     s_str = f'sample_{sample}'
     delta_array = run_dict['delta_array']
@@ -162,13 +214,12 @@ def plot_formation_energy(ax, run_dict, method_plot_dict, sample):
 
     ax.plot(delta_array_sample, E_form_pred0, **method_plot_dict['formation']['energy_pred0'])
     ax.plot(delta_array_sample, E_form_hom_pred, **method_plot_dict['formation']['energy_hom_pred'])
-    ax.plot(delta_array_sample, E_form_inhom_pred, **method_plot_dict['formation']['energy_inhom_pred'])
+    #ax.plot(delta_array_sample, E_form_inhom_pred, **method_plot_dict['formation']['energy_inhom_pred'])
     ax.plot(delta_array_sample, E_form_full_pred, **method_plot_dict['formation']['energy_full_pred'])
     ax.plot(delta_array_sample, E_form_true, **method_plot_dict['formation']['energy_true'])
 
     ax.set_xlabel('Perturbation Magnitude $\delta$')
     ax.set_ylabel('Formation Energy (eV)')
-    ax.legend()
 
 
 def plot_formation_energy_error(ax, run_dict, method_plot_dict, sample, error_type='abs', legend=True):
@@ -213,7 +264,7 @@ def get_prop_array(run_dict, sample, system, prop_name):
     return prop_array
 
 
-def plot_absolute_volume(ax, run_dict, sample):
+def plot_absolute_volume(ax, run_dict, sample, method_plot_dict):
 
     s_str = f'sample_{sample}'
     delta_array = run_dict['delta_array']
@@ -332,49 +383,64 @@ def plot_energy_error(ax, run_dict, method_plot_dict, sample, error_type='abs'):
     ax.legend()
 
 
-def plot_formation_volume(ax, run_dict, sample):
+def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change=True):
 
     s_str = f'sample_{sample}'
     delta_array = run_dict['delta_array']
     delta_array_sample = [delta_array[i] for i in run_dict[s_str]['conv_idelta_list']]
 
-    vol_form_full_pred = compute_formation_property(run_dict, sample, 'volume_pred')
-    vol_form_pred_DT = compute_formation_property(run_dict, sample, 'volume_pred_DT', 'volume_pred')
-    vol_form_true = compute_formation_property(run_dict, sample, 'volume_true')
+    # One for pure, another for vacacny
+    #vol_form_pred_DT = compute_formation_property(run_dict, sample, 'volume_pred_DT', 'volume_pred')
 
-    ax.plot(delta_array_sample, vol_form_true, label='True', marker='o', c='black')
-    ax.plot(delta_array_sample, vol_form_full_pred, label='Pred. from dP/dV', marker='o')
-    ax.plot(delta_array_sample, vol_form_pred_DT, label='Pred. from D@T', marker='o', ls='--')
+    # vol_key_list = ['volume_pred', 'volume_pred_DT']
+    vol_key_list = ['volume_pred', 'volume_true']
+
+    for i, vol_key in enumerate(vol_key_list):
+
+        vol_form = compute_formation_property(run_dict, sample, vol_key)
+
+        ax.plot(delta_array_sample, vol_form, **method_plot_dict['formation'][vol_key])
+
+    if plot_no_change:
+        delta_array = run_dict['delta_array']
+        idelta0 = np.argmin(np.abs(delta_array))
+
+        vol_pure_true0 = run_dict['sample_0'][f'delta_{idelta0}']['pure']['npt']['volume_true']
+        vol_vac_true0 = run_dict['sample_0'][f'delta_{idelta0}']['vac']['npt']['volume_true']
+        vol_form_true0 = vol_vac_true0 - vol_pure_true0 * run_dict['Natom vac'] / run_dict['Natom pure']
+
+        vol_no_change_array = np.zeros_like(vol_form)
+        vol_no_change_array[:] = vol_form_true0
+        ax.plot(delta_array_sample, vol_no_change_array, **method_plot_dict['formation']['energy_pred0'], zorder=-1)
 
     ax.set_xlabel('Perturbation Magnitude $\delta$')
     ax.set_ylabel('Formation Volume ($\mathrm{\AA}^3$)')
-    ax.legend()
 
 
-def plot_formation_energy_error_bins(ax, bin_dict, method_plot_dict, spline_fill=True):
+def plot_formation_energy_error_bins(ax, bin_error_dict, method_plot_dict, spline_fill=True):
 
     # Energies
     # en_key_list = ['energy_pred0', 'energy_hom_pred', 'energy_inhom_pred', 'energy_full_pred']
     en_key_list = ['energy_pred0', 'energy_hom_pred', 'energy_full_pred']
 
-    dE_bin_centers = bin_dict['energy']['bin_centers']
+    dE_bin_centers = bin_error_dict['energy']['bin_centers']
 
     for i, en_key in enumerate(en_key_list):
 
-        bin_average = bin_dict['energy'][en_key]['average']
-        bin_perc_33 = bin_dict['energy'][en_key]['perc_33']
-        bin_perc_66 = bin_dict['energy'][en_key]['perc_66']
-        bin_std = bin_dict['energy'][en_key]['std']
+        bin_average = bin_error_dict['energy'][en_key]['average']
+        bin_perc_16 = bin_error_dict['energy'][en_key]['perc_16']
+        bin_perc_84 = bin_error_dict['energy'][en_key]['perc_84']
+        bin_std = bin_error_dict['energy'][en_key]['std']
 
         ax.plot(dE_bin_centers, bin_average, **method_plot_dict['formation'][en_key])
 
         if spline_fill:
-            dE_grid, bin_33_interp = interpolate(dE_bin_centers, bin_perc_33)
-            dE_grid, bin_66_interp = interpolate(dE_bin_centers, bin_perc_66)
-            ax.fill_between(dE_grid, bin_33_interp, bin_66_interp, alpha=0.2,
+            dE_grid, bin_16_interp = interpolate(dE_bin_centers, bin_perc_16)
+            dE_grid, bin_84_interp = interpolate(dE_bin_centers, bin_perc_84)
+            ax.fill_between(dE_grid, bin_16_interp, bin_84_interp, alpha=0.2,
                             color=method_plot_dict['formation'][en_key]['c'])
         else:
-            ax.fill_between(dE_bin_centers, bin_perc_33, bin_perc_66, alpha=0.2,
+            ax.fill_between(dE_bin_centers, bin_perc_16, bin_perc_84, alpha=0.2,
                             color=method_plot_dict['formation'][en_key]['c'])
 
     ax.set_ylabel('Energy Error (eV)')
@@ -383,33 +449,59 @@ def plot_formation_energy_error_bins(ax, bin_dict, method_plot_dict, spline_fill
     ax.set_ylabel('Formation Energy Error (eV)')
 
 
-def plot_formation_volume_error_bins(ax, bin_dict, method_plot_dict, spline_fill=True):
+def plot_formation_volume_error_bins(ax, bin_error_dict, method_plot_dict, spline_fill=True):
 
     # vol_key_list = ['volume_pred', 'volume_pred_DT']
     vol_key_list = ['volume_pred']
 
-    dV_bin_centers = bin_dict['volume']['bin_centers']
+    dV_bin_centers = bin_error_dict['volume']['bin_centers']
 
     for i, vol_key in enumerate(vol_key_list):
 
-        bin_average = bin_dict['volume'][vol_key]['average']
-        bin_perc_33 = bin_dict['volume'][vol_key]['perc_33']
-        bin_perc_66 = bin_dict['volume'][vol_key]['perc_66']
-        bin_std = bin_dict['volume'][vol_key]['std']
+        bin_average = bin_error_dict['volume'][vol_key]['average']
+        bin_perc_16 = bin_error_dict['volume'][vol_key]['perc_16']
+        bin_perc_84 = bin_error_dict['volume'][vol_key]['perc_84']
+        bin_std = bin_error_dict['volume'][vol_key]['std']
 
         ax.plot(dV_bin_centers, bin_average, **method_plot_dict['formation'][vol_key])
 
         if spline_fill:
-            dV_grid, bin_33_interp = interpolate(dV_bin_centers, bin_perc_33)
-            dV_grid, bin_66_interp = interpolate(dV_bin_centers, bin_perc_66)
-            ax.fill_between(dV_grid, bin_33_interp, bin_66_interp, alpha=0.2, color=method_plot_dict['formation'][vol_key]['c'])
+            dV_grid, bin_16_interp = interpolate(dV_bin_centers, bin_perc_16)
+            dV_grid, bin_84_interp = interpolate(dV_bin_centers, bin_perc_84)
+            ax.fill_between(dV_grid, bin_16_interp, bin_84_interp, alpha=0.2, color=method_plot_dict['formation'][vol_key]['c'])
         else:
-            ax.fill_between(dV_bin_centers, bin_perc_33, bin_perc_66, color=method_plot_dict['formation'][vol_key]['c'], alpha=0.2)
-
-    ax.set_ylabel('Volume Error ($\mathrm{\AA}^3$)')
+            ax.fill_between(dV_bin_centers, bin_perc_16, bin_perc_84, color=method_plot_dict['formation'][vol_key]['c'], alpha=0.2)
 
     ax.set_xlabel('Formation Volume Change ($\mathrm{\AA}^3$)')
     ax.set_ylabel('Formation Volume Error ($\mathrm{\AA}^3$)')
+
+
+def plot_formation_volume_bins(ax, run_dict, bin_vol_dict, method_plot_dict, spline_fill=True):
+
+    # vol_key_list = ['volume_pred', 'volume_pred_DT']
+    vol_key_list = ['volume_true', 'volume_pred']
+
+    V_bin_centers = bin_vol_dict['V_bin_centers']
+
+    for i, vol_key in enumerate(vol_key_list):
+
+        bin_average = bin_vol_dict[vol_key]['median']
+        bin_perc_16 = bin_vol_dict[vol_key]['perc_16']
+        bin_perc_84 = bin_vol_dict[vol_key]['perc_84']
+
+        atomic_volume = V_bin_centers / run_dict['Natom pure']
+
+        ax.plot(atomic_volume, bin_average, **method_plot_dict['formation'][vol_key])
+
+        if spline_fill:
+            dV_grid, bin_16_interp = interpolate(atomic_volume, bin_perc_16)
+            dV_grid, bin_84_interp = interpolate(atomic_volume, bin_perc_84)
+            ax.fill_between(dV_grid, bin_16_interp, bin_84_interp, alpha=0.2, color=method_plot_dict['formation'][vol_key]['c'])
+        else:
+            ax.fill_between(atomic_volume, bin_perc_16, bin_perc_84, color=method_plot_dict['formation'][vol_key]['c'], alpha=0.2)
+
+    ax.set_xlabel('Atomic Volume ($\mathrm{\AA}^3$)')
+    ax.set_ylabel('Formation Volume ($\mathrm{\AA}^3$)')
 
 
 def plot_formation_energy_error_average(ax, average_dict, method_plot_dict):
@@ -624,23 +716,26 @@ def average_data(run_dict):
 
             # Replace the list of values with the average
             average_dict['error']['pure'][prop_key][d_str] = [np.mean(pure_array), np.std(pure_array)]
-            # TODO: percentile -> 33, 66
-            #average_dict['error']['pure'][prop_key][d_str] = [np.mean(pure_array), np.percentile(pure_array, 33, 66)]
+            # TODO: percentile -> 16, 84
+            #average_dict['error']['pure'][prop_key][d_str] = [np.mean(pure_array), np.percentile(pure_array, 16, 84)]
             average_dict['error']['vac'][prop_key][d_str] = [np.mean(vac_array), np.std(vac_array)]
             average_dict['error']['formation'][prop_key][d_str] = [np.mean(form_array), np.std(form_array)]
 
     return average_dict
 
 
-def compute_error_bins(run_dict, E_range=None, V_range=None):
+def compute_error_bins(run_dict, E_range=None, V_range=None, dE_num_bins=50, dV_num_bins=50):
+    """
+    Form. energy and form. volume ERRORS as a function of form. energy and form. volume
+    """
 
     en_key_list = ['energy_pred0', 'energy_hom_pred', 'energy_inhom_pred', 'energy_full_pred']
     vol_key_list = ['volume_pred', 'volume_pred_DT']
     prop_key_list = en_key_list + vol_key_list
 
-    bin_dict = {}
-    bin_dict['energy'] = {}
-    bin_dict['volume'] = {}
+    bin_error_dict = {}
+    bin_error_dict['energy'] = {}
+    bin_error_dict['volume'] = {}
 
     # Find emin and emax
     delta_array = run_dict['delta_array']
@@ -693,31 +788,27 @@ def compute_error_bins(run_dict, E_range=None, V_range=None):
         emin, emax = E_range
         vmin, vmax = V_range
 
-    print(f'Formation energy at delta=0: {en_form_true0:.3f} eV')
-    print(f'Max. deviations -+: {emin:.3f} to {emax:.3f} eV')
-    print(f'Formation volume at delta=0: {vol_form_true0:.3f} A^3')
-    print(f'Max. deviations -+: {vmin:.3f} to {vmax:.3f} A^3')
+    print(f'Formation energy at delta=0: {en_form_true0:.3f} eV; range of {emin:.3f} to {emax:.3f} eV')
+    print(f'Formation volume at delta=0: {vol_form_true0:.3f} A^3; range of {vmin:.3f} to {vmax:.3f} A^3')
 
-    dE_num_bins = 20
     dE_bins = np.linspace(np.ceil(emin), np.floor(emax), dE_num_bins + 1)
     dE_bin_centers = 0.5 * (dE_bins[:-1] + dE_bins[1:])
-    bin_dict['energy']['bins'] = dE_bins
-    bin_dict['energy']['bin_centers'] = dE_bin_centers
-    bin_dict['energy']['at delta 0'] = en_form_true0
+    bin_error_dict['energy']['bins'] = dE_bins
+    bin_error_dict['energy']['bin_centers'] = dE_bin_centers
+    bin_error_dict['energy']['at delta 0'] = en_form_true0
 
-    dV_num_bins = 20
     dV_bins = np.linspace(np.ceil(vmin), np.floor(vmax), dV_num_bins + 1)
     dV_bin_centers = 0.5 * (dV_bins[:-1] + dV_bins[1:])
-    bin_dict['volume']['bins'] = dV_bins
-    bin_dict['volume']['bin_centers'] = dV_bin_centers
-    bin_dict['volume']['at delta 0'] = vol_form_true0
+    bin_error_dict['volume']['bins'] = dV_bins
+    bin_error_dict['volume']['bin_centers'] = dV_bin_centers
+    bin_error_dict['volume']['at delta 0'] = vol_form_true0
 
     for en_key in en_key_list:
-        bin_dict['energy'][en_key] = {}
-        bin_dict['energy'][en_key]['bin_errors'] = [[] for _ in range(dE_num_bins)]
+        bin_error_dict['energy'][en_key] = {}
+        bin_error_dict['energy'][en_key]['bin_errors'] = [[] for _ in range(dE_num_bins)]
     for vol_key in vol_key_list:
-        bin_dict['volume'][vol_key] = {}
-        bin_dict['volume'][vol_key]['bin_errors'] = [[] for _ in range(dV_num_bins)]
+        bin_error_dict['volume'][vol_key] = {}
+        bin_error_dict['volume'][vol_key]['bin_errors'] = [[] for _ in range(dV_num_bins)]
 
     for sample in run_dict['sample_list']:
         s_str = f'sample_{sample}'
@@ -745,7 +836,7 @@ def compute_error_bins(run_dict, E_range=None, V_range=None):
                     en_vac = run_dict[s_str][d_str]['vac']['npt'][en_key]
                     en_form = en_vac - en_pure * run_dict['Natom vac'] / run_dict['Natom pure']
                     en_form_error = en_form - en_form_true
-                    bin_dict['energy'][en_key]['bin_errors'][dE_bin_index].append(en_form_error)
+                    bin_error_dict['energy'][en_key]['bin_errors'][dE_bin_index].append(en_form_error)
 
             if 0 <= dV_bin_index < dV_num_bins:
                 for vol_key in vol_key_list:
@@ -753,24 +844,96 @@ def compute_error_bins(run_dict, E_range=None, V_range=None):
                     vol_vac = run_dict[s_str][d_str]['vac']['npt'][vol_key]
                     vol_form = vol_vac - vol_pure * run_dict['Natom vac'] / run_dict['Natom pure']
                     vol_form_error = vol_form - vol_form_true
-                    bin_dict['volume'][vol_key]['bin_errors'][dV_bin_index].append(vol_form_error)
+                    bin_error_dict['volume'][vol_key]['bin_errors'][dV_bin_index].append(vol_form_error)
 
     # Compute the average and percentiles
     for en_key in en_key_list:
-        bin_errors = bin_dict['energy'][en_key]['bin_errors']
-        bin_dict['energy'][en_key]['average'] = np.array([np.percentile(errors, 50) if errors else np.nan for errors in bin_errors])
-        bin_dict['energy'][en_key]['perc_33'] = np.array([np.percentile(errors, 33) if errors else np.nan for errors in bin_errors])
-        bin_dict['energy'][en_key]['perc_66'] = np.array([np.percentile(errors, 66) if errors else np.nan for errors in bin_errors])
-        bin_dict['energy'][en_key]['std'] = np.array([np.std(errors) if errors else np.nan for errors in bin_errors])
+        bin_errors = bin_error_dict['energy'][en_key]['bin_errors']
+        bin_error_dict['energy'][en_key]['average'] = np.array([np.percentile(errors, 50) if errors else np.nan for errors in bin_errors])
+        bin_error_dict['energy'][en_key]['perc_16'] = np.array([np.percentile(errors, 16) if errors else np.nan for errors in bin_errors])
+        bin_error_dict['energy'][en_key]['perc_84'] = np.array([np.percentile(errors, 84) if errors else np.nan for errors in bin_errors])
+        bin_error_dict['energy'][en_key]['std'] = np.array([np.std(errors) if errors else np.nan for errors in bin_errors])
 
     for vol_key in vol_key_list:
-        bin_errors = bin_dict['volume'][vol_key]['bin_errors']
-        bin_dict['volume'][vol_key]['average'] = np.array([np.percentile(errors, 50)  if errors else np.nan for errors in bin_errors])
-        bin_dict['volume'][vol_key]['perc_33'] = np.array([np.percentile(errors, 33) if errors else np.nan for errors in bin_errors])
-        bin_dict['volume'][vol_key]['perc_66'] = np.array([np.percentile(errors, 66) if errors else np.nan for errors in bin_errors])
-        bin_dict['volume'][vol_key]['std'] = np.array([np.std(errors) if errors else np.nan for errors in bin_errors])
+        bin_errors = bin_error_dict['volume'][vol_key]['bin_errors']
+        bin_error_dict['volume'][vol_key]['average'] = np.array([np.percentile(errors, 50) if errors else np.nan for errors in bin_errors])
+        bin_error_dict['volume'][vol_key]['perc_16'] = np.array([np.percentile(errors, 16) if errors else np.nan for errors in bin_errors])
+        bin_error_dict['volume'][vol_key]['perc_84'] = np.array([np.percentile(errors, 84) if errors else np.nan for errors in bin_errors])
+        bin_error_dict['volume'][vol_key]['std'] = np.array([np.std(errors) if errors else np.nan for errors in bin_errors])
 
-    return bin_dict
+    return bin_error_dict
+
+
+def compute_form_volume_bins(run_dict, V_range=None, V_num_bins=50):
+    """
+    Predicted and true formation volume as a function of bulk volume
+    """
+
+    bin_vol_dict = {}
+
+    vol_key_list = ['volume_true', 'volume_pred', 'volume_pred_DT']
+
+    delta_array = run_dict['delta_array']
+    idelta0 = np.argmin(np.abs(delta_array))
+    V_pure_true0 = run_dict['sample_0'][f'delta_{idelta0}']['pure']['npt']['volume_true']
+
+    # Find the volume range
+    if V_range is None:
+        V_min, V_max = V_pure_true0, V_pure_true0
+
+        for sample in run_dict['sample_list']:
+            s_str = f'sample_{sample}'
+            # Only the filtered deltas
+            delta_sample_list = run_dict[s_str]['conv_idelta_list']
+            for delta in delta_sample_list:
+                d_str = f'delta_{delta}'
+                V_pure_true = run_dict[s_str][d_str]['pure']['npt']['volume_true']
+
+                if V_pure_true < V_min:
+                    V_min = V_pure_true
+                elif V_pure_true > V_max:
+                    V_max = V_pure_true
+    else:
+        V_min, V_max = V_range
+
+    print(f'Bulk volume at delta=0: {V_pure_true0:.3f} A^3. Range: from {V_min:.3f} to {V_max:.3f} A^3')
+
+    V_bins = np.linspace(V_min, V_max, V_num_bins + 1)
+    V_bin_centers = 0.5 * (V_bins[:-1] + V_bins[1:])
+
+    bin_vol_dict['V_bins'] = V_bins
+    bin_vol_dict['V_bin_centers'] = V_bin_centers
+    bin_vol_dict['at delta 0'] = V_pure_true0
+
+    for vol_key in vol_key_list:
+        bin_vol_dict[vol_key] = {}
+        bin_vol_dict[vol_key]['bin_vals'] = [[] for _ in range(V_num_bins)]
+
+    for sample in run_dict['sample_list']:
+        s_str = f'sample_{sample}'
+        # Only the filtered deltas
+        delta_sample_list = run_dict[s_str]['conv_idelta_list']
+        for delta in delta_sample_list:
+            d_str = f'delta_{delta}'
+
+            vol_pure_true = run_dict[s_str][d_str]['pure']['npt']['volume_true']
+            V_bin_index = np.digitize(vol_pure_true, V_bins) - 1
+
+            if 0 <= V_bin_index < V_num_bins:
+                for vol_key in vol_key_list:
+                    vol_pure = run_dict[s_str][d_str]['pure']['npt'][vol_key]
+                    vol_vac = run_dict[s_str][d_str]['vac']['npt'][vol_key]
+                    vol_form = vol_vac - vol_pure * run_dict['Natom vac'] / run_dict['Natom pure']
+
+                    bin_vol_dict[vol_key]['bin_vals'][V_bin_index].append(vol_form)
+
+    for vol_key in vol_key_list:
+        bin_vals = bin_vol_dict[vol_key]['bin_vals']
+        bin_vol_dict[vol_key]['median'] = np.array([np.percentile(vals, 50) if bin_vals else np.nan for vals in bin_vals])
+        bin_vol_dict[vol_key]['perc_16'] = np.array([np.percentile(vals, 16) if bin_vals else np.nan for vals in bin_vals])
+        bin_vol_dict[vol_key]['perc_84'] = np.array([np.percentile(vals, 84) if bin_vals else np.nan for vals in bin_vals])
+
+    return bin_vol_dict
 
 
 def cut_data(run_dict, delta_min=-50.0, delta_max=50.0, verbose=False):
@@ -822,8 +985,11 @@ def filter_data_energy_volume(run_dict, atol=1e-7, rtol=50.0, verbose=False):
     return run_dict
 
 
-def get_run_dict(from_samples='False'):
+def get_run_dict(from_samples='False', save_run_dict=True):
 
+    print('='*60)
+    print('Reading the pickle files')
+    print('='*60)
     if from_samples:
         run_dict = {}
         s_read_list = []
@@ -836,18 +1002,36 @@ def get_run_dict(from_samples='False'):
 
                 run_dict[s_str] = sample_dict
 
+        if len(s_read_list) == 0:
+            raise RuntimeError('No sample_... .pkl files in the directory.')
+
         s_str0 = list(run_dict.keys())[0]
         for k, v in run_dict[s_str0]['system_info'].items():
             run_dict[k] = v
 
         s_read_list = sorted(s_read_list)
-        print(f'Read samples: {s_read_list}')
+
+        run_dict['sample_list'] = s_read_list
+        samples_missing = False
+        print(f'Samples from {s_read_list[0]} to {s_read_list[-1]}')
+        for isample in range(s_read_list[0], s_read_list[-1]):
+            if isample not in s_read_list:
+                print(f'!MISSING SAMPLE! {isample}')
+                samples_missing = True
+        if not samples_missing:
+            print('No missing samples in the range')
+
+        if save_run_dict:
+            with open('run_dict.pkl', 'wb') as file:
+                pickle.dump(run_dict, file)
 
     else:
         pickle_filename = 'run_dict.pkl'
         print(f'Reading {pickle_filename}...')
         with open(pickle_filename, 'rb') as f:
             run_dict = pickle.load(f)
+
+    print('='*60+'\n')
 
     return run_dict
 
@@ -857,9 +1041,11 @@ def main():
     plot_dir = 'plots'
     os.makedirs(plot_dir, exist_ok=True)
 
-    from_samples = True
-    #from_samples = False
+    #from_samples = True
+    from_samples = False
     run_dict = get_run_dict(from_samples=from_samples)
+    method_plot_dict = setup_method_plot_dict()
+    method_plot_dict2 = setup_method_plot_dict2()
 
     print(f'Number of atoms in pure system: {run_dict["Natom pure"]}')
     print(f'Number of atoms in vacancy system: {run_dict["Natom vac"]}')
@@ -871,6 +1057,9 @@ def main():
     # Hard-remove deltas from -50.0 to 50.0
     #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
 
+    average_dict = average_data(run_dict)
+    bin_error_dict = compute_error_bins(run_dict, E_range=(-1, 1), V_range=(-3, 3), dE_num_bins=15, dV_num_bins=15)
+
     # Plot success_matrix
     plot_succ_matrix = False
     #plot_succ_matrix = True
@@ -879,42 +1068,14 @@ def main():
         plot_success_matrix(ax, run_dict)
         fig.savefig(os.path.join('plots', 'success_matrix.pdf'))
 
-    method_plot_dict = {
-        'formation': {
-            'energy_true': {'label': 'True', 'marker': 'o', 'c': 'black'},
-            'energy_pred0': {'label': 'No pos. change', 'marker': 'o', 'c': 'purple'},
-            'energy_hom_pred': {'label': 'Hom.', 'marker': 'o', 'c': 'goldenrod'},
-            'energy_inhom_pred': {'label': 'Inhom.', 'marker': 'o', 'c': 'blue'},
-            'energy_full_pred': {'label': 'Hom. + Inhom.', 'marker': 'o', 'c': 'red'},
-            'volume_pred': {'label': 'From dP/dV', 'marker': 'o', 'c': 'tab:blue'},
-            'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange'},
-        },
-        'pure': {
-            'energy_true': {'label': 'Bulk True', 'marker': 's', 'c': 'black', 'ls': '--'},
-            'energy_pred0': {'label': 'Bulk No pos. change', 'marker': 's', 'c': 'purple', 'ms': 12, 'ls': '--'},
-            'energy_hom_pred': {'label': 'Bulk Hom.', 'marker': 's', 'c': 'goldenrod', 'ls': '--'},
-            'energy_inhom_pred': {'label': 'Bulk Inhom.', 'marker': 's', 'c': 'blue', 'ms': 12, 'ls': '--'},
-            'energy_full_pred': {'label': 'Bulk Hom. + Inhom.', 'marker': 's', 'c': 'red', 'ls': '--'},
-            'volume_pred': {'label': 'From dP/dV', 'marker': 'o', 'c': 'tab:blue', 'ls': '--'},
-            'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange', 'ls': '--'},
-        },
-        'vac': {
-            'energy_true': {'label': 'Vac. True', 'marker': 'o', 'c': 'black'},
-            'energy_pred0': {'label': 'Vac. No pos. change', 'marker': 'o', 'c': 'purple', 'ms': 12},
-            'energy_hom_pred': {'label': 'Vac. Hom.', 'marker': 'o', 'c': 'goldenrod'},
-            'energy_inhom_pred': {'label': 'Vac. Inhom.', 'marker': 'o', 'c': 'blue', 'ms': 12},
-            'energy_full_pred': {'label': 'Vac. Hom. + Inhom.', 'marker': 'o', 'c': 'red'},
-            'volume_pred': {'label': 'From dP/dV', 'marker': 'o', 'c': 'tab:blue'},
-            'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange'},
-        }
-    }
-
     #
     # Plotting physical data
     #
-    sample = 1
-    #sample = 80
+    #sample = 5
+    sample = 20
     #sample = 62
+
+    bin_vol_dict = compute_form_volume_bins(run_dict, V_range=None, V_num_bins=20)
 
     #plot_coordinate_error = True
     plot_coordinate_error = False
@@ -928,6 +1089,7 @@ def main():
     # Layout 2x2
     #
     plot_2x2 = False
+    #plot_2x2 = True
     if plot_2x2:
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         plt.subplots_adjust(left=0.07, right=0.96, bottom=0.09, top=0.97, wspace=0.22, hspace=0.01)
@@ -939,14 +1101,14 @@ def main():
         plot_energy_volume_deltas(ax_inset, run_dict, sample, fsize_bar=12)
 
         # Formation energies
-        plot_formation_energy(axes[1, 0], run_dict, method_plot_dict, sample)
+        plot_formation_energy(axes[1, 0], run_dict, sample, method_plot_dict)
 
         # Absolute volume
-        plot_absolute_volume(axes[0, 1], run_dict, sample)
+        plot_absolute_volume(axes[0, 1], run_dict, sample, method_plot_dict)
         axes[0, 1].set_xticklabels([])
 
         # Formation volume
-        plot_formation_volume(axes[1, 1], run_dict, sample)
+        plot_formation_volume(axes[1, 1], run_dict, sample, method_plot_dict)
 
     #fig, ax = plt.subplots(1, 1, figsize=(12, 8))
     #plot_energy_error(ax, run_dict, sample, error_type='abs')
@@ -967,18 +1129,19 @@ def main():
         plot_energy_volume_deltas(axes[0], run_dict, sample)
 
         # Formation energies
-        plot_formation_energy(axes[1], run_dict, method_plot_dict, sample)
+        plot_formation_energy(axes[1], run_dict, sample, method_plot_dict)
         axes[1].set_title(f'ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}; sample {sample}')
 
         # Formation volume
-        plot_formation_volume(axes[2], run_dict, sample)
+        plot_formation_volume(axes[2], run_dict, sample, method_plot_dict)
 
         plt.show()
 
     #
     # Layout 2x2
     #
-    plot_2x2_new = True
+    #plot_2x2_new = True
+    plot_2x2_new = False
     if plot_2x2_new:
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         plt.subplots_adjust(left=0.08, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
@@ -987,14 +1150,39 @@ def main():
         plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='Paired') # 'coolwarm')
 
         # Formation volume
-        plot_formation_volume(axes[1, 1], run_dict, sample)
+        plot_formation_volume(axes[1, 1], run_dict, sample, method_plot_dict)
 
         # Formation energies
-        plot_formation_energy(axes[0, 0], run_dict, method_plot_dict, sample)
+        plot_formation_energy(axes[0, 0], run_dict, sample, method_plot_dict)
         axes[0, 1].set_title(f'ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}; sample {sample}', y=1.15, x=-0.2, fontsize=25)
 
         # Formation energies error
         plot_formation_energy_error(axes[1, 0], run_dict, method_plot_dict, sample, legend=False)
+
+        plt.show()
+
+    plot_2x2_two_samples = True
+    #plot_2x2_two_samples = False
+    if plot_2x2_two_samples:
+
+        sample1 = 20
+        sample2 = 80
+
+        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        plt.subplots_adjust(left=0.07, right=0.98, bottom=0.07, top=0.97, wspace=0.2, hspace=0.01)
+        plot_formation_volume(axes[0, 0], run_dict, sample1, method_plot_dict2)
+        plot_formation_energy(axes[1, 0], run_dict, sample1, method_plot_dict2)
+
+        axes[0, 0].set_xticklabels([])
+        axes[0, 1].set_xticklabels([])
+
+        plot_formation_volume(axes[0, 1], run_dict, sample2, method_plot_dict2)
+        plot_formation_energy(axes[1, 1], run_dict, sample2, method_plot_dict2)
+
+        axes[0, 0].legend()
+        axes[1, 0].legend()
+
+        fig.savefig(os.path.join(plot_dir, f'two_samples_2x2_{sample1}_{sample2}.pdf'))
 
         plt.show()
 
@@ -1010,10 +1198,10 @@ def main():
             plot_energy_volume_deltas(axes[0, 1], run_dict, sample, label_pad=0, second_xaxis=True, cmap_name='Paired') # jet
 
             # Formation volume
-            plot_formation_volume(axes[1, 1], run_dict, sample)
+            plot_formation_volume(axes[1, 1], run_dict, sample, method_plot_dict)
 
             # Formation energies
-            plot_formation_energy(axes[0, 0], run_dict, method_plot_dict, sample)
+            plot_formation_energy(axes[0, 0], run_dict, sample, method_plot_dict)
             axes[0, 1].set_title(f'ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}; sample {sample}',
                                  y=1.15, x=-0.2, fontsize=25)
 
@@ -1035,7 +1223,7 @@ def main():
     #plot_av_data = True
     plot_av_data = False
     if plot_av_data:
-        average_dict = average_data(run_dict)
+
 
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         plt.subplots_adjust(left=0.08, right=0.96, bottom=0.09, top=0.95, wspace=0.22, hspace=0.01)
@@ -1057,32 +1245,46 @@ def main():
 
         plt.show()
 
-    plot_av_data_bins = True
-    #plot_av_data_bins = False
+    #plot_av_data_bins = True
+    plot_av_data_bins = False
     if plot_av_data_bins:
-        average_dict = average_data(run_dict)
-        bin_dict = compute_error_bins(run_dict, E_range=(-1, 1), V_range=(-3, 3))
+
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-        #plt.subplots_adjust(left=0.08, right=0.96, bottom=0.09, top=0.95, wspace=0.22, hspace=0.01)
-        plt.subplots_adjust(left=0.07, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
+        plt.subplots_adjust(left=0.07, right=0.97, bottom=0.07, top=0.97, wspace=0.2, hspace=0.2)
+        plot_formation_energy(axes[0, 0], run_dict, sample, method_plot_dict)
+        plot_formation_volume(axes[0, 1], run_dict, sample, method_plot_dict)
+        spline_fill = True
+        #spline_fill = False
+        plot_formation_energy_error_bins(axes[1, 0], bin_error_dict, method_plot_dict, spline_fill=spline_fill)
+        plot_formation_volume_error_bins(axes[1, 1], bin_error_dict, method_plot_dict, spline_fill=spline_fill)
 
-        sample_list = run_dict['sample_list']
-
-        plot_formation_energy(axes[0, 0], run_dict, method_plot_dict, sample)
-        plot_formation_volume(axes[0, 1], run_dict, sample)
-        plot_formation_energy_error_bins(axes[1, 0], bin_dict, method_plot_dict, spline_fill=True)
-        plot_formation_volume_error_bins(axes[1, 1], bin_dict, method_plot_dict, spline_fill=True)
-
-        for ax in axes.flatten():
-            ax.legend()
-
-        #axes[0, 1].set_title(f'AVERAGE OVER {len(sample_list)} samples; ncell_x={run_dict["ncell_x"]};'
-        #                     f' Natom={run_dict["Natom pure"]}', y=1.01, x=-0.2, fontsize=25)
-
-        #axes[0, 1].set_xticklabels([])
-        #axes[1, 1].set_xticklabels([])
+        for ax_idx in [(0, 0), (1, 0)]:
+            axes[ax_idx].legend()
 
         fig.savefig(os.path.join(plot_dir, 'average_data_bins.pdf'))
+
+        plt.show()
+
+    plot_av_data_bins_1x3 = True
+    if plot_av_data_bins_1x3:
+
+        # for 3x1
+        #fig, axes = plt.subplots(1, 3, figsize=(7, 13))
+        #plt.subplots_adjust(left=0.145, right=0.97, bottom=0.05, top=0.995, wspace=0.2, hspace=0.27)
+
+        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+        plt.subplots_adjust(left=0.05, right=0.985, bottom=0.13, top=0.96, wspace=0.24, hspace=0.27)
+
+        spline_fill = True
+        #spline_fill = False
+        plot_formation_volume_bins(axes[0], run_dict, bin_vol_dict, method_plot_dict, spline_fill=spline_fill)
+        plot_formation_volume_error_bins(axes[1], bin_error_dict, method_plot_dict, spline_fill=spline_fill)
+        plot_formation_energy_error_bins(axes[2], bin_error_dict, method_plot_dict, spline_fill=spline_fill)
+
+        axes[0].legend(loc='upper left')
+        axes[2].legend()
+
+        fig.savefig(os.path.join(plot_dir, 'average_data_bins_1x3.pdf'))
 
         plt.show()
 

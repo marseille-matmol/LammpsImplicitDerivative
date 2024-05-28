@@ -822,19 +822,44 @@ def filter_data_energy_volume(run_dict, atol=1e-7, rtol=50.0, verbose=False):
     return run_dict
 
 
+def get_run_dict(from_samples='False'):
+
+    if from_samples:
+        run_dict = {}
+        s_read_list = []
+        for fname in os.listdir():
+            if fname.startswith('sample_') and fname.endswith('.pkl'):
+                s_str = fname.split('.')[0]
+                s_read_list.append(int(s_str.split('_')[-1]))
+                with open(fname, 'rb') as fstream:
+                    sample_dict = pickle.load(fstream)
+
+                run_dict[s_str] = sample_dict
+
+        s_str0 = list(run_dict.keys())[0]
+        for k, v in run_dict[s_str0]['system_info'].items():
+            run_dict[k] = v
+
+        s_read_list = sorted(s_read_list)
+        print(f'Read samples: {s_read_list}')
+
+    else:
+        pickle_filename = 'run_dict.pkl'
+        print(f'Reading {pickle_filename}...')
+        with open(pickle_filename, 'rb') as f:
+            run_dict = pickle.load(f)
+
+    return run_dict
+
+
 def main():
 
     plot_dir = 'plots'
     os.makedirs(plot_dir, exist_ok=True)
 
-    # Read the pickle file: run_dict.pkl
-    pickle_filename = 'run_dict.pkl'
-    #pickle_filename = './ncell_x_3_dense_npt2/run_dict.pkl'
-    #pickle_filename = './NERSC/ncell_x_4_energy/run_dict.pkl'
-
-    print(f'Reading {pickle_filename}...')
-    with open(pickle_filename, 'rb') as f:
-        run_dict = pickle.load(f)
+    from_samples = True
+    #from_samples = False
+    run_dict = get_run_dict(from_samples=from_samples)
 
     print(f'Number of atoms in pure system: {run_dict["Natom pure"]}')
     print(f'Number of atoms in vacancy system: {run_dict["Natom vac"]}')
@@ -887,8 +912,8 @@ def main():
     #
     # Plotting physical data
     #
-    #sample = 1
-    sample = 80
+    sample = 1
+    #sample = 80
     #sample = 62
 
     #plot_coordinate_error = True

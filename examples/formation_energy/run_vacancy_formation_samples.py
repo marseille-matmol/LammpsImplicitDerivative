@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import pickle
 import os
+import copy
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,11 +13,7 @@ from scipy.interpolate import CubicSpline
 from lammps_implicit_der import LammpsImplicitDer, SNAP
 from lammps_implicit_der.tools import mpi_print, initialize_mpi, TimingGroup, plot_tools, \
                                       compute_energy_volume, create_perturbed_system, run_npt_implicit_derivative
-from lammps_implicit_der.tools.npt_tools import run_npt_implicit_derivative2
-from lammps_implicit_der.tools.npt_tools import run_npt_implicit_derivative3
-from lammps_implicit_der.tools.error_tools import coord_error
 from lammps_implicit_der.systems import BccVacancy, Bcc
-#from lammps_implicit_der.tools.error_tools import coord_error
 
 
 def get_min(en_vol_dict, ncell_x):
@@ -45,6 +42,9 @@ def main():
 
     ncell_x = int(sys.argv[1])
     impl_der_method = sys.argv[2]
+
+    sample_first = int(sys.argv[3])
+    sample_last = int(sys.argv[4])
 
     alat0 = 3.18
     snapcoeff_filename = 'W_NEW.snapcoeff'
@@ -141,10 +141,11 @@ def main():
 
         delta_array = np.linspace(-100.0, 100.0, 11)
         #delta_array = np.linspace(-10.0, 10.0, 3)
-
+        #delta_array = np.linspace(-30.0, 30.0, 61)
         # For energy-volume curves
         #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 15)
         epsilon_array_en_vol = np.linspace(-0.05, 0.05, 25)
+        #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 101)
 
         run_dict['delta_array'] = delta_array
 
@@ -157,17 +158,21 @@ def main():
 
         trun_npt = TimingGroup('NPT implicit derivative')
 
-        sample_list = list(range(0, 100))
-        #sample_list = list(range(0, 10))
-        #sample_list = [37]
+        sample_list = np.arange(sample_first, sample_last + 1)
         run_dict['sample_list'] = sample_list
 
         for sample in sample_list:
 
+            trun.add('sample').start()
             mpi_print('\n'+'*'*80+f'\n{sample = }'+'\n'+'*'*80, comm=comm)
 
             s_str = f'sample_{sample}'
-            run_dict[s_str] = {}
+            sample_dict = {}
+            sample_dict['system_info'] = {}
+            # Copy all the system info into sample_dict
+            for k, v in run_dict.items():
+                if 'sample' not in k or k == 'sample_list':
+                    sample_dict['system_info'][k] = v
 
             # delta values for converged box/relax
             conv_idelta_list = []
@@ -175,9 +180,9 @@ def main():
             for idelta, delta in enumerate(delta_array):
                 mpi_print(f'\n{idelta+1}/{len(delta_array)}, {delta=:.1f}', comm=comm)
                 d_str = f'delta_{idelta}'
-                run_dict[s_str][d_str] = {}
-                run_dict[s_str][d_str]['pure'] = {}
-                run_dict[s_str][d_str]['vac'] = {}
+                sample_dict[d_str] = {}
+                sample_dict[d_str]['pure'] = {}
+                sample_dict[d_str]['vac'] = {}
 
                 mpi_print('   Eergy-volume curves...', comm=comm)
                 with trun.add('en.-vol. curves'):
@@ -192,15 +197,15 @@ def main():
 
                     if bcc_pure_tmp is None or bcc_vac_tmp is None:
                         mpi_print('   Error in creating perturbed systems.', comm=comm)
-                        run_dict[s_str][d_str]['pure'] = None
-                        run_dict[s_str][d_str]['vac'] = None
+                        sample_dict[d_str]['pure'] = None
+                        sample_dict[d_str]['vac'] = None
                         continue
 
                     en_vol_pure_dict = compute_energy_volume(bcc_pure_tmp, epsilon_array_en_vol)
                     en_vol_vac_dict = compute_energy_volume(bcc_vac_tmp, epsilon_array_en_vol)
 
-                    run_dict[s_str][d_str]['pure']['en_vol'] = en_vol_pure_dict
-                    run_dict[s_str][d_str]['vac']['en_vol'] = en_vol_vac_dict
+                    sample_dict[d_str]['pure']['en_vol'] = en_vol_pure_dict
+                    sample_dict[d_str]['vac']['en_vol'] = en_vol_vac_dict
 
                 mpi_print('   NPT minimization...', comm=comm)
                 with trun.add('npt'):
@@ -220,13 +225,22 @@ def main():
                     if comm is not None:
                         comm.Barrier()
 
-                    run_dict[s_str][d_str]['pure']['npt'] = pure_dict
-                    run_dict[s_str][d_str]['vac']['npt'] = vac_dict
+                    sample_dict[d_str]['pure']['npt'] = pure_dict
+                    sample_dict[d_str]['vac']['npt'] = vac_dict
 
                     if pure_dict is not None and vac_dict is not None:
                         conv_idelta_list.append(idelta)
 
-                run_dict[s_str]['conv_idelta_list'] = conv_idelta_list
+                sample_dict['conv_idelta_list'] = conv_idelta_list
+                run_dict[s_str] = copy.deepcopy(sample_dict)
+
+                if rank == 0:
+                    with open(f'{s_str}.pkl', 'wb') as file:
+                        pickle.dump(sample_dict, file)
+
+            trun.timings['sample'].stop()
+            if rank == 0:
+                print(trun.timings['sample'])
 
     mpi_print(trun_npt, comm=comm)
 

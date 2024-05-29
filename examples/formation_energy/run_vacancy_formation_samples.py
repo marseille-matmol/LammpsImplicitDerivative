@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import pickle
 import os
 import copy
@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from scipy.interpolate import CubicSpline
 
@@ -85,7 +86,7 @@ def main():
 
         epsilon_array = np.linspace(-0.03, 0.03, 101)
         en_vol_pure_dict = compute_energy_volume(bcc_pure, epsilon_array)
-        en_vol_vac_dict = compute_energy_volume(bcc_vac, epsilon_array)
+        en_vol_vac_dict = compute_energy_volume(bcc_vac, epsilon_array, compute_forces=True)
 
         # We keep alat computed from fix box/relax, alat from E-V curves is not used
         energy_pure_min, volume_pure_min, pressure_pure_min, alat_tmp = \
@@ -100,25 +101,31 @@ def main():
         run_dict['Natom vac'] = bcc_vac.Natom
 
     with trun.add('virial derivatives'):
-        spline_list_pure = []
-        spline_list_vac = []
+        spline_virial_list_pure = []
+        spline_virial_list_vac = []
+        spline_force_list_vac = []
 
         volume_array_pure = en_vol_pure_dict['volume_array']
         volume_array_vac = en_vol_vac_dict['volume_array']
 
         virial_array_pure = en_vol_pure_dict['virial_array']
         virial_array_vac = en_vol_vac_dict['virial_array']
+        force_array_vac = en_vol_vac_dict['force_array']
 
         for idesc in range(bcc_pure.Ndesc):
 
             virial_trace_array_pure = np.sum(virial_array_pure[:, :3, :], axis=1) / 3.0
-            spline_list_pure.append(CubicSpline(volume_array_pure, virial_trace_array_pure[:, idesc]))
+            spline_virial_list_pure.append(CubicSpline(volume_array_pure, virial_trace_array_pure[:, idesc]))
 
             virial_trace_array_vac = np.sum(virial_array_vac[:, :3, :], axis=1) / 3.0
-            spline_list_vac.append(CubicSpline(volume_array_vac, virial_trace_array_vac[:, idesc]))
+            spline_virial_list_vac.append(CubicSpline(volume_array_vac, virial_trace_array_vac[:, idesc]))
 
-        virial_der_pure0 = np.array([spline_list_pure[idesc](volume_pure_min, nu=1) for idesc in range(bcc_pure.Ndesc)])
-        virial_der_vac0 = np.array([spline_list_vac[idesc](volume_vac_min, nu=1) for idesc in range(bcc_vac.Ndesc)])
+        for icoord in range(bcc_vac.Natom * 3):
+            spline_force_list_vac.append(CubicSpline(volume_array_pure, force_array_vac[:, icoord]))
+
+        virial_der_pure0 = np.array([spline_virial_list_pure[idesc](volume_pure_min, nu=1) for idesc in range(bcc_pure.Ndesc)])
+        virial_der_vac0 = np.array([spline_virial_list_vac[idesc](volume_vac_min, nu=1) for idesc in range(bcc_vac.Ndesc)])
+        force_der_vac0 = np.array([spline_force_list_vac[icoord](volume_vac_min, nu=1) for icoord in range(bcc_vac.Natom * 3)])
 
         bcc_pure.compute_virial()
         bcc_pure.gather_virial()
@@ -220,7 +227,7 @@ def main():
                     vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
                                                            snapcoeff_filename, snapparam_filename,
                                                            virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
-                                                           dX_dTheta_vac_inhom, comm=comm, trun=trun_npt)
+                                                           dX_dTheta_vac_inhom, force_der0=force_der_vac0, comm=comm, trun=trun_npt)
 
                     if comm is not None:
                         comm.Barrier()

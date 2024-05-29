@@ -24,6 +24,9 @@ plotparams['font.size'] = 16
 plotparams['figure.subplot.wspace'] = 0.2
 plotparams['axes.labelsize'] = 20 #22
 
+#plotparams['text.usetex'] = True
+#plotparams['text.latex.preamble'] = r'\usepackage{amsmath}'
+
 plt.rcParams.update(plotparams)
 
 
@@ -33,11 +36,12 @@ def setup_method_plot_dict():
         'formation': {
             'energy_true': {'label': 'True', 'marker': 'o', 'c': 'black'},
             'energy_pred0': {'label': 'No pos. change', 'marker': 'o', 'c': 'purple'},
-            'energy_hom_pred': {'label': 'Hom.', 'marker': 'o', 'c': 'goldenrod'},
+            'energy_hom_pred': {'label': 'Homogeneous', 'marker': 'o', 'c': 'goldenrod'},
             'energy_inhom_pred': {'label': 'Inhom.', 'marker': 'o', 'c': 'blue'},
             'energy_full_pred': {'label': 'Hom. + Inhom.', 'marker': 'o', 'c': 'red', 'ms': 12},
             'volume_true': {'label': 'True', 'marker': 'o', 'c': 'black'},
-            'volume_pred': {'label': 'Predicted', 'marker': 'o', 'c': 'tab:blue', 'ms': 12},
+            'volume_pred': {'label': 'Homogeneous', 'marker': 'o', 'c': 'goldenrod', 'ms': 12},
+            'volume_pred_full': {'label': 'Hom. + Inhom.', 'marker': 'o', 'c': 'red', 'ms': 8},
             'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange'},
         },
         'pure': {
@@ -46,7 +50,7 @@ def setup_method_plot_dict():
             'energy_hom_pred': {'label': 'Bulk Hom.', 'marker': 's', 'c': 'goldenrod', 'ls': '--'},
             'energy_inhom_pred': {'label': 'Bulk Inhom.', 'marker': 's', 'c': 'blue', 'ms': 12, 'ls': '--'},
             'energy_full_pred': {'label': 'Bulk Hom. + Inhom.', 'marker': 's', 'c': 'red', 'ls': '--'},
-            'volume_pred': {'label': 'From dP/dV', 'marker': 'o', 'c': 'tab:blue', 'ls': '--'},
+            'volume_pred': {'label': 'Homogeneous', 'marker': 'o', 'c': 'goldenrod', 'ls': '--'},
             'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange', 'ls': '--'},
         },
         'vac': {
@@ -55,7 +59,7 @@ def setup_method_plot_dict():
             'energy_hom_pred': {'label': 'Vac. Hom.', 'marker': 'o', 'c': 'goldenrod'},
             'energy_inhom_pred': {'label': 'Vac. Inhom.', 'marker': 'o', 'c': 'blue', 'ms': 12},
             'energy_full_pred': {'label': 'Vac. Hom. + Inhom.', 'marker': 'o', 'c': 'red'},
-            'volume_pred': {'label': 'From dP/dV', 'marker': 'o', 'c': 'tab:blue'},
+            'volume_pred': {'label': 'Homogeneous', 'marker': 'o', 'c': 'goldenrod'},
             'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange'},
         }
     }
@@ -78,7 +82,6 @@ def setup_method_plot_dict2():
                 method_plot_dict2[k][kk]['lw'] = 6
 
     return method_plot_dict2
-
 
 
 def compute_formation_property(run_dict, sample, property_name_pure, property_name_vac=None):
@@ -115,7 +118,7 @@ def plot_success_matrix(ax, run_dict):
     ax.imshow(success_matrix, cmap=cmap, aspect='auto')
     ax.set_xticks(2*np.array(range(len(delta_array[::2]))))
     ax.set_xticklabels([f'{delta:.0f}' for delta in delta_array[::2]])
-    ax.set_xlabel('Perturbation magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel('Sample index')
     #ax.yaxis.set_major_locator(MultipleLocator(1))
 
@@ -139,7 +142,7 @@ def plot_lattice_constant(ax, run_dict, sample):
 
     ax.plot(delta_array[idelta_en_vol_list], alat_pure_list, lw=4.0, label='Bulk latt')
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel('Lattice constant ($\mathrm{\AA}$)')
     ax.set_ylim(3.05, 3.22)
     ax.yaxis.set_major_locator(MultipleLocator(0.05))
@@ -188,7 +191,7 @@ def plot_energy_volume_deltas(ax, run_dict, sample, cmap_name='coolwarm', label_
     else:
         ax.set_xlabel('Strain Magnitude (%)')
         ax.set_ylabel('Energy (eV)')
-        cbar.set_label('Perturbation Magnitude $\delta$', labelpad=label_pad)
+        cbar.set_label('Perturbation Magnitude $\lambda$', labelpad=label_pad)
 
     if second_xaxis:
         ax2 = ax.twiny()
@@ -218,7 +221,7 @@ def plot_formation_energy(ax, run_dict, sample, method_plot_dict):
     ax.plot(delta_array_sample, E_form_full_pred, **method_plot_dict['formation']['energy_full_pred'])
     ax.plot(delta_array_sample, E_form_true, **method_plot_dict['formation']['energy_true'])
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel('Formation Energy (eV)')
 
 
@@ -246,7 +249,7 @@ def plot_formation_energy_error(ax, run_dict, method_plot_dict, sample, error_ty
     ax.plot(delta_array_sample, E_form_inhom_pred_error, **method_plot_dict['formation']['energy_inhom_pred'])
     ax.plot(delta_array_sample, E_form_full_pred_error, **method_plot_dict['formation']['energy_full_pred'])
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
 
     if error_type == 'abs':
         ax.set_ylabel('Formation Energy Error (eV)')
@@ -279,7 +282,7 @@ def plot_absolute_volume(ax, run_dict, sample, method_plot_dict):
     ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'vac', 'volume_pred'), label='Vac. Pred. from dP/dV', marker='o')
     ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'vac', 'volume_pred_DT'), label='Vac. Pred. from D@T', marker='o', ls='--')
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel('Volume ($\mathrm{\AA}^3$)')
     ax.legend()
 
@@ -303,7 +306,7 @@ def plot_absolute_energy(ax, run_dict, sample):
     ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'vac', 'energy_inhom_pred'), label='Vac. Inhom.', marker='o', c='blue')
     ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'vac', 'energy_full_pred'), label='Vac. Hom. + Inhom.', marker='o', c='red')
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel('Energy (eV)')
     ax.legend()
 
@@ -326,7 +329,7 @@ def plot_coord_error(ax, run_dict, method_plot_dict, sample):
 
     #ax.plot(delta_array_sample, get_prop_array(run_dict, sample, 'pure', 'coord_error_full'), label='Pure Hom. + Inhom.', marker='s')
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel(r"Coordinate Error, $\mathrm{\AA}$")
     ax.legend()
 
@@ -373,7 +376,7 @@ def plot_energy_error(ax, run_dict, method_plot_dict, sample, error_type='abs'):
     error_full = error_func(get_prop_array(run_dict, sample, 'vac', 'energy_full_pred'), vac_true)
     ax.plot(delta_array_sample, error_full, **method_plot_dict['vac']['energy_full_pred'])
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
 
     if error_type == 'abs':
         ax.set_ylabel('Energy Error (eV)')
@@ -393,15 +396,11 @@ def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change
     #vol_form_pred_DT = compute_formation_property(run_dict, sample, 'volume_pred_DT', 'volume_pred')
 
     # vol_key_list = ['volume_pred', 'volume_pred_DT']
-    vol_key_list = ['volume_pred', 'volume_true']
-
-    for i, vol_key in enumerate(vol_key_list):
-
-        vol_form = compute_formation_property(run_dict, sample, vol_key)
-
-        ax.plot(delta_array_sample, vol_form, **method_plot_dict['formation'][vol_key])
+    #vol_key_list = ['volume_pred_full', 'volume_true']
+    vol_key_list = ['volume_pred', 'volume_pred_full', 'volume_true']
 
     if plot_no_change:
+        vol_form = compute_formation_property(run_dict, sample, 'volume_true')
         delta_array = run_dict['delta_array']
         idelta0 = np.argmin(np.abs(delta_array))
 
@@ -411,9 +410,15 @@ def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change
 
         vol_no_change_array = np.zeros_like(vol_form)
         vol_no_change_array[:] = vol_form_true0
-        ax.plot(delta_array_sample, vol_no_change_array, **method_plot_dict['formation']['energy_pred0'], zorder=-1)
+        kwargs = method_plot_dict['formation']['energy_pred0'].copy()
+        kwargs.pop('marker', None)
+        ax.plot(delta_array_sample, vol_no_change_array, zorder=-1, **kwargs)
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    for i, vol_key in enumerate(vol_key_list):
+        vol_form = compute_formation_property(run_dict, sample, vol_key)
+        ax.plot(delta_array_sample, vol_form, **method_plot_dict['formation'][vol_key])
+
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel('Formation Volume ($\mathrm{\AA}^3$)')
 
 
@@ -518,7 +523,7 @@ def plot_formation_energy_error_average(ax, average_dict, method_plot_dict):
         ax.fill_between(delta_array, form_error_array - form_error_std, form_error_array + form_error_std,
                         color=method_plot_dict['formation'][en_key]['c'], alpha=0.2)
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel('Formation Energy Error (eV)')
 
 
@@ -537,7 +542,7 @@ def plot_formation_volume_error_average(ax, average_dict, method_plot_dict):
         ax.fill_between(delta_array, form_error_array - form_error_std, form_error_array + form_error_std,
                         color=method_plot_dict['formation'][vol_key]['c'], alpha=0.2)
 
-    ax.set_xlabel('Perturbation Magnitude $\delta$')
+    ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel('Formation Volume Error ($\mathrm{\AA}^3$)')
 
 
@@ -1041,8 +1046,8 @@ def main():
     plot_dir = 'plots'
     os.makedirs(plot_dir, exist_ok=True)
 
-    #from_samples = True
-    from_samples = False
+    from_samples = True
+    #from_samples = False
     run_dict = get_run_dict(from_samples=from_samples)
     method_plot_dict = setup_method_plot_dict()
     method_plot_dict2 = setup_method_plot_dict2()
@@ -1071,11 +1076,11 @@ def main():
     #
     # Plotting physical data
     #
-    #sample = 5
-    sample = 20
+    sample = 0
+    #sample = 20
     #sample = 62
 
-    bin_vol_dict = compute_form_volume_bins(run_dict, V_range=None, V_num_bins=20)
+    #bin_vol_dict = compute_form_volume_bins(run_dict, V_range=None, V_num_bins=20)
 
     #plot_coordinate_error = True
     plot_coordinate_error = False
@@ -1140,8 +1145,8 @@ def main():
     #
     # Layout 2x2
     #
-    #plot_2x2_new = True
-    plot_2x2_new = False
+    plot_2x2_new = True
+    #plot_2x2_new = False
     if plot_2x2_new:
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         plt.subplots_adjust(left=0.08, right=0.93, bottom=0.07, top=0.90, wspace=0.2, hspace=0.2)
@@ -1159,28 +1164,42 @@ def main():
         # Formation energies error
         plot_formation_energy_error(axes[1, 0], run_dict, method_plot_dict, sample, legend=False)
 
+        axes[0, 0].legend()
+        axes[1, 0].legend()
+        axes[1, 1].legend()
+
         plt.show()
 
-    plot_2x2_two_samples = True
-    #plot_2x2_two_samples = False
+    #plot_2x2_two_samples = True
+    plot_2x2_two_samples = False
     if plot_2x2_two_samples:
 
         sample1 = 20
         sample2 = 80
 
-        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-        plt.subplots_adjust(left=0.07, right=0.98, bottom=0.07, top=0.97, wspace=0.2, hspace=0.01)
+        fig, axes = plt.subplots(2, 2, figsize=(14, 9), sharex='col', sharey='row')
+        #plt.subplots_adjust(left=0.07, right=0.98, bottom=0.07, top=0.97, wspace=0.2, hspace=0.01)
+        plt.subplots_adjust(left=0.07, right=0.98, bottom=0.07, top=0.97, wspace=0.01, hspace=0.01)
         plot_formation_volume(axes[0, 0], run_dict, sample1, method_plot_dict2)
         plot_formation_energy(axes[1, 0], run_dict, sample1, method_plot_dict2)
 
-        axes[0, 0].set_xticklabels([])
-        axes[0, 1].set_xticklabels([])
+        #axes[0, 0].set_xticklabels([])
+        #axes[0, 1].set_xticklabels([])
 
         plot_formation_volume(axes[0, 1], run_dict, sample2, method_plot_dict2)
         plot_formation_energy(axes[1, 1], run_dict, sample2, method_plot_dict2)
 
         axes[0, 0].legend()
         axes[1, 0].legend()
+
+        axes[0, 1].set_ylabel('')
+        axes[1, 1].set_ylabel('')
+
+        id_list = [1, 2, 1, 2]
+        for i, idx in enumerate([(0, 0), (0, 1), (1, 0), (1, 1)]):
+            text = rf'$\Theta_0 + \lambda \delta \Theta^{{({id_list[i]})}}$'
+            axes[idx].text(0.96, 0.05, text, transform=axes[idx].transAxes, fontsize=45,
+                           color='silver', verticalalignment='bottom', horizontalalignment='right')
 
         fig.savefig(os.path.join(plot_dir, f'two_samples_2x2_{sample1}_{sample2}.pdf'))
 
@@ -1224,7 +1243,6 @@ def main():
     plot_av_data = False
     if plot_av_data:
 
-
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         plt.subplots_adjust(left=0.08, right=0.96, bottom=0.09, top=0.95, wspace=0.22, hspace=0.01)
 
@@ -1265,7 +1283,8 @@ def main():
 
         plt.show()
 
-    plot_av_data_bins_1x3 = True
+    #plot_av_data_bins_1x3 = True
+    plot_av_data_bins_1x3 = False
     if plot_av_data_bins_1x3:
 
         # for 3x1

@@ -59,7 +59,6 @@ def main():
     mpi_print('Computing lattice parameters for Bcc and BccVacancy systems...', comm=comm)
     with trun.add('find alat min'):
 
-
         # Find alat from fix box/relax
 
         bcc_pure_box_relax = Bcc(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc.log',

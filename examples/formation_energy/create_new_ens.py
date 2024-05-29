@@ -4,6 +4,8 @@ import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 
+from lammps_implicit_der.systems import Bcc
+
 
 def main():
 
@@ -33,6 +35,16 @@ def main():
     Theta_ens_NEW['Theta_mean'] = Theta_average
 
     Theta_ens_NEW['Fisher_distance'] = Fisher_distance
+
+    with open(os.path.join(path, 'Theta_ens_NEW.pkl'), 'wb') as file:
+        pickle.dump(Theta_ens_NEW, file)
+
+    system_tmp = Bcc(alat=4.0, ncell_x=2, minimize=False, logname=None,
+                         snapcoeff_filename='W_NEW.snapcoeff', verbose=False)
+
+    system_tmp.pot.Theta_dict['W']['Theta'] = Theta_average
+    system_tmp.pot.Theta_dict['W']['beta0'] = 0.0
+    system_tmp.pot.to_files(path='.', overwrite=True, snapcoeff_filename='W_Fisher.snapcoeff', snapparam_filename='W_Fisher.snapparam', verbose=True)
 
 
 if __name__ == "__main__":

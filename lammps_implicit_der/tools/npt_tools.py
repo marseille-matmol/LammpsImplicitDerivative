@@ -11,7 +11,7 @@ from .timing import TimingGroup
 from .utils import mpi_print
 
 
-def compute_energy_volume(system, epsilon_array):
+def compute_energy_volume(system, epsilon_array, compute_forces=False):
 
     energy_array = np.zeros_like(epsilon_array)
     volume_array = np.zeros_like(epsilon_array)
@@ -20,6 +20,9 @@ def compute_energy_volume(system, epsilon_array):
     pressure_array = np.zeros_like(epsilon_array)
 
     descriptor_array = np.zeros((epsilon_array.shape[0], system.Ndesc))
+
+    if compute_forces:
+        force_array = np.zeros((epsilon_array.shape[0], system.Natom * 3))
 
     system.scatter_coord()
     system.gather_D_dD()
@@ -56,6 +59,9 @@ def compute_energy_volume(system, epsilon_array):
         system.get_pressure_from_virial()
         pressure_array[i] = system.pressure
 
+        if compute_forces:
+            force_array[i, :] = system.forces(dx=np.zeros(system.Natom*3))
+
     # Reapply the original cell
     system.apply_strain(initial_cell)
 
@@ -70,6 +76,9 @@ def compute_energy_volume(system, epsilon_array):
         'pressure_array': pressure_array,
         'descriptor_array': descriptor_array
     }
+
+    if compute_forces:
+        result_dict['force_array'] = force_array
 
     return result_dict
 
@@ -128,7 +137,8 @@ def create_perturbed_system(Theta_ens, delta, LammpsClass, snapcoeff_filename, s
 def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sample,
                                 snapcoeff_filename, snapparam_filename,
                                 virial_trace, virial_der0, descriptor_array, volume_array,
-                                dX_dTheta_inhom, data_path=None, comm=None, trun=None):
+                                dX_dTheta_inhom, force_der0=None,
+                                data_path=None, comm=None, trun=None):
 
     if trun is None:
         trun = TimingGroup('NPT implicit derivative')
@@ -197,6 +207,11 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sa
 
         strain_pred_DT = ((volume_pred_DT) / volume0)**(1/3)
         cell_pred_DT = np.dot(cell0, np.eye(3) * strain_pred_DT)
+
+        # Inhomogeneous correction to volume that requires the derivative of the forces
+        if force_der0 is not None:
+            dot_prod = -np.einsum('ji,i->j', dX_dTheta_inhom, force_der0)
+            dV_pred_inhom = np.dot(dot_prod, dTheta) / np.dot(virial_der0, Theta0)
 
     # Homogeneous contribution: scale the system with the predicted volume change
     # And then return to the original volume with cell0
@@ -273,5 +288,10 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sa
         'coord_error_inhom': coord_error_inhom,
         'coord_error0': coord_error0,
     }
+
+    if force_der0 is not None:
+        result_dict['volume_pred_full'] = volume0 + dV_pred + dV_pred_inhom
+    else:
+        result_dict['volume_pred_full'] = volume0 + dV_pred
 
     return result_dict

@@ -146,12 +146,12 @@ def main():
             Theta_ens = pickle.load(file)
 
         #delta_array = np.linspace(-100.0, 100.0, 11)
-        delta_array = np.linspace(-10.0, 10.0, 3)
-        #delta_array = np.linspace(-30.0, 30.0, 61)
+        #delta_array = np.linspace(-10.0, 10.0, 3)
+        delta_array = np.linspace(-50.0, 50.0, 101)
         # For energy-volume curves
         #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 15)
-        epsilon_array_en_vol = np.linspace(-0.05, 0.05, 25)
-        #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 101)
+        #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 25)
+        epsilon_array_en_vol = np.linspace(-0.05, 0.05, 61)
 
         run_dict['delta_array'] = delta_array
 

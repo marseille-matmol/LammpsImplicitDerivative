@@ -17,6 +17,7 @@ from lammps_implicit_der.systems import BccVacancy, Bcc
 
 from matplotlib.ticker import FormatStrFormatter, MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.gridspec as gridspec
 
 plotparams = plot_tools.plotparams.copy()
 plotparams['figure.figsize'] = (9, 6)
@@ -35,7 +36,7 @@ def setup_method_plot_dict():
     method_plot_dict = {
         'formation': {
             'energy_true': {'label': 'True', 'marker': 'o', 'c': 'black'},
-            'energy_pred0': {'label': 'No pos. change', 'marker': 'o', 'c': 'purple'},
+            'energy_pred0': {'label': 'Constant', 'marker': 'o', 'c': 'purple'},
             'energy_hom_pred': {'label': 'Homogeneous', 'marker': 'o', 'c': 'blue'}, # goldenrod
             'energy_inhom_pred': {'label': 'Inhom.', 'marker': 'o', 'c': 'tab:blue'},
             'energy_full_pred': {'label': 'Hom. + Inhom.', 'marker': 'o', 'c': 'red', 'ms': 12},
@@ -46,7 +47,7 @@ def setup_method_plot_dict():
         },
         'pure': {
             'energy_true': {'label': 'Bulk True', 'marker': 's', 'c': 'black', 'ls': '--'},
-            'energy_pred0': {'label': 'Bulk No pos. change', 'marker': 's', 'c': 'purple', 'ms': 12, 'ls': '--'},
+            'energy_pred0': {'label': 'Bulk Constant', 'marker': 's', 'c': 'purple', 'ms': 12, 'ls': '--'},
             'energy_hom_pred': {'label': 'Bulk Hom.', 'marker': 's', 'c': 'blue', 'ls': '--'}, # goldenrod
             'energy_inhom_pred': {'label': 'Bulk Inhom.', 'marker': 's', 'c': 'tab:blue', 'ms': 12, 'ls': '--'},
             'energy_full_pred': {'label': 'Bulk Hom. + Inhom.', 'marker': 's', 'c': 'red', 'ls': '--'},
@@ -55,7 +56,7 @@ def setup_method_plot_dict():
         },
         'vac': {
             'energy_true': {'label': 'Vac. True', 'marker': 'o', 'c': 'black'},
-            'energy_pred0': {'label': 'Vac. No pos. change', 'marker': 'o', 'c': 'purple', 'ms': 12},
+            'energy_pred0': {'label': 'Vac. Constant', 'marker': 'o', 'c': 'purple', 'ms': 12},
             'energy_hom_pred': {'label': 'Vac. Hom.', 'marker': 'o', 'c': 'blue'}, # goldenrod
             'energy_inhom_pred': {'label': 'Vac. Inhom.', 'marker': 'o', 'c': 'tab:blue', 'ms': 12},
             'energy_full_pred': {'label': 'Vac. Hom. + Inhom.', 'marker': 'o', 'c': 'red'},
@@ -422,6 +423,34 @@ def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change
         ax.plot(delta_array_sample, vol_form, **method_plot_dict['formation'][vol_key])
 
     ax.set_xlabel('Perturbation Magnitude $\lambda$')
+    ax.set_ylabel('Formation Volume ($\mathrm{\AA}^3$)')
+
+
+def plot_formation_volume_scatter(ax, run_dict, method_plot_dict):
+
+    vol_key_list = ['volume_pred', 'volume_pred_full']
+
+    # iterate over samples
+    for sample in run_dict['sample_list']:
+
+        # True formation volume
+        vol_form_true = compute_formation_property(run_dict, sample, 'volume_true')
+
+        for i, vol_key in enumerate(vol_key_list):
+            vol_form = compute_formation_property(run_dict, sample, vol_key)
+            color = method_plot_dict['formation'][vol_key]['c']
+            size = method_plot_dict['formation'][vol_key]['ms']*2
+            ax.scatter(vol_form_true, vol_form, color=color, s=size)
+
+    ax.plot([0, 20], [0, 20], c='black', lw=1.0)
+    #for i, vol_key in enumerate(vol_key_list):
+    #    ax.plot([0, 100], [0, 100], c='black', lw=1.0)
+
+    # Setup the legend manually for vol_key from vol_key_list
+    #for i, vol_key in enumerate(vol_key_list):
+        #line
+
+    ax.set_xlabel('True Formation Volume ($\mathrm{\AA}^3$)')
     ax.set_ylabel('Formation Volume ($\mathrm{\AA}^3$)')
 
 
@@ -1192,8 +1221,8 @@ def main():
 
         plt.show()
 
-    plot_2x2_two_samples = True
-    #plot_2x2_two_samples = False
+    #plot_2x2_two_samples = True
+    plot_2x2_two_samples = False
     if plot_2x2_two_samples:
 
         sample1 = 20
@@ -1228,6 +1257,31 @@ def main():
                            color='silver', verticalalignment='bottom', horizontalalignment='right')
 
         fig.savefig(os.path.join(plot_dir, f'two_samples_2x2_{sample1}_{sample2}.pdf'))
+
+        plt.show()
+
+    #plot_2x1_one_sample = True
+    plot_2x1_one_sample = False
+    if plot_2x1_one_sample:
+
+        sample1 = 20
+
+        fig, axes = plt.subplots(2, 1, figsize=(7, 9), sharex='col')
+        plt.subplots_adjust(left=0.12, right=0.98, bottom=0.07, top=0.97, wspace=0.01, hspace=0.01)
+        plot_formation_volume(axes[0], run_dict, sample1, method_plot_dict2)
+        plot_formation_energy(axes[1], run_dict, sample1, method_plot_dict2)
+
+        axes[0].text(-0.12, 1.05, 'a', transform=axes[0].transAxes, fontsize=28, fontweight='bold', va='top', ha='left')
+        axes[1].text(-0.12, 1.0, 'b', transform=axes[1].transAxes, fontsize=28, fontweight='bold', va='top', ha='left')
+
+        axes[0].legend(fontsize=18, frameon=False)
+
+        # iterate over the lines of axes[0, 0] and set the linewidth to 6
+        for line in axes[0].get_legend().get_lines():
+            line.set_linewidth(5)
+            line.set_markersize(7)
+
+        fig.savefig(os.path.join(plot_dir, f'one_sample_2x1_{sample1}.pdf'))
 
         plt.show()
 
@@ -1309,8 +1363,8 @@ def main():
 
         plt.show()
 
-    plot_av_data_bins_1x3 = True
-    #plot_av_data_bins_1x3 = False
+    #plot_av_data_bins_1x3 = True
+    plot_av_data_bins_1x3 = False
     if plot_av_data_bins_1x3:
 
         # for 3x1
@@ -1333,7 +1387,76 @@ def main():
         for line in axes[0].get_legend().get_lines():
             line.set_markersize(10)
 
+        # a,b, c labels
+        label_list = ['a', 'b', 'c']
+        pos_list = [(-0.15, 1.0), (-0.15, 1.0), (-0.15, 1.0)]
+        for i, ax in enumerate(axes):
+            ax.text(pos_list[i][0], pos_list[i][1], label_list[i], transform=ax.transAxes, fontsize=30, fontweight='bold', va='top', ha='left')
+
         fig.savefig(os.path.join(plot_dir, 'average_data_bins_1x3.pdf'))
+
+        plt.show()
+
+    plot_av_data_bins_1x4 = True
+    #plot_av_data_bins_1x4 = False
+    if plot_av_data_bins_1x4:
+
+        sample1 = 20
+
+        #fig, axes = plt.subplots(1, 4, figsize=(22, 6))
+        #plt.subplots_adjust(left=0.05, right=0.985, bottom=0.13, top=0.96, wspace=0.24, hspace=0.27)
+        fig = plt.figure(figsize=(22, 6))
+        gs0 = gridspec.GridSpec(2, 4, figure=fig)
+
+        # with this grid, split the first plot into two vertically
+        # and for 2,3,4 create axes
+        ax0_top = fig.add_subplot(gs0[0, 0])
+        ax0_bot = fig.add_subplot(gs0[1, 0])
+
+        ax1 = fig.add_subplot(gs0[0:2, 1])
+        ax2 = fig.add_subplot(gs0[0:2, 2])
+        ax3 = fig.add_subplot(gs0[0:2, 3])
+
+        plt.subplots_adjust(left=0.05, right=0.99, bottom=0.13, top=0.96, wspace=0.24, hspace=0.01)
+
+        plot_formation_volume(ax0_top, run_dict, sample1, method_plot_dict)
+        plot_formation_energy(ax0_bot, run_dict, sample1, method_plot_dict)
+
+        ax0_top.set_ylabel('Formation\nVolume ($\mathrm{\AA}^3$)')
+        ax0_bot.set_ylabel('Formation\nEnergy (eV)')
+
+        ax0_top.set_xticklabels([])
+
+        spline_fill = True
+        #spline_fill = False
+        plot_formation_volume_bins(ax1, run_dict, bin_vol_dict, method_plot_dict, spline_fill=spline_fill)
+        plot_formation_volume_error_bins(ax2, bin_error_dict, method_plot_dict, spline_fill=spline_fill)
+        #plot_formation_volume_scatter(ax2, run_dict, method_plot_dict)
+        plot_formation_energy_error_bins(ax3, bin_error_dict, method_plot_dict, spline_fill=spline_fill)
+
+        ax1.set_ylim(5, 17)
+        ax2.set_ylim(-0.3, 0.6)
+        #ax2.set_xlim(5, 15)
+        #ax2.set_ylim(5, 15)
+        ax3.set_ylim(ymax=0.175)
+        # For ax3 multiple locator by 0.05
+        ax3.yaxis.set_major_locator(MultipleLocator(0.05))
+
+        # no legend box around it
+        ax0_top.legend(loc='upper left', fontsize=16, frameon=False)
+
+        # iterate over the lines of the legend and set the marker size to 10
+        for line in ax0_top.get_legend().get_lines():
+            line.set_markersize(10)
+            line.set_linewidth(3)
+
+        # a,b, c labels
+        label_list = ['a', 'b', 'c', 'd', 'e']
+        pos_list = [(-0.18, 1.0), (-0.18, 1.0), (-0.15, 1.0), (-0.17, 1.0), (-0.17, 1.0)]
+        for i, ax in enumerate([ax0_top, ax0_bot, ax1, ax2, ax3]):
+            ax.text(pos_list[i][0], pos_list[i][1], label_list[i], transform=ax.transAxes, fontsize=30, fontweight='bold', va='top', ha='left')
+
+        fig.savefig(os.path.join(plot_dir, 'average_data_bins_1x4.pdf'))
 
         plt.show()
 

@@ -177,24 +177,27 @@ def minimize_loss(sim,
 
         P_matrix = get_projection(sim.A_hard, sim.Ndesc)
 
-    minim_dict = {}
+    minim_dict = {
+        'converged': False,
+        'sim_init': copy.deepcopy(sim.to_dict()),
+        'X_target': X_target,
+        'cell': sim.cell
+        }
 
-    minim_dict['converged'] = False
-
-    minim_dict['sim_init'] = copy.deepcopy(sim.to_dict())
-    minim_dict['X_target'] = X_target
-    minim_dict['cell'] = sim.cell
     minim_dict['params'] = {
+        # Implicit derivative parameters
+        'der_method': der_method,
+        'der_min_style': der_min_style,
+        'der_adaptive_alpha': der_adaptive_alpha,
+        'der_alpha': der_alpha,
+        'der_ftol': der_ftol,
+        'der_atol': der_atol,
+        'der_maxiter': der_maxiter,
+        # Minimization parameters
+        'maxiter': maxiter,
         'step': step,
         'adaptive_step': adaptive_step,
         'error_tol': error_tol,
-        'maxiter': maxiter,
-        'der_method': der_method,
-        'der_ftol': der_ftol,
-        'der_alpha': der_alpha,
-        'der_maxiter': der_maxiter,
-        'der_atol': der_atol,
-        'der_adaptive_alpha': der_adaptive_alpha,
         'minimize_at_iters': minimize_at_iters,
         'apply_hard_constraints': apply_hard_constraints,
     }
@@ -403,6 +406,8 @@ def minimize_loss(sim,
     minim_dict['numiter'] = i+1
     minim_dict['error_array'] = error_array[:i+1]
     minim_dict['sim_final'] = sim.to_dict()
+    minim_dict['X_final'] = min_X
+    minim_dict['Theta_final'] = min_Theta
 
     # delete the tmp files
     if rank == 0:
@@ -434,4 +439,4 @@ def minimize_loss(sim,
         mpi_print(f'Final error: {error_array[i+1]:.3e}', comm=comm)
         mpi_print('\n', trun, comm=comm)
 
-    return sim, error_array, min_X, min_Theta
+    return sim, minim_dict

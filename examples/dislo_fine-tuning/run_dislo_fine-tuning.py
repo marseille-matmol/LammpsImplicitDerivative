@@ -57,7 +57,7 @@ def run_minimization(
 
     mpi_print('\nParameter optimization...\n', comm=comm)
 
-    dislo_final, error_array = error_tools.minimize_loss(
+    dislo_final, minim_dict = error_tools.minimize_loss(
                                     dislo_start,
                                     X_target,
                                     comm=comm,

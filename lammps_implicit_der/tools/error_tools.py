@@ -226,7 +226,7 @@ def minimize_loss(sim,
         if verbosity > 1:
             mpi_print(f'Computing dX/dTheta using {der_method} method.', comm=comm)
             if der_method == 'energy':
-                mpi_print(f'min_style: {der_min_style}, {der_adaptive_alpha=}, {der_alpha=:.3e}, , force tolerance: {der_ftol:.3e}', comm=comm)
+                mpi_print(f'{der_min_style=}, {der_adaptive_alpha=}, {der_alpha=:.3e}, {der_ftol=:.3e}', comm=comm)
         with trun.add('dX_dTheta') as t:
 
             try:
@@ -262,6 +262,9 @@ def minimize_loss(sim,
         dX = dTheta @ dX_dTheta
         dX -= dX.mean(0)
 
+        minim_dict['iter'][i]['dTheta'] = dTheta
+        minim_dict['iter'][i]['X_coord'] = dX
+
         # Step size
         if adaptive_step:
             """
@@ -291,6 +294,8 @@ def minimize_loss(sim,
         # Update the LAMMPS system
         try:
             sim.X_coord += dX
+            minim_dict['iter'][i]['X_coord'] = sim.X_coord
+
             sim.scatter_coord()
 
             # Update the potential

@@ -37,11 +37,18 @@ class LammpsImplicitDer:
                  verbose=True):
         """Set of methods for implicit derivative. Parent class.
 
-        Attributes
+        Parameters
         ----------
 
-        _X_coord : numpy array
-            atomic coordinates with pbc applied
+        data_path : str
+            Path to the data files: potentials and hard constraints.
+            If not specified, the default path is used: 'lammps_implicit_der/data_files', NOT the current directory.
+
+        datafile : str
+            LAMMPS data file, data_path IS NOT prepended
+
+        Attributes
+        ----------
 
         """
 

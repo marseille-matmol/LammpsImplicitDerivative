@@ -78,26 +78,30 @@ def loss_function(min_image_func, X1, X2, **kwargs):
     return 0.5 * (coord_diff(min_image_func, X1, X2)**2).sum()
 
 
-def minimize_loss(  sim,
-                    X_target,
-                    comm=None,
-                    step=0.01,
-                    adaptive_step=True,
-                    error_tol=1e-6,
-                    maxiter=100,
-                    der_method='inverse',
-                    der_ftol=1e-8,
-                    der_alpha=0.5,
-                    der_adaptive_alpha=True,
-                    der_maxiter=500,
-                    der_atol=1e-5,
-                    verbosity=2,
-                    pickle_name=None,
-                    minimize_at_iters=True,
-                    apply_hard_constraints=False,
-                    binary=False,
-                    output_folder='minim_output',
-                    ):
+def minimize_loss(sim,
+                  X_target,
+                  # Implicit derivative parameters
+                  der_method='inverse',
+                  der_min_style='cg',
+                  der_adaptive_alpha=True,
+                  der_alpha=1e-4,
+                  der_ftol=1e-8,
+                  der_atol=1e-5,
+                  der_maxiter=500,
+                  # Minimization parameters
+                  maxiter=100,
+                  step=0.01,
+                  adaptive_step=True,
+                  error_tol=1e-6,
+                  minimize_at_iters=True,
+                  apply_hard_constraints=False,
+                  # io parameters
+                  verbosity=2,
+                  pickle_name=None,
+                  binary=False,
+                  output_folder='minim_output',
+                  comm=None,
+                  ):
     """
     Optimize the potential parameters to get the X_target
     as stationary point of the potential.
@@ -217,12 +221,15 @@ def minimize_loss(  sim,
 
         # Compute the implicit derivative
         if verbosity > 1:
-            mpi_print(f'Computing dX/dTheta using {der_method} method...', comm=comm)
+            mpi_print(f'Computing dX/dTheta using {der_method} method.', comm=comm)
+            if der_method == 'energy':
+                mpi_print(f'min_style: {der_min_style}, {der_adaptive_alpha=}, {der_alpha=:.3e}, , force tolerance: {der_ftol:.3e}', comm=comm)
         with trun.add('dX_dTheta') as t:
 
             try:
                 dX_dTheta = sim.implicit_derivative(
                                             method=der_method,
+                                            min_style=der_min_style,
                                             alpha=der_alpha,
                                             adaptive_alpha=der_adaptive_alpha,
                                             maxiter=der_maxiter,
@@ -307,6 +314,7 @@ def minimize_loss(  sim,
 
                 # save coordinates to output_folder
                 sim.write_xyz_file(filename=os.path.join(output_folder, f'coords_step_{i:04d}.xyz'))
+            sim.write_data(filename=os.path.join(output_folder, f'data_step_{i:04d}.lammps-data'))
 
             #sim.setup_snap_potential()
             sim.lmp.commands_string(f"""
@@ -423,7 +431,7 @@ def minimize_loss(  sim,
         # Align the lines for printing
         mpi_print('Number of iterations:', i+1, comm=comm)
         mpi_print('Converged:', minim_dict['converged'], comm=comm)
-        mpi_print('Final error:', error_array[i+1], comm=comm)
+        mpi_print(f'Final error: {error_array[i+1]:.3e}', comm=comm)
         mpi_print('\n', trun, comm=comm)
 
     return sim, error_array, min_X, min_Theta

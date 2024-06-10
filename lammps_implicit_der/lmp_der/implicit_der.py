@@ -37,11 +37,21 @@ class LammpsImplicitDer:
                  verbose=True):
         """Set of methods for implicit derivative. Parent class.
 
-        Attributes
+        Parameters
         ----------
 
-        _X_coord : numpy array
-            atomic coordinates with pbc applied
+        data_path : str
+            Path to the data files: potentials and hard constraints.
+            If not specified, the default path is used: 'lammps_implicit_der/data_files', NOT the current directory.
+
+        datafile : str
+            LAMMPS data file, data_path IS NOT prepended
+
+        minimize_algo : str
+            Minimization algorithm for energy minimization, NOT the implicit derivative.
+
+        Attributes
+        ----------
 
         """
 
@@ -620,8 +630,12 @@ class LammpsImplicitDer:
         Returns
         -------
 
+        min_style : str
+            Minimization algorithm for implicit derivative. Applies to the energy method only.
+            Options: fire, cg, sd, htfn
+
         dX_dTheta : numpy array
-            implicit derivative
+            Implicit derivative. Shape: (Ndesc, 3Natom)
         """
 
         if self.mixed_hessian is None:

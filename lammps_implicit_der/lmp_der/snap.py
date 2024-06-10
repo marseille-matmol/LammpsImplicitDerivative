@@ -87,6 +87,9 @@ class SNAP():
             lines = [line.strip() for line in f
                      if line.strip() and not line.strip().startswith('#')]
 
+            # Remove all comments after the data
+            lines = [line.split('#')[0] for line in lines]
+
             # First line is the number of elements
             num_el, num_params = [int(x) for x in lines[0].split()]
 
@@ -129,6 +132,9 @@ class SNAP():
             # Ignore all lines starting with # and all empty lines
             lines = [line.strip() for line in f
                      if line.strip() and not line.strip().startswith('#')]
+
+            # Remove all comments after the data
+            lines = [line.split('#')[0] for line in lines]
 
             for line in lines:
                 key, value = line.split()

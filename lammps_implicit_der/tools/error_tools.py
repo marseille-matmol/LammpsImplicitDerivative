@@ -102,6 +102,7 @@ def minimize_loss(sim,
                   binary=False,
                   output_folder='minim_output',
                   comm=None,
+                  lambda_param=0.0,
                   ):
     """
     Optimize the potential parameters to get the X_target
@@ -259,7 +260,7 @@ def minimize_loss(sim,
         """
 
         # Potential parameters change given by the loss function gradient
-        dTheta = - dX_dTheta @ coord_diff(sim.minimum_image, sim.X_coord, X_target)
+        dTheta = - dX_dTheta @ coord_diff(sim.minimum_image, sim.X_coord, X_target) - lambda_param * (sim.Theta - Theta0)
         if apply_hard_constraints:
             dTheta = P_matrix @ dTheta
 
@@ -377,7 +378,7 @@ def minimize_loss(sim,
             break
 
         # Evaluate the error
-        error_array[i+1] = loss_function(sim.minimum_image, sim.X_coord, X_target, sim.Theta, Theta0, lambda_param=1.0)
+        error_array[i+1] = loss_function(sim.minimum_image, sim.X_coord, X_target, sim.Theta, Theta0, lambda_param=lambda_param)
 
         if verbosity > 0:
             # Predicted change in the loss function

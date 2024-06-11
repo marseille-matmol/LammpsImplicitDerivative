@@ -975,6 +975,8 @@ class LammpsImplicitDer:
 
         hessian = self.hessian(hess_mask=hess_mask)
 
+        hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
+
         #hess_mask = np.array([True]*self.N)
 
         # Use linalg.solve to find dX_dTheta in H.dX_dTheta = C

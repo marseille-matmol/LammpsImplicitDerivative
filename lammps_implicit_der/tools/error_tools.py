@@ -88,6 +88,7 @@ def minimize_loss(sim,
                   der_ftol=1e-8,
                   der_atol=1e-5,
                   der_maxiter=500,
+                  der_hess_mask=None,
                   # Minimization parameters
                   maxiter=100,
                   step=0.01,
@@ -237,7 +238,9 @@ def minimize_loss(sim,
                                             adaptive_alpha=der_adaptive_alpha,
                                             maxiter=der_maxiter,
                                             atol=der_atol,
-                                            ftol=der_ftol)
+                                            ftol=der_ftol,
+                                            hess_mask=der_hess_mask,
+                                            )
             except Exception as e:
                 mpi_print(f'Iteration {i+1}, LAMMPS error at dX_dTheta: {e}', comm=comm)
                 minim_dict['LAMMPS error'] = e

@@ -72,10 +72,10 @@ def coord_diff(min_image_func, X1, X2):
     return dX
 
 
-def loss_function(min_image_func, X1, X2, **kwargs):
+def loss_function(min_image_func, X1, X2, Theta, Theta0, lambda_param=0.0):
     """Loss function for the minimization algorithm."""
 
-    return 0.5 * (coord_diff(min_image_func, X1, X2)**2).sum()
+    return 0.5 * (coord_diff(min_image_func, X1, X2)**2).sum() + 0.5 * lambda_param * ((Theta - Theta0)**2).sum()
 
 
 def minimize_loss(sim,
@@ -206,8 +206,10 @@ def minimize_loss(sim,
     error_array = np.zeros(maxiter + 1)
     step_array = np.zeros(maxiter)
 
+    Theta0 = sim.Theta.copy()
+
     # Compute the initial error
-    error_array[0] = loss_function(sim.minimum_image, sim.X_coord, X_target)
+    error_array[0] = loss_function(sim.minimum_image, sim.X_coord, X_target, Theta0, sim.Theta0, lambda_param=0.0)
     mpi_print(f'{"Initial error":>30}: {error_array[0]:.3e}\n', comm=comm)
 
     minim_dict['iter'] = {}
@@ -375,7 +377,7 @@ def minimize_loss(sim,
             break
 
         # Evaluate the error
-        error_array[i+1] = loss_function(sim.minimum_image, sim.X_coord, X_target)
+        error_array[i+1] = loss_function(sim.minimum_image, sim.X_coord, X_target, sim.Theta, Theta0, lambda_param=1.0)
 
         if verbosity > 0:
             # Predicted change in the loss function

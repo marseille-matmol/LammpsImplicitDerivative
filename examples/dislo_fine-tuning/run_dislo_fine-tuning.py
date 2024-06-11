@@ -98,17 +98,18 @@ def main():
     #
     # Implicit derivative parameters
     #
+    #der_method = 'dense'  # 'sparse' # 'inverse'
     der_method = 'energy'  # 'sparse' # 'inverse'
     der_adaptive_alpha = True
 
-    der_ftol = 1e-2
-    der_maxiter = 100
-
+    der_ftol = 1e-6
+    der_maxiter = 500
     #der_min_style = 'cg'
-    #der_alpha = 1e-6
+    der_min_style = 'fire'
+    der_alpha = 1e-2
 
-    der_min_style = 'fire'                                                                    
-    der_alpha = 0.5
+    #der_min_style = 'fire'                                                                    
+    #der_alpha = 0.5
 
     run_minimization(
                      # Implicit derivative parameters

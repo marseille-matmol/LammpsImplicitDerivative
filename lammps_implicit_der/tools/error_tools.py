@@ -210,7 +210,7 @@ def minimize_loss(sim,
     Theta0 = sim.Theta.copy()
 
     # Compute the initial error
-    error_array[0] = loss_function(sim.minimum_image, sim.X_coord, X_target, Theta0, sim.Theta0, lambda_param=0.0)
+    error_array[0] = loss_function(sim.minimum_image, sim.X_coord, X_target, Theta0, Theta0, lambda_param=0.0)
     mpi_print(f'{"Initial error":>30}: {error_array[0]:.3e}\n', comm=comm)
 
     minim_dict['iter'] = {}

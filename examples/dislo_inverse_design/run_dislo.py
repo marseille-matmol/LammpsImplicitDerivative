@@ -7,7 +7,7 @@ import yaml
 # local imports
 from lammps_implicit_der.tools import initialize_mpi, mpi_print, error_tools, TimingGroup, minimize_loss
 from lammps_implicit_der.systems import DisloSub
-from lammps_implicit_der.tools.io import setup_minimization_dict
+from lammps_implicit_der.tools.io import setup_default_minimization_dict, load_parameters, print_parameters
 
 
 def run_minimization(param_dict, comm=None):
@@ -95,7 +95,9 @@ def main():
 
     comm, rank = initialize_mpi()
 
-    param_dict = setup_minimization_dict(input_name='minimize_param.yml', comm=comm)
+    param_dict = setup_default_minimization_dict()
+    param_dict = load_parameters(param_dict, 'minimize_param.yml')
+    print_parameters(param_dict, comm=comm)
 
     run_minimization(param_dict, comm=comm)
 

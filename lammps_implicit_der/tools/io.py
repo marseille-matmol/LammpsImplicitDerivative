@@ -7,7 +7,7 @@ import yaml
 from .utils import mpi_print
 
 
-def setup_default_minimization_dict(input_name=None, comm=None):
+def setup_default_minimization_dict():
     """
     Setup a dictionary with the parameters for the minimization (inverse design).
 
@@ -34,6 +34,7 @@ def setup_default_minimization_dict(input_name=None, comm=None):
         alpha: 0.5
         ftol: 1e-4
         maxiter: 500
+        apply_hess_mask: False
     """
 
     param_dict = {}
@@ -68,7 +69,7 @@ def setup_default_minimization_dict(input_name=None, comm=None):
     return param_dict
 
 
-def load_parameters(param_dict, input_name, comm=None):
+def load_parameters(param_dict, input_name):
 
     with open(input_name, 'r') as f:
         param_dict_input = yaml.load(f, Loader=yaml.FullLoader)

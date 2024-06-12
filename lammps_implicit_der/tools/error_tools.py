@@ -292,6 +292,9 @@ def minimize_loss(sim,
             mpi_print(f'{"Largest dX":>30}: {np.max(np.abs(dX)):.3e}', comm=comm)
             mpi_print(f'{"Std Dev of dX":>30}: {np.std(dX):.3e}', comm=comm)
 
+            dX_target = coord_diff(sim.minimum_image, sim.X_coord + dX, X_target)
+            mpi_print(f'{"Largest dX wrt target":>30}: {np.max(np.abs(dX_target)):.3e}', comm=comm)
+
         # Update the LAMMPS system
         try:
             sim.X_coord += dX
@@ -304,7 +307,7 @@ def minimize_loss(sim,
             sim.gather_D_dD()
 
             # Update the parameters in the pot object
-            mpi_print(f'Updating the potential parameters for {sub_element}', comm=comm)
+            mpi_print(f'\n  >>Updating the potential parameters for {sub_element}', comm=comm)
             sim.pot.Theta_dict[sub_element]['Theta'] = sim.Theta
 
             # Update the potential parameters

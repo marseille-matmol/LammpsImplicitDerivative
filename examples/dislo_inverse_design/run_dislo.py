@@ -95,7 +95,7 @@ def main():
 
     comm, rank = initialize_mpi()
 
-    param_dict = setup_minimization_dict(input_name='WBe-NEW_fine_tuning.yml', comm=comm)
+    param_dict = setup_minimization_dict(input_name='minimize_param.yml', comm=comm)
 
     run_minimization(param_dict, comm=comm)
 

@@ -7,7 +7,7 @@ import yaml
 from .utils import mpi_print
 
 
-def setup_minimization_dict(input_name=None, comm=None):
+def setup_default_minimization_dict(input_name=None, comm=None):
     """
     Setup a dictionary with the parameters for the minimization (inverse design).
 
@@ -65,26 +65,32 @@ def setup_minimization_dict(input_name=None, comm=None):
         'maxiter': 500,
     }
 
-    # Load parameters from file
-    if input_name is not None:
+    return param_dict
 
-        with open(input_name, 'r') as f:
-            param_dict_input = yaml.load(f, Loader=yaml.FullLoader)
 
-        # check that param_dict_input has allowed keys only
-        for key1 in param_dict_input.keys():
-            if key1 not in param_dict.keys():
-                raise ValueError(f'Key {key1} not allowed in input file')
+def load_parameters(param_dict, input_name, comm=None):
 
-            for key2 in param_dict_input[key1].keys():
-                if key2 not in param_dict[key1].keys():
-                    raise ValueError(f'Key {key2} not allowed in input file')
+    with open(input_name, 'r') as f:
+        param_dict_input = yaml.load(f, Loader=yaml.FullLoader)
 
-                # apply the same type as in the default dictionary
-                default_type = type(param_dict[key1][key2])
-                param_dict[key1][key2] = default_type(param_dict_input[key1][key2])
+    # check that param_dict_input has allowed keys only
+    for key1 in param_dict_input.keys():
+        if key1 not in param_dict.keys():
+            raise ValueError(f'Key {key1} not allowed in input file')
 
-    # Print the parameters
+        for key2 in param_dict_input[key1].keys():
+            if key2 not in param_dict[key1].keys():
+                raise ValueError(f'Key {key2} not allowed in input file')
+
+            # apply the same type as in the default dictionary
+            default_type = type(param_dict[key1][key2])
+            param_dict[key1][key2] = default_type(param_dict_input[key1][key2])
+
+    return param_dict
+
+
+def print_parameters(param_dict, comm=None):
+
     mpi_print('Running with the following parameters:', comm=comm)
     for key1 in param_dict.keys():
         mpi_print(f'  {key1}:', comm=comm)

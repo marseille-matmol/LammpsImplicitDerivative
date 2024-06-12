@@ -96,3 +96,4 @@ def setup_minimization_dict(input_name=None, comm=None):
 
         mpi_print('', comm=comm)
 
+    return param_dict

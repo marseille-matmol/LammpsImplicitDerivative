@@ -80,6 +80,7 @@ def loss_function(min_image_func, X1, X2, **kwargs):
 
 def minimize_loss(sim,
                   X_target,
+                  sub_element,
                   # Implicit derivative parameters
                   der_method='inverse',
                   der_min_style='cg',
@@ -303,9 +304,8 @@ def minimize_loss(sim,
             sim.gather_D_dD()
 
             # Update the parameters in the pot object
-            # !!! HARDCODED: update the Mo parameters if binary, W otherwise
-            elem = 'Mo' if binary else 'W'
-            sim.pot.Theta_dict[elem]['Theta'] = sim.Theta
+            mpi_print(f'Updating the potential parameters for {sub_element}', comm=comm)
+            sim.pot.Theta_dict[sub_element]['Theta'] = sim.Theta
 
             # Update the potential parameters
             if rank == 0:

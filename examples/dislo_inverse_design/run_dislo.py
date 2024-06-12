@@ -69,6 +69,7 @@ def run_minimization(param_dict, comm=None):
     dislo_final, minim_dict = error_tools.minimize_loss(
                                     dislo_start,
                                     X_target,
+                                    sub_element,
                                     comm=comm,
                                     step=step,
                                     adaptive_step=adaptive_step,
@@ -94,7 +95,7 @@ def main():
 
     comm, rank = initialize_mpi()
 
-    param_dict = setup_minimization_dict(input_name='WBe-NEW_fine_tuning.yml')
+    param_dict = setup_minimization_dict(input_name='WBe-NEW_fine_tuning.yml', comm=comm)
 
     run_minimization(param_dict, comm=comm)
 

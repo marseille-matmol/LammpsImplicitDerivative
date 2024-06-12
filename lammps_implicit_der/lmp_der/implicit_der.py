@@ -556,7 +556,7 @@ class LammpsImplicitDer:
         return force
 
     @measure_runtime_and_calls
-    def hessian(self, dx=0.001, hess_mask=None, sparse_tol=1e-6):
+    def hessian(self, dx=0.001, hess_mask=None):
         """Naive calculation of the hessian
 
         Use the finite difference:
@@ -568,17 +568,29 @@ class LammpsImplicitDer:
         dx : float, optional
             finite difference, by default 0.001
         """
+
+        mpi_print('Computing the Hessian...', comm=self.comm, verbose=self.verbose)
+
         hessian = np.zeros((self.N, self.N))
 
         # We need to define a vector of displacements because the forces function
         # expects a vector of displacements
         dx_vector = np.zeros_like(self._X_coord.flatten())
-        # iterate over 3N
+
+        # Iterate over the atoms
+        if hess_mask is None:
+            idx_move = np.arange(self.N, dtype=int)
+            desc = 'Hessian (full)'
+        else:
+            if (hess_mask.size != self.N):
+                raise ValueError('hess_mask must have the same size as the number of atoms')
+            idx_move = idx_move[hess_mask]
+            desc = 'Hessian (masked)'
 
         if self.verbose and self.rank == 0:
-            iterator = tqdm(range(self.N), desc='Hessian')
+            iterator = tqdm(idx_move, desc=desc)
         else:
-            iterator = range(self.N)
+            iterator = idx_move
 
         for i in iterator:
 
@@ -607,13 +619,13 @@ class LammpsImplicitDer:
     @measure_runtime_and_calls
     def implicit_derivative(self,
                             method='energy',
-                            #alpha=0.001,
+                            min_style='fire',
                             alpha=0.5,
                             adaptive_alpha=True,
                             atol=1e-5,
-                            ftol=1e-10,
+                            ftol=1e-8,
                             maxiter=500,
-                            min_style='fire'):
+                            hess_mask=None):
         """A wrapper for implicit derivative calculation
 
         Returns
@@ -649,10 +661,12 @@ class LammpsImplicitDer:
             return res_dict['dX_dTheta']
 
         elif method == 'inverse':
+            if hess_mask is not None:
+                 mpi_print('WARNING: hess_mask is not yet implemented in the inverse method', comm=self.comm)
             return self.implicit_derivative_inverse()
 
         elif method == 'dense':
-            return self.implicit_derivative_dense()
+            return self.implicit_derivative_dense(hess_mask=hess_mask)
 
         else:
             raise ValueError(f'Unknown method for implicit derivative: {method}')
@@ -797,7 +811,7 @@ class LammpsImplicitDer:
             iterator = self.mixed_hessian
         else:
             if self.verbose and self.rank == 0:
-                iterator = tqdm(self.mixed_hessian, desc='Impl. Der. Energy')
+                iterator = tqdm(self.mixed_hessian, desc=f'Impl. Der. Energy {min_style.upper()}')
             else:
                 iterator = self.mixed_hessian
 
@@ -935,7 +949,7 @@ class LammpsImplicitDer:
         # Matrix multiplication to get dX_dTheta
         return (H_inv @ self.mixed_hessian.T).T
 
-    def implicit_derivative_dense(self):
+    def implicit_derivative_dense(self, hess_mask=None):
         """Compute implicit derivative from Hessian inverse
 
         Returns
@@ -944,8 +958,27 @@ class LammpsImplicitDer:
             implicit derivative
         """
 
-        # Use linalg.solve to find dX_dTheta in hessian.dX_dTheta = C
-        dX_dTheta = np.linalg.solve(self.hessian(), self.mixed_hessian.T).T
+        hessian = self.hessian(hess_mask=hess_mask)
+
+        # Lift the diagonal of the Hessian to avoid singularities
+        hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
+
+        # Use linalg.solve to find dX_dTheta in H.dX_dTheta = C
+        if hess_mask is not None:
+            dX_dTheta = np.zeros_like(self.mixed_hessian)
+
+            # hessian with rows and columns corresponding to hess_mask
+            hessian_mask = hessian[hess_mask, :][:, hess_mask]
+
+            mpi_print(f'Computing dX_dTheta with linalg.solve, Hessian shape (masked): {hessian_mask.shape}', comm=self.comm, verbose=self.verbose)
+            with self.timings.add('linalg.solve') as t:
+                dX_dTheta[:, hess_mask] = np.linalg.solve(hessian_mask, self.mixed_hessian.T[hess_mask, :]).T
+
+        else:
+
+            mpi_print(f'Computing dX_dTheta with linalg.solve, Hessian shape: {hessian.shape}', comm=self.comm, verbose=self.verbose)
+            with self.timings.add('linalg.solve') as t:
+                dX_dTheta = np.linalg.solve(hessian, self.mixed_hessian.T).T
 
         return dX_dTheta
 

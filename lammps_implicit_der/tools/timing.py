@@ -226,7 +226,7 @@ class TimingGroup:
         """
 
         timings_dict = {tag:
-            {'runtime': round(timing.total_runtime,8), 'call_count': timing.call_count}
+            {'runtime': round(timing.total_runtime, 8), 'call_count': timing.call_count}
             for tag, timing in self.timings.items()
             }
 

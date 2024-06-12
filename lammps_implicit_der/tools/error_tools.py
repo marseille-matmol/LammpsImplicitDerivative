@@ -126,6 +126,9 @@ def minimize_loss(sim,
         Gradient descent step size, by default 0.01.
         If adaptive_step is True, step is ignored.
 
+    sub_element : str
+        Element name for which the potential parameters will be optimized.
+
     adaptive_step : bool, optional
         Use adaptive step size, by default True.
 
@@ -216,10 +219,19 @@ def minimize_loss(sim,
     min_X = sim.X_coord.copy()
     min_Theta = sim.Theta.copy()
 
-    for i in range(maxiter):
+    # Write the initial lammps data and potential files
+    if rank == 0:
+        sim.write_data(filename=os.path.join(output_folder, f'data_step_0000.lammps-data'))
+        sim.pot.to_files(path=output_folder,
+                         snapcoeff_filename=f'{sim.pot.elmnts}_step_0000.snapcoeff',
+                         snapparam_filename=f'{sim.pot.elmnts}_step_0000.snapparam',
+                         overwrite=True, verbose=False)
+
+
+    for i in range(1, maxiter+1):
 
         if verbosity > 0:
-            mpi_print('Iteration', i+1, '/', maxiter, comm=comm)
+            mpi_print('Iteration', i, '/', maxiter, comm=comm)
 
         minim_dict['iter'][i] = {}
 
@@ -240,8 +252,8 @@ def minimize_loss(sim,
                                             atol=der_atol,
                                             ftol=der_ftol)
             except Exception as e:
-                mpi_print(f'Iteration {i+1}, LAMMPS error at dX_dTheta: {e}', comm=comm)
-                minim_dict['LAMMPS error'] = e
+                mpi_print(f'Iteration {i}, error at dX_dTheta: {e}', comm=comm)
+                minim_dict['iter'][i]['error'] = e
                 break
 
         # minim_dict['iter'][i]['dX_dTheta'] = dX_dTheta
@@ -322,9 +334,8 @@ def minimize_loss(sim,
                                  snapcoeff_filename=f'{sim.pot.elmnts}_step_{i:04d}.snapcoeff',
                                  snapparam_filename=f'{sim.pot.elmnts}_step_{i:04d}.snapparam',
                                  overwrite=True, verbose=False)
+                # sim.write_xyz_file(filename=os.path.join(output_folder, f'coords_step_{i:04d}.xyz'))
 
-                # save coordinates to output_folder
-                sim.write_xyz_file(filename=os.path.join(output_folder, f'coords_step_{i:04d}.xyz'))
             sim.write_data(filename=os.path.join(output_folder, f'data_step_{i:04d}.lammps-data'))
 
             #sim.setup_snap_potential()
@@ -370,12 +381,12 @@ def minimize_loss(sim,
                         mpi_print(f'{"Energy":>30}: {sim.energy:.10e}', comm=comm)
 
         except Exception as e:
-            mpi_print(f'Iteration {i+1}, LAMMPS error at update: {e}', comm=comm)
-            minim_dict['LAMMPS error'] = e
+            mpi_print(f'Iteration {i}, error at update: {e}', comm=comm)
+            minim_dict['iter'][i]['error'] = e
             break
 
         # Evaluate the error
-        error_array[i+1] = loss_function(sim.minimum_image, sim.X_coord, X_target)
+        error_array[i] = loss_function(sim.minimum_image, sim.X_coord, X_target)
 
         if verbosity > 0:
             # Predicted change in the loss function
@@ -386,21 +397,21 @@ def minimize_loss(sim,
             # ||dX+X-Y||-||X-Y|| = ||dX|| + 2*dot_prod + ||X-Y|| - ||X-Y|| = ||dX|| + 2*dot_prod
 
             # Actual change in the loss function
-            real_change = error_array[i] - error_array[i+1]
+            real_change = error_array[i-1] - error_array[i]
 
             mpi_print('', comm=comm)
             mpi_print('\n'+' '*11+'-'*13+'Errors'+'-'*13, comm=comm)
-            mpi_print(f'{"Current error":>30}: {error_array[i+1]:.3e}', comm=comm)
+            mpi_print(f'{"Current error":>30}: {error_array[i]:.3e}', comm=comm)
             #mpi_print(f'{"Predicted change":>30}: {pred_change:.3e}', comm=comm)
-            mpi_print(f'{"Actual change":>30}: {real_change:.3e}', comm=comm)
+            mpi_print(f'{"Error change":>30}: {real_change:.3e}', comm=comm)
             #mpi_print('', comm=comm)
 
-        if error_array[i+1] < min_error:
-            min_error = error_array[i+1]
+        if error_array[i] < min_error:
+            min_error = error_array[i]
             min_X = sim.X_coord.copy()
             min_Theta = sim.Theta.copy()
 
-        if error_array[i+1] < error_tol:
+        if error_array[i] < error_tol:
             mpi_print('Convergence reached!', comm=comm)
             minim_dict['converged'] = True
             break
@@ -411,8 +422,8 @@ def minimize_loss(sim,
 
     mpi_print('='*80+'\n', comm=comm)
 
-    minim_dict['numiter'] = i+1
-    minim_dict['error_array'] = error_array[:i+1]
+    minim_dict['numiter'] = i
+    minim_dict['error_array'] = error_array[:i]
     minim_dict['sim_final'] = sim.to_dict()
     minim_dict['X_final'] = min_X
     minim_dict['Theta_final'] = min_Theta
@@ -441,10 +452,9 @@ def minimize_loss(sim,
     trun.timings['total'].stop()
 
     if verbosity > 0:
-        # Align the lines for printing
-        mpi_print('Number of iterations:', i+1, comm=comm)
+        mpi_print('Number of iterations:', i, comm=comm)
         mpi_print('Converged:', minim_dict['converged'], comm=comm)
-        mpi_print(f'Final error: {error_array[i+1]:.3e}', comm=comm)
+        mpi_print(f'Final error: {error_array[i]:.3e}', comm=comm)
         mpi_print('\n', trun, comm=comm)
 
     return sim, minim_dict

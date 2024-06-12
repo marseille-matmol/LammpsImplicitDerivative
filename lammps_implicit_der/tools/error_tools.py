@@ -9,7 +9,7 @@ import numpy as np
 import pickle
 
 # local imports
-from .utils import mpi_print, save_snap_coeff, get_projection
+from .utils import mpi_print, get_projection
 from .timing import TimingGroup
 
 

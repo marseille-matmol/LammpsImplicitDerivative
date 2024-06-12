@@ -2,39 +2,47 @@
 
 import os
 import numpy as np
+import yaml
 
 # local imports
 from lammps_implicit_der.tools import initialize_mpi, mpi_print, error_tools, TimingGroup, minimize_loss
 from lammps_implicit_der.systems import DisloSub
+from lammps_implicit_der.tools.io import setup_minimization_dict
 
 
-def run_minimization(
-                     # Implicit derivative parameters
-                     der_method,
-                     der_min_style,
-                     der_adaptive_alpha,
-                     der_alpha,
-                     der_ftol,
-                     der_maxiter,
-                     # Minimization parameters
-                     maxiter,
-                     step,
-                     adaptive_step,
-                     error_tol,
-                     minimize_at_iters,
-                     apply_hard_constraints,
-                     comm=None):
+def run_minimization(param_dict, comm=None):
 
     trun = TimingGroup('Minimize Dislo')
     trun.add('total', level=2).start()
 
-    datafile_path_start = 'dislo_sub_easy_core.lammps-data'
-    datafile_path_target = 'dislo_sub_hard_core.lammps-data'
+    # Unpack the parameter dictionary
+    # Implicit derivative parameters
+    der_method = param_dict['implicit_derivative']['method']
+    der_min_style = param_dict['implicit_derivative']['min_style']
+    der_adaptive_alpha = param_dict['implicit_derivative']['adaptive_alpha']
+    der_alpha = param_dict['implicit_derivative']['alpha']
+    der_ftol = param_dict['implicit_derivative']['ftol']
+    der_maxiter = param_dict['implicit_derivative']['maxiter']
+
+    # Minimization parameters
+    maxiter = param_dict['minimization']['maxiter']
+    step = param_dict['minimization']['step']
+    adaptive_step = param_dict['minimization']['adaptive_step']
+    error_tol = param_dict['minimization']['error_tol']
+    minimize_at_iters = param_dict['minimization']['minimize_at_iters']
+    apply_hard_constraints = param_dict['minimization']['apply_hard_constraints']
+
+    # System parameters
+    datafile_path_start = param_dict['system']['lammps_data_start']
+    datafile_path_target = param_dict['system']['lammps_data_target']
+    snapcoeff_filename = param_dict['system']['snapcoeff_filename']
+    sub_element = param_dict['system']['sub_element']
 
     mpi_print('Dislo start initial relaxation...', comm=comm)
     with trun.add('start init'):
-        dislo_start = DisloSub(snapcoeff_filename='WX.snapcoeff',
+        dislo_start = DisloSub(snapcoeff_filename=snapcoeff_filename,
                                datafile=datafile_path_start,
+                               sub_element=sub_element,
                                logname='dislo_start.log',
                                minimize=True,
                                comm=comm,
@@ -42,8 +50,9 @@ def run_minimization(
 
     mpi_print('Dislo target initialization (no relaxation)...', comm=comm)
     with trun.add('target init'):
-        dislo_target = DisloSub(snapcoeff_filename='WX.snapcoeff',
+        dislo_target = DisloSub(snapcoeff_filename=snapcoeff_filename,
                                 datafile=datafile_path_target,
+                                sub_element=sub_element,
                                 logname='dislo_target.log',
                                 minimize=False,
                                 comm=comm,
@@ -85,47 +94,9 @@ def main():
 
     comm, rank = initialize_mpi()
 
-    #
-    # Minimization parameters
-    #
-    step = 1e-3  # 0.1 # 1e-4
-    minimize_at_iters = True
-    apply_hard_constraints = False  # True
-    adaptive_step = True  # False
-    maxiter = 100
-    error_tol = 1e-6
+    param_dict = setup_minimization_dict(input_name='WBe-NEW_fine_tuning.yml')
 
-    #
-    # Implicit derivative parameters
-    #
-    der_method = 'energy'  # 'sparse' # 'inverse'
-    der_adaptive_alpha = True
-
-    #der_min_style = 'cg'
-    #der_alpha = 1e-6
-
-    der_min_style = 'fire'
-    der_alpha = 0.5
-
-    der_ftol = 1e-2
-    der_maxiter = 100
-
-    run_minimization(
-                     # Implicit derivative parameters
-                     der_method,
-                     der_min_style=der_min_style,
-                     der_adaptive_alpha=der_adaptive_alpha,
-                     der_alpha=der_alpha,
-                     der_ftol=der_ftol,
-                     der_maxiter=der_maxiter,
-                     # Minimization parameters
-                     maxiter=maxiter,
-                     step=step,
-                     adaptive_step=adaptive_step,
-                     error_tol=error_tol,
-                     minimize_at_iters=minimize_at_iters,
-                     apply_hard_constraints=apply_hard_constraints,
-                     comm=comm)
+    run_minimization(param_dict, comm=comm)
 
 
 if __name__ == '__main__':

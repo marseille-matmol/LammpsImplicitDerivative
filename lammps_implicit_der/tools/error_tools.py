@@ -216,7 +216,7 @@ def minimize_loss(sim,
     }
 
     error_array = np.zeros(maxiter + 1)
-    step_array = np.zeros(maxiter)
+    step_array = np.zeros(maxiter + 1)
 
     # Compute the initial error
     error_array[0] = loss_function(sim.minimum_image, sim.X_coord, X_target)
@@ -436,6 +436,9 @@ def minimize_loss(sim,
     minim_dict['sim_final'] = sim.to_dict()
     minim_dict['X_final'] = min_X
     minim_dict['Theta_final'] = min_Theta
+    trun.timings['total'].stop()
+
+    minim_dict['sim_timings'] = sim.timings
 
     # delete the tmp files
     if rank == 0:
@@ -458,12 +461,11 @@ def minimize_loss(sim,
         with open(pickle_name, 'wb') as f:
             pickle.dump(minim_dict, f)
 
-    trun.timings['total'].stop()
-
     if verbosity > 0:
         mpi_print('Number of iterations:', i, comm=comm)
         mpi_print('Converged:', minim_dict['converged'], comm=comm)
         mpi_print(f'Final error: {error_array[i]:.3e}', comm=comm)
         mpi_print('\n', trun, comm=comm)
+        mpi_print(sim.timings, comm=comm)
 
     return sim, minim_dict

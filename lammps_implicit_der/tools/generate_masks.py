@@ -23,7 +23,9 @@ def generate_mask_dX(dX, threshold=0.12, comm=None):
 
     nmask = np.sum(hess_mask)
     ntotal = len(hess_mask)
+    natom_mask = nmask // 3
     mpi_print(f'>>>dX mask. Number of elements in the mask: {nmask} out of {ntotal} ({nmask/ntotal:.1%})', comm=comm)
+    mpi_print(f'>>>Number of atoms in the mask: {natom_mask}', comm=comm)
 
     return hess_mask, hess_mask_3D
 
@@ -51,9 +53,11 @@ def generate_mask_radius(X_coord, radius=5.0, center_coord=np.array([0.0, 0.0, 0
 
     nmask = np.sum(hess_mask)
     ntotal = len(hess_mask)
+    natom_mask = nmask // 3
 
-    mpi_print(f'>>>Center of the mask: {center_coord}, with radius of {radius} A', comm=comm)
-    mpi_print(f'>>>Radius mask. Number of elements in the mask: {nmask} out of {ntotal} ({nmask/ntotal:.1%})', comm=comm)
+    mpi_print(f'>>>Radius mask. Center of the mask: {center_coord}, with radius of {radius} A', comm=comm)
+    mpi_print(f'>>>Number of elements in the mask: {nmask} out of {ntotal} ({nmask/ntotal:.1%})', comm=comm)
+    mpi_print(f'>>>Number of atoms in the mask: {natom_mask}', comm=comm)
 
     return hess_mask, hess_mask_3D
 

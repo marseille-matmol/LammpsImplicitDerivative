@@ -7,8 +7,8 @@ import yaml
 # local imports
 from lammps_implicit_der.tools import initialize_mpi, mpi_print, error_tools, TimingGroup, minimize_loss
 from lammps_implicit_der.systems import DisloSub
-from lammps_implicit_der.tools.io import setup_minimization_dict
-
+from lammps_implicit_der.tools.io import setup_default_minimization_dict, load_parameters, print_parameters
+from lammps_implicit_der.tools.generate_masks import generate_mask_dX, generate_mask_radius, plot_mask
 
 def run_minimization(param_dict, comm=None):
 
@@ -64,6 +64,29 @@ def run_minimization(param_dict, comm=None):
 
     X_target = X_start.copy() + dislo_start.minimum_image(X_target-X_start)
 
+    # Hessian mask
+    if param_dict['implicit_derivative']['apply_hess_mask']:
+
+        hess_mask_type = param_dict['implicit_derivative']['hess_mask_type']
+        if hess_mask_type == 'dX':
+            dX = dislo_start.minimum_image(X_target - X_start)
+            threshold = param_dict['implicit_derivative']['hess_mask_threshold']
+            hess_mask, hess_mask_3D = generate_mask_dX(dX, threshold=threshold, comm=comm)
+
+        elif hess_mask_type == 'radius':
+            radius = param_dict['implicit_derivative']['hess_mask_radius']
+            center_specie = 2
+            species = dislo_start.species
+            hess_mask, hess_mask_3D = generate_mask_radius(X_start, radius=radius, center_specie=center_specie, species=species, comm=comm)
+
+        plot = True
+        if plot and (comm is None or comm.Get_rank() == 0):
+            plot_mask(X_start, hess_mask_3D)
+
+    else:
+        hess_mask = None
+        hess_mask_3D = None
+
     mpi_print('\nParameter optimization...\n', comm=comm)
 
     dislo_final, minim_dict = error_tools.minimize_loss(
@@ -81,6 +104,7 @@ def run_minimization(param_dict, comm=None):
                                     der_adaptive_alpha=der_adaptive_alpha,
                                     der_alpha=der_alpha,
                                     der_maxiter=der_maxiter,
+                                    der_hess_mask=hess_mask,
                                     verbosity=3,
                                     minimize_at_iters=minimize_at_iters,
                                     apply_hard_constraints=apply_hard_constraints,
@@ -95,7 +119,9 @@ def main():
 
     comm, rank = initialize_mpi()
 
-    param_dict = setup_minimization_dict(input_name='minimize_param.yml', comm=comm)
+    param_dict = setup_default_minimization_dict()
+    param_dict = load_parameters(param_dict, 'minimize_param.yml')
+    print_parameters(param_dict, comm=comm)
 
     run_minimization(param_dict, comm=comm)
 

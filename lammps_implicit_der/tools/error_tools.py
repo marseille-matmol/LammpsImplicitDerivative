@@ -73,7 +73,15 @@ def coord_diff(min_image_func, X1, X2):
 
 
 def loss_function(min_image_func, X1, X2, **kwargs):
-    """Loss function for the minimization algorithm."""
+    """
+    Loss function for the minimization algorithm.
+
+    Possible change: add the Theta distance as a penalty term.
+    + 0.5 * lambda_param * ((Theta - Theta0)**2).sum()
+
+    Then, the gradient of the loss function is:
+    dL/dTheta = (X - X_target) * dX/dTheta + lambda_param * (Theta - Theta0)
+    """
 
     return 0.5 * (coord_diff(min_image_func, X1, X2)**2).sum()
 
@@ -89,6 +97,7 @@ def minimize_loss(sim,
                   der_ftol=1e-8,
                   der_atol=1e-5,
                   der_maxiter=500,
+                  der_hess_mask=None,
                   # Minimization parameters
                   maxiter=100,
                   step=0.01,
@@ -220,13 +229,12 @@ def minimize_loss(sim,
     min_Theta = sim.Theta.copy()
 
     # Write the initial lammps data and potential files
+    sim.write_data(filename=os.path.join(output_folder, 'data_step_0000.lammps-data'))
     if rank == 0:
-        sim.write_data(filename=os.path.join(output_folder, f'data_step_0000.lammps-data'))
         sim.pot.to_files(path=output_folder,
                          snapcoeff_filename=f'{sim.pot.elmnts}_step_0000.snapcoeff',
                          snapparam_filename=f'{sim.pot.elmnts}_step_0000.snapparam',
                          overwrite=True, verbose=False)
-
 
     for i in range(1, maxiter+1):
 
@@ -250,7 +258,8 @@ def minimize_loss(sim,
                                             adaptive_alpha=der_adaptive_alpha,
                                             maxiter=der_maxiter,
                                             atol=der_atol,
-                                            ftol=der_ftol)
+                                            ftol=der_ftol,
+                                            hess_mask=der_hess_mask)
             except Exception as e:
                 mpi_print(f'Iteration {i}, error at dX_dTheta: {e}', comm=comm)
                 minim_dict['iter'][i]['error'] = e

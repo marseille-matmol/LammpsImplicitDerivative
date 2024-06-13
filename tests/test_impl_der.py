@@ -25,11 +25,24 @@ def sort_coord(X_coord):
 
     X_round = np.round(X_coord, decimals=8)
     X_3D = X_round.reshape(-1, 3)
+
+    # Sort based on x, y, z
     idx_sort = np.lexsort((X_3D[:, 2], X_3D[:, 1], X_3D[:, 0]))
 
     flat_indices = np.concatenate([np.arange(i*3, i*3+3) for i in idx_sort])
 
     return flat_indices
+
+
+def test_impl_der_inverse(bcc_vacancy):
+
+    dTheta_dX_desired = np.load('./refs/test_impl_der_inverse.npy')
+    dTheta_dX = bcc_vacancy.implicit_derivative(method='inverse')
+
+    # The LAMMPS atom indexing can be different for MPI runs, hence the sorting
+    dTheta_dX = dTheta_dX[sort_coord(bcc_vacancy.X_coord)]
+
+    np.testing.assert_allclose(dTheta_dX, dTheta_dX_desired, atol=1e-7)
 
 
 def test_impl_der_energy_sd(bcc_vacancy):

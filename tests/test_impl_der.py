@@ -36,13 +36,33 @@ def sort_coord(X_coord):
 
 def test_impl_der_inverse(bcc_vacancy):
 
-    dTheta_dX_desired = np.load('./refs/test_impl_der_inverse.npy')
-    dTheta_dX = bcc_vacancy.implicit_derivative(method='inverse')
+    dX_dTheta_desired = np.load('./refs/test_impl_der_inverse.npy')
+    dX_dTheta = bcc_vacancy.implicit_derivative(method='inverse')
 
     # The LAMMPS atom indexing can be different for MPI runs, hence the sorting
-    dTheta_dX = dTheta_dX[sort_coord(bcc_vacancy.X_coord)]
+    dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
 
-    np.testing.assert_allclose(dTheta_dX, dTheta_dX_desired, atol=1e-7)
+    np.testing.assert_allclose(dX_dTheta, dX_dTheta_desired, atol=1e-7)
+
+
+def test_impl_der_dense(bcc_vacancy):
+
+    dX_dTheta_desired = np.load('./refs/test_impl_der_dense.npy')
+    dX_dTheta = bcc_vacancy.implicit_derivative(method='dense')
+
+    dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
+
+    np.testing.assert_allclose(dX_dTheta, dX_dTheta_desired, atol=1e-7)
+
+
+def test_impl_der_sparse(bcc_vacancy):
+
+    dX_dTheta_desired = np.load('./refs/test_impl_der_sparse.npy')
+    dX_dTheta = bcc_vacancy.implicit_derivative(method='sparse', alpha=1e-4, adaptive_alpha=False, maxiter=20)
+
+    dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
+
+    np.testing.assert_allclose(dX_dTheta, dX_dTheta_desired, atol=1e-7)
 
 
 def test_impl_der_energy_sd(bcc_vacancy):
@@ -50,7 +70,6 @@ def test_impl_der_energy_sd(bcc_vacancy):
     dX_dTheta_desired = np.load('./refs/test_impl_der_energy_sd.npy')
     dX_dTheta = bcc_vacancy.implicit_derivative(method='energy', adaptive_alpha=True, min_style='sd', alpha=1e-6, ftol=1e-10, maxiter=200)
 
-    # The LAMMPS atom indexing can be different for MPI runs, hence the sorting
     dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
 
     np.testing.assert_allclose(dX_dTheta, dX_dTheta_desired, atol=1e-7)
@@ -61,7 +80,6 @@ def test_impl_der_energy_cg(bcc_vacancy):
     dX_dTheta_desired = np.load('./refs/test_impl_der_energy_cg.npy')
     dX_dTheta = bcc_vacancy.implicit_derivative(method='energy', adaptive_alpha=True, min_style='cg', alpha=1e-6, ftol=1e-10, maxiter=200)
 
-    # The LAMMPS atom indexing can be different for MPI runs, hence the sorting
     dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
 
     np.testing.assert_allclose(dX_dTheta, dX_dTheta_desired, atol=1e-7)
@@ -77,7 +95,6 @@ def test_impl_der_energy_fire(comm):
     dX_dTheta_desired = np.load('./refs/test_impl_der_energy_fire.npy')
     dX_dTheta = bcc_vacancy_211.implicit_derivative(method='energy', adaptive_alpha=True, min_style='fire', alpha=1e-3, ftol=1e-7, maxiter=50)
 
-    # The LAMMPS atom indexing can be different for MPI runs, hence the sorting
     dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy_211.X_coord)]
 
     np.testing.assert_allclose(dX_dTheta, dX_dTheta_desired, atol=1e-7)

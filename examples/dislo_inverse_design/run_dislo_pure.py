@@ -51,7 +51,6 @@ def run_minimization(param_dict, comm=None):
     with trun.add('target init'):
         dislo_target = Dislo(snapcoeff_filename=snapcoeff_filename,
                                 datafile=datafile_path_target,
-                                sub_element=sub_element,
                                 logname='dislo_target.log',
                                 minimize=False,
                                 comm=comm,

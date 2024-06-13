@@ -35,6 +35,9 @@ def setup_default_minimization_dict():
         ftol: 1e-4
         maxiter: 500
         apply_hess_mask: False
+        hess_mask_type: dX # radius
+        hess_mask_threshold: 0.12
+        hess_mask_radius: 5.0
     """
 
     param_dict = {}
@@ -64,6 +67,10 @@ def setup_default_minimization_dict():
         'alpha': 0.5,
         'ftol': 1e-4,
         'maxiter': 500,
+        'apply_hess_mask': False,
+        'hess_mask_type': 'radius',
+        'hess_mask_threshold': 0.12,
+        'hess_mask_radius': 5.0,
     }
 
     return param_dict

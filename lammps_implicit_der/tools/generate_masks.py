@@ -36,11 +36,12 @@ def generate_mask_radius(X_coord, radius=5.0, center_coord=np.array([0.0, 0.0, 0
     if center_specie is not None and species is None:
         raise ValueError('If center_species is not None, species must be provided.')
 
-    # check shapes
-    if (species is not None) and (len(X_coord) != len(species)):
-        raise ValueError('X_coord and species must have the same length.')
-
     X_3D = X_coord.reshape(-1, 3)
+
+    # check shapes
+    if (species is not None) and (len(X_3D) != len(species)):
+        mpi_print(f'{len(X_coord)=} {len(X_3D)=}', comm=comm)
+        raise ValueError('X_coord and species must have the same length.')
 
     if center_specie is not None:
         center_coord = X_3D[species == center_specie]

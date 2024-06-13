@@ -573,6 +573,9 @@ class LammpsImplicitDer:
 
         hessian = np.zeros((self.N, self.N))
 
+        # Memory-efficient
+        # H = np.zeros((self.mask.sum(),self.mask.sum()))
+
         # We need to define a vector of displacements because the forces function
         # expects a vector of displacements
         dx_vector = np.zeros_like(self._X_coord.flatten())
@@ -584,6 +587,7 @@ class LammpsImplicitDer:
         else:
             if (hess_mask.size != self.N):
                 raise ValueError('hess_mask must have the same size as the number of atoms')
+            idx_move = np.arange(self.N, dtype=int)
             idx_move = idx_move[hess_mask]
             desc = 'Hessian (masked)'
 
@@ -599,10 +603,14 @@ class LammpsImplicitDer:
 
             # compute forces: F(X + alpha * dX_dTheta)
             hessian[i, :] = -self.forces(dx_vector, alpha=1.0)
+            # Memory-efficient
+            # hessian[i,:] = -self.forces(dx_vector, alpha=1.0)[self.mask]
 
             # compute forces: F(X - alpha * dX_dTheta) and subtract
             dx_vector[i] = -dx
             hessian[i, :] -= -self.forces(dx_vector, alpha=1.0)
+            # Memory-efficient
+            # hessian[i,:] -= -self.forces(dx_vector, alpha=1.0)[self.mask]
 
             dx_vector[i] = 0.0
 

@@ -229,13 +229,12 @@ def minimize_loss(sim,
     min_Theta = sim.Theta.copy()
 
     # Write the initial lammps data and potential files
+    sim.write_data(filename=os.path.join(output_folder, 'data_step_0000.lammps-data'))
     if rank == 0:
-        sim.write_data(filename=os.path.join(output_folder, f'data_step_0000.lammps-data'))
         sim.pot.to_files(path=output_folder,
                          snapcoeff_filename=f'{sim.pot.elmnts}_step_0000.snapcoeff',
                          snapparam_filename=f'{sim.pot.elmnts}_step_0000.snapparam',
                          overwrite=True, verbose=False)
-
 
     for i in range(1, maxiter+1):
 

@@ -107,7 +107,7 @@ def minimize_loss(sim,
                   apply_hard_constraints=False,
                   # io parameters
                   verbosity=2,
-                  pickle_name=None,
+                  pickle_name='minim_dict.pkl',
                   binary=False,
                   output_folder='minim_output',
                   comm=None,
@@ -192,7 +192,8 @@ def minimize_loss(sim,
 
     minim_dict = {
         'converged': False,
-        'sim_init': copy.deepcopy(sim.to_dict()),
+        'loop_completed': False,
+        #'sim_init': copy.deepcopy(sim.to_dict()),
         'X_target': X_target,
         'cell': sim.cell
         }
@@ -206,6 +207,8 @@ def minimize_loss(sim,
         'der_ftol': der_ftol,
         'der_atol': der_atol,
         'der_maxiter': der_maxiter,
+        'apply_hess_mask': der_hess_mask is not None,
+        'natom_hess_mask': np.sum(der_hess_mask) // 3 if der_hess_mask is not None else None,
         # Minimization parameters
         'maxiter': maxiter,
         'step': step,
@@ -216,7 +219,7 @@ def minimize_loss(sim,
     }
 
     error_array = np.zeros(maxiter + 1)
-    step_array = np.zeros(maxiter)
+    step_array = np.zeros(maxiter + 1)
 
     # Compute the initial error
     error_array[0] = loss_function(sim.minimum_image, sim.X_coord, X_target)
@@ -262,7 +265,9 @@ def minimize_loss(sim,
                                             hess_mask=der_hess_mask)
             except Exception as e:
                 mpi_print(f'Iteration {i}, error at dX_dTheta: {e}', comm=comm)
-                minim_dict['iter'][i]['error'] = e
+                minim_dict['Exception error'] = e
+                minim_dict['Iteration error'] = i
+                minim_dict['Exception Occured'] = 'dX_dTheta'
                 break
 
         # minim_dict['iter'][i]['dX_dTheta'] = dX_dTheta
@@ -284,8 +289,7 @@ def minimize_loss(sim,
         dX = dTheta @ dX_dTheta
         dX -= dX.mean(0)
 
-        minim_dict['iter'][i]['dTheta'] = dTheta
-        minim_dict['iter'][i]['X_coord'] = dX
+
 
         # Step size
         if adaptive_step:
@@ -319,13 +323,16 @@ def minimize_loss(sim,
         # Update the LAMMPS system
         try:
             sim.X_coord += dX
-            minim_dict['iter'][i]['X_coord'] = sim.X_coord
-
             sim.scatter_coord()
 
             # Update the potential
             sim.Theta += dTheta
             sim.gather_D_dD()
+
+            minim_dict['iter'][i]['X_coord'] = sim.X_coord
+            minim_dict['iter'][i]['dX'] = dX
+            minim_dict['iter'][i]['Theta'] = sim.Theta
+            minim_dict['iter'][i]['dTheta'] = dTheta
 
             # Update the parameters in the pot object
             mpi_print(f'\n  >>Updating the potential parameters for {sub_element}', comm=comm)
@@ -391,11 +398,15 @@ def minimize_loss(sim,
 
         except Exception as e:
             mpi_print(f'Iteration {i}, error at update: {e}', comm=comm)
-            minim_dict['iter'][i]['error'] = e
+            minim_dict['Exception error'] = e
+            minim_dict['Iteration error'] = i
+            minim_dict['Exception Occured'] = 'update'
             break
 
         # Evaluate the error
         error_array[i] = loss_function(sim.minimum_image, sim.X_coord, X_target)
+
+        minim_dict['iter'][i]['error'] = error_array[i]
 
         if verbosity > 0:
             # Predicted change in the loss function
@@ -425,17 +436,26 @@ def minimize_loss(sim,
             minim_dict['converged'] = True
             break
 
+        # Re-write the minim_dict pickle file at each iteration
+        if rank == 0:
+            with open(os.path.join(output_folder, pickle_name), 'wb') as f:
+                pickle.dump(minim_dict, f)
+
         # Sync the MPI processes once per iteration
         if comm is not None:
             comm.Barrier()
 
     mpi_print('='*80+'\n', comm=comm)
 
+    minim_dict['loop_completed'] = True
     minim_dict['numiter'] = i
     minim_dict['error_array'] = error_array[:i]
-    minim_dict['sim_final'] = sim.to_dict()
+    #minim_dict['sim_final'] = sim.to_dict()
     minim_dict['X_final'] = min_X
     minim_dict['Theta_final'] = min_Theta
+    trun.timings['total'].stop()
+
+    minim_dict['sim_timings'] = sim.timings
 
     # delete the tmp files
     if rank == 0:
@@ -445,25 +465,19 @@ def minimize_loss(sim,
             os.remove('tmp.snapparam')
 
     if rank == 0:
-        # Save the final potential parameters
-        if rank == 0:
-            sim.pot.to_files(path='.',
-                             snapcoeff_filename=f'minimized_{sim.pot.elmnts}.snapcoeff',
-                             snapparam_filename=f'minimized_{sim.pot.elmnts}.snapparam',
-                             overwrite=True, verbose=False)
+        sim.pot.to_files(path=output_folder,
+                         snapcoeff_filename=f'minimized_{sim.pot.elmnts}.snapcoeff',
+                         snapparam_filename=f'minimized_{sim.pot.elmnts}.snapparam',
+                         overwrite=True, verbose=False)
 
-        # Save into a pickle file
-        if pickle_name is None:
-            pickle_name = f'minim_dict_{der_method}.pkl'
-        with open(pickle_name, 'wb') as f:
+        with open(os.path.join(output_folder, pickle_name), 'wb') as f:
             pickle.dump(minim_dict, f)
-
-    trun.timings['total'].stop()
 
     if verbosity > 0:
         mpi_print('Number of iterations:', i, comm=comm)
         mpi_print('Converged:', minim_dict['converged'], comm=comm)
         mpi_print(f'Final error: {error_array[i]:.3e}', comm=comm)
         mpi_print('\n', trun, comm=comm)
+        mpi_print(sim.timings, comm=comm)
 
     return sim, minim_dict

@@ -37,12 +37,25 @@ def run_minimization(param_dict, comm=None):
     datafile_path_target = param_dict['system']['lammps_data_target']
     snapcoeff_filename = param_dict['system']['snapcoeff_filename']
     sub_element = param_dict['system']['sub_element']
+    # fixed cylinder for dislocation
+    fixed_cyl_axis = param_dict['system']['fixed_cyl_axis']
+    fixed_cyl_x1 = param_dict['system']['fixed_cyl_x1']
+    fixed_cyl_x2 = param_dict['system']['fixed_cyl_x2']
+    fixed_cyl_r = param_dict['system']['fixed_cyl_r']
+    fixed_cyl_lo = param_dict['system']['fixed_cyl_lo']
+    fixed_cyl_hi = param_dict['system']['fixed_cyl_hi']
 
     mpi_print('Dislo start initial relaxation...', comm=comm)
     with trun.add('start init'):
         dislo_start = DisloSub(snapcoeff_filename=snapcoeff_filename,
                                datafile=datafile_path_start,
                                sub_element=sub_element,
+                               fixed_cyl_axis=fixed_cyl_axis,
+                               fixed_cyl_x1=fixed_cyl_x1,
+                               fixed_cyl_x2=fixed_cyl_x2,
+                               fixed_cyl_r=fixed_cyl_r,
+                               fixed_cyl_lo=fixed_cyl_lo,
+                               fixed_cyl_hi=fixed_cyl_hi,
                                logname='dislo_start.log',
                                minimize=True,
                                comm=comm,
@@ -53,6 +66,12 @@ def run_minimization(param_dict, comm=None):
         dislo_target = DisloSub(snapcoeff_filename=snapcoeff_filename,
                                 datafile=datafile_path_target,
                                 sub_element=sub_element,
+                                fixed_cyl_axis=fixed_cyl_axis,
+                                fixed_cyl_x1=fixed_cyl_x1,
+                                fixed_cyl_x2=fixed_cyl_x2,
+                                fixed_cyl_r=fixed_cyl_r,
+                                fixed_cyl_lo=fixed_cyl_lo,
+                                fixed_cyl_hi=fixed_cyl_hi,
                                 logname='dislo_target.log',
                                 minimize=False,
                                 comm=comm,

@@ -18,6 +18,13 @@ def setup_default_minimization_dict():
         lammps_data_target: target_WBe_screw.lammps-data
         snapcoeff_filename: WBe-NEW.snapcoeff
         sub_element: Be
+        # fixed cylinder for dislocation
+        fixed_cyl_axis: z
+        fixed_cyl_x1: 70.2259
+        fixed_cyl_x2: 72.0799
+        fixed_cyl_r: 49.9
+        fixed_cyl_lo: 0.0
+        fixed_cyl_hi: 2.7587
 
     minimization:
         step: 1e-3
@@ -47,6 +54,13 @@ def setup_default_minimization_dict():
         'lammps_data_target': 'target_WBe_screw.lammps-data',
         'snapcoeff_filename': 'WBe.snapcoeff',
         'sub_element': 'Be',
+        # fixed cylinder for dislocation
+        'fixed_cyl_axis': 'z',
+        'fixed_cyl_x1': 70.2259,
+        'fixed_cyl_x2': 72.0799,
+        'fixed_cyl_r': 49.9,
+        'fixed_cyl_lo': 0.0,
+        'fixed_cyl_hi': 2.7587,
     }
 
     param_dict['minimization'] = {

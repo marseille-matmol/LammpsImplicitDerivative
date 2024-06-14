@@ -21,6 +21,12 @@ class Dislo(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  fix_sel='moving_atoms',
+                 fixed_cyl_axis='z',
+                 fixed_cyl_x1='70.2259',
+                 fixed_cyl_x2='72.0799',
+                 fixed_cyl_r='49.9',
+                 fixed_cyl_lo='0.0',
+                 fixed_cyl_hi='2.7587',
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -63,13 +69,14 @@ class Dislo(LammpsImplicitDer):
 
         # Fix the border atoms
         # Define the cylinder region
-        region fixed_cyl cylinder z 70.22590967109964 72.07990729368126 49.9 0.0 2.7587342746349166 units lattice side out
+        region fixed_cyl cylinder {fixed_cyl_axis} {fixed_cyl_x1} {fixed_cyl_x2} {fixed_cyl_r} {fixed_cyl_lo} {fixed_cyl_hi} units lattice side out
+        #region fixed_cyl cylinder z 70.22590967109964 72.07990729368126 49.9 0.0 2.7587342746349166 units lattice side out
 
         # Define the group of atoms in the cylinder
         group fixed_atoms region fixed_cyl
 
         # All the rest
-        group moving_atoms subtract all fixed_atoms
+        group {fix_sel} subtract all fixed_atoms
 
         # Zero force on the fixed atoms
         fix freeze fixed_atoms setforce 0.0 0.0 0.0
@@ -99,6 +106,12 @@ class DisloSub(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  fix_sel='moving_atoms',
+                 fixed_cyl_axis='z',
+                 fixed_cyl_x1='70.2259',
+                 fixed_cyl_x2='72.0799',
+                 fixed_cyl_r='49.9',
+                 fixed_cyl_lo='0.0',
+                 fixed_cyl_hi='2.7587',
                  sub_element='Be',
                  sub_mass=9.012182,
                  *args, **kwargs):
@@ -151,14 +164,14 @@ class DisloSub(LammpsImplicitDer):
         self.lmp.commands_string(f"""
         # Fix the border atoms
         # Define the cylinder region
-        region fixed_cyl cylinder z 70.22590967109964 72.07990729368126 49.9 0.0 2.7587342746349166 units lattice side out
+        region fixed_cyl cylinder {fixed_cyl_axis} {fixed_cyl_x1} {fixed_cyl_x2} {fixed_cyl_r} {fixed_cyl_lo} {fixed_cyl_hi} units lattice side out
         # region fixed_cyl cylinder z 70.22590967109964 72.07990729368126 49.9 INF INF units lattice side out
 
         # Define the group of atoms in the cylinder
         group fixed_atoms region fixed_cyl
 
         # All the rest
-        group moving_atoms subtract all fixed_atoms
+        group {fix_sel} subtract all fixed_atoms
 
         # Zero force on the fixed atoms
         fix freeze fixed_atoms setforce 0.0 0.0 0.0

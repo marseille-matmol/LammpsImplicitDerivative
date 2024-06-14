@@ -195,7 +195,9 @@ def minimize_loss(sim,
         'loop_completed': False,
         #'sim_init': copy.deepcopy(sim.to_dict()),
         'X_target': X_target,
-        'cell': sim.cell
+        'cell': sim.cell,
+        'species': sim.species,
+        'sub_element': sub_element,
         }
 
     minim_dict['params'] = {
@@ -226,6 +228,10 @@ def minimize_loss(sim,
     mpi_print(f'{"Initial error":>30}: {error_array[0]:.3e}\n', comm=comm)
 
     minim_dict['iter'] = {}
+    minim_dict['iter'][0] = {}
+    minim_dict['iter'][0]['error'] = error_array[0]
+    minim_dict['iter'][0]['X_coord'] = sim.X_coord
+    minim_dict['iter'][0]['Theta'] = sim.Theta
 
     min_error = error_array[0]
     min_X = sim.X_coord.copy()

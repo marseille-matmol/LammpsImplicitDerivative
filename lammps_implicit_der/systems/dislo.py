@@ -152,6 +152,7 @@ class DisloSub(LammpsImplicitDer):
         # Fix the border atoms
         # Define the cylinder region
         region fixed_cyl cylinder z 70.22590967109964 72.07990729368126 49.9 0.0 2.7587342746349166 units lattice side out
+        # region fixed_cyl cylinder z 70.22590967109964 72.07990729368126 49.9 INF INF units lattice side out
 
         # Define the group of atoms in the cylinder
         group fixed_atoms region fixed_cyl

@@ -6,7 +6,7 @@ import yaml
 
 # local imports
 from lammps_implicit_der.tools import initialize_mpi, mpi_print, error_tools, TimingGroup, minimize_loss
-from lammps_implicit_der.systems import DisloSub
+from lammps_implicit_der.systems import ScrewDislo
 from lammps_implicit_der.tools.io import setup_default_minimization_dict, load_parameters, print_parameters
 from lammps_implicit_der.tools.generate_masks import generate_mask_dX, generate_mask_radius, plot_mask
 
@@ -47,35 +47,35 @@ def run_minimization(param_dict, comm=None):
 
     mpi_print('Dislo start initial relaxation...', comm=comm)
     with trun.add('start init'):
-        dislo_start = DisloSub(snapcoeff_filename=snapcoeff_filename,
-                               datafile=datafile_path_start,
-                               sub_element=sub_element,
-                               fixed_cyl_axis=fixed_cyl_axis,
-                               fixed_cyl_x1=fixed_cyl_x1,
-                               fixed_cyl_x2=fixed_cyl_x2,
-                               fixed_cyl_r=fixed_cyl_r,
-                               fixed_cyl_lo=fixed_cyl_lo,
-                               fixed_cyl_hi=fixed_cyl_hi,
-                               logname='dislo_start.log',
-                               minimize=True,
-                               comm=comm,
-                               verbose=True)
+        dislo_start = ScrewDislo(snapcoeff_filename=snapcoeff_filename,
+                                 datafile=datafile_path_start,
+                                 sub_element=sub_element,
+                                 fixed_cyl_axis=fixed_cyl_axis,
+                                 fixed_cyl_x1=fixed_cyl_x1,
+                                 fixed_cyl_x2=fixed_cyl_x2,
+                                 fixed_cyl_r=fixed_cyl_r,
+                                 fixed_cyl_lo=fixed_cyl_lo,
+                                 fixed_cyl_hi=fixed_cyl_hi,
+                                 logname='dislo_start.log',
+                                 minimize=True,
+                                 comm=comm,
+                                 verbose=True)
 
     mpi_print('Dislo target initialization (no relaxation)...', comm=comm)
     with trun.add('target init'):
-        dislo_target = DisloSub(snapcoeff_filename=snapcoeff_filename,
-                                datafile=datafile_path_target,
-                                sub_element=sub_element,
-                                fixed_cyl_axis=fixed_cyl_axis,
-                                fixed_cyl_x1=fixed_cyl_x1,
-                                fixed_cyl_x2=fixed_cyl_x2,
-                                fixed_cyl_r=fixed_cyl_r,
-                                fixed_cyl_lo=fixed_cyl_lo,
-                                fixed_cyl_hi=fixed_cyl_hi,
-                                logname='dislo_target.log',
-                                minimize=False,
-                                comm=comm,
-                                verbose=True)
+        dislo_target = ScrewDislo(snapcoeff_filename=snapcoeff_filename,
+                                  datafile=datafile_path_target,
+                                  sub_element=sub_element,
+                                  fixed_cyl_axis=fixed_cyl_axis,
+                                  fixed_cyl_x1=fixed_cyl_x1,
+                                  fixed_cyl_x2=fixed_cyl_x2,
+                                  fixed_cyl_r=fixed_cyl_r,
+                                  fixed_cyl_lo=fixed_cyl_lo,
+                                  fixed_cyl_hi=fixed_cyl_hi,
+                                  logname='dislo_target.log',
+                                  minimize=False,
+                                  comm=comm,
+                                  verbose=True)
 
     X_target = dislo_target.X_coord
 

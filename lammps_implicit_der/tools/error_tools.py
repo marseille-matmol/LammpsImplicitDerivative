@@ -295,8 +295,6 @@ def minimize_loss(sim,
         dX = dTheta @ dX_dTheta
         dX -= dX.mean(0)
 
-
-
         # Step size
         if adaptive_step:
             """

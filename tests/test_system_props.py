@@ -136,7 +136,9 @@ def test_hessian(comm):
 
     desired_hessian = np.load('./refs/test_system_props_hessian.npy')
 
-    np.testing.assert_allclose(bcc_system_tmp.hessian(), desired_hessian, atol=1e-12)
+    bcc_system_tmp.compute_hessian(store_internally=True)
+
+    np.testing.assert_allclose(bcc_system_tmp.hessian, desired_hessian, atol=1e-12)
 
 
 def test_write_data(comm):

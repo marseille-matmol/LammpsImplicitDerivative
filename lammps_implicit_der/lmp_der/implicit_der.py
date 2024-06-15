@@ -536,8 +536,8 @@ class LammpsImplicitDer:
     @measure_runtime_and_calls
     def forces(self, dx, alpha=0.05):
         """
-            Evaluate forces for given position
-            Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
+        Evaluate forces for given position
+        Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
         """
         # update positions
         x = self._X_coord + alpha * dx.flatten()
@@ -556,17 +556,28 @@ class LammpsImplicitDer:
         return force
 
     @measure_runtime_and_calls
-    def hessian(self, dx=0.001, hess_mask=None):
-        """Naive calculation of the hessian
-
-        Use the finite difference:
+    def compute_hessian(self, dx=0.001, hess_mask=None, store_internally=True):
+        """
+        Finite difference Hessian calculation
 
         H_ij = -[F_i(X + dx_j) - F_i(X - dx_j)]/(2*dx_j)
 
         Parameters
         ----------
         dx : float, optional
-            finite difference, by default 0.001
+            Finite difference.
+
+        hess_mask : numpy array, optional
+            Mask for the Hessian calculation.
+
+        store_internally : bool, optional
+            Store the Hessian internally in the object.
+
+        Returns
+        -------
+
+        hessian : numpy array
+            Hessian matrix. Shape: (3N, 3N).
         """
 
         mpi_print('Computing the Hessian...', comm=self.comm, verbose=self.verbose)
@@ -621,6 +632,9 @@ class LammpsImplicitDer:
         T = np.array([np.array([1, 0, 0] * self.Natom), np.array([0, 1, 0]*self.Natom), np.array([0, 0, 1]*self.Natom)])
         T = T.T@T * epsilon
         hessian = np.add(hessian, T)
+
+        if store_internally:
+            self.hessian = hessian
 
         return hessian
 
@@ -950,7 +964,7 @@ class LammpsImplicitDer:
         """
 
         # Compute the Moore-Penrose inverse of the Hessian
-        hessian = self.hessian()
+        hessian = self.compute_hessian()
         hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
         H_inv = np.linalg.pinv(hessian)
 
@@ -966,7 +980,7 @@ class LammpsImplicitDer:
             implicit derivative
         """
 
-        hessian = self.hessian(hess_mask=hess_mask)
+        hessian = self.compute_hessian(hess_mask=hess_mask)
 
         # Lift the diagonal of the Hessian to avoid singularities
         hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
@@ -987,16 +1001,6 @@ class LammpsImplicitDer:
             mpi_print(f'Computing dX_dTheta with linalg.solve, Hessian shape: {hessian.shape}', comm=self.comm, verbose=self.verbose)
             with self.timings.add('linalg.solve') as t:
                 dX_dTheta = np.linalg.solve(hessian, self.mixed_hessian.T).T
-
-        return dX_dTheta
-
-    def implicit_derivative_direct_sparse(self):
-        """Compute implicit derivative from Hessian inverse
-        by solving dX_dT @ hessian = -C
-        using sparse solver
-        """
-
-        dX_dTheta = spsolve(self.hessian(return_sparse=True), self.mixed_hessian.T).T
 
         return dX_dTheta
 

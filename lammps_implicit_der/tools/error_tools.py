@@ -355,7 +355,7 @@ def minimize_loss(sim,
                                  snapcoeff_filename=f'{sim.pot.elmnts}_step_{i:04d}.snapcoeff',
                                  snapparam_filename=f'{sim.pot.elmnts}_step_{i:04d}.snapparam',
                                  overwrite=True, verbose=False)
-                # sim.write_xyz_file(filename=os.path.join(output_folder, f'coords_step_{i:04d}.xyz'))
+                sim.write_xyz_file(filename=os.path.join(output_folder, f'coords_step_{i:04d}.xyz'))
 
             sim.write_data(filename=os.path.join(output_folder, f'data_step_{i:04d}.lammps-data'))
 

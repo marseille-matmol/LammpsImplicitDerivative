@@ -194,7 +194,7 @@ def minimize_loss(sim,
         'converged': False,
         'loop_completed': False,
         #'sim_init': copy.deepcopy(sim.to_dict()),
-        'X_target': X_target,
+        'X_target': X_target.copy(),
         'cell': sim.cell,
         'species': sim.species,
         'sub_element': sub_element,
@@ -230,8 +230,11 @@ def minimize_loss(sim,
     minim_dict['iter'] = {}
     minim_dict['iter'][0] = {}
     minim_dict['iter'][0]['error'] = error_array[0]
-    minim_dict['iter'][0]['X_coord'] = sim.X_coord
-    minim_dict['iter'][0]['Theta'] = sim.Theta
+    minim_dict['iter'][0]['X_coord'] = sim.X_coord.copy()
+    minim_dict['iter'][0]['Theta'] = sim.Theta.copy()
+    minim_dict['iter'][0]['dX'] = np.zeros_like(sim.X_coord)
+    minim_dict['iter'][0]['dTheta'] = np.zeros_like(sim.Theta)
+    minim_dict['iter'][0]['dX_target'] = coord_diff(sim.minimum_image, sim.X_coord, X_target)
 
     min_error = error_array[0]
     min_X = sim.X_coord.copy()

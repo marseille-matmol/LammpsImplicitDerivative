@@ -1068,6 +1068,7 @@ def compute_form_volume_bins(run_dict, V_range=None, V_num_bins=50):
 
     for vol_key in vol_key_list:
         bin_vals = bin_vol_dict[vol_key]['bin_vals']
+        print('SUKA', bin_vals)
         bin_vol_dict[vol_key]['median'] = np.array([np.percentile(vals, 50) if bin_vals else np.nan for vals in bin_vals])
         bin_vol_dict[vol_key]['perc_16'] = np.array([np.percentile(vals, 16) if bin_vals else np.nan for vals in bin_vals])
         bin_vol_dict[vol_key]['perc_84'] = np.array([np.percentile(vals, 84) if bin_vals else np.nan for vals in bin_vals])
@@ -1295,8 +1296,10 @@ def main():
     #sample = 20
     #sample = 62
 
-    bin_vol_dict = compute_form_volume_bins(run_dict, V_range=None, V_num_bins=20)
-    bin_en_dict = compute_formation_energy_bins(run_dict, E_form_range=None, E_form_num_bins=20)
+    V_num_bins = 20
+    E_form_num_bins = 20
+    #bin_vol_dict = compute_form_volume_bins(run_dict, V_range=None, V_num_bins=20)
+    #bin_en_dict = compute_formation_energy_bins(run_dict, E_form_range=None, E_form_num_bins=20)
 
     #plot_coordinate_error = True
     plot_coordinate_error = False
@@ -1641,7 +1644,8 @@ def main():
 
         plt.show()
 
-    plot_LJ_2x1 = True
+    #plot_LJ_2x1 = True
+    plot_LJ_2x1 = False
     if plot_LJ_2x1:
 
         LJ_dict_path = '/Users/imaliyov/Papers/Potential-Perturbation/LJ_notebook/LATTICE-DIST/LJ_dict.pkl'

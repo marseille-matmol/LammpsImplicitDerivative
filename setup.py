@@ -16,10 +16,10 @@ setup(
     packages=find_packages(),
     install_requires=[
         'numpy',
+        'scipy',
         'pytest',
         'PyYAML',
         'matplotlib',
-        'scipy',
         'psutil',
         'pynvml',
         'tqdm'

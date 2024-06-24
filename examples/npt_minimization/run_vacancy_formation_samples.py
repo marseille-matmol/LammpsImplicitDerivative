@@ -111,12 +111,12 @@ def main():
         virial_array_vac = en_vol_vac_dict['virial_array']
         force_array_vac = en_vol_vac_dict['force_array']
 
+        virial_trace_array_pure = np.sum(virial_array_pure[:, :3, :], axis=1) / 3.0
+        virial_trace_array_vac = np.sum(virial_array_vac[:, :3, :], axis=1) / 3.0
+
         for idesc in range(bcc_pure.Ndesc):
 
-            virial_trace_array_pure = np.sum(virial_array_pure[:, :3, :], axis=1) / 3.0
             spline_virial_list_pure.append(CubicSpline(volume_array_pure, virial_trace_array_pure[:, idesc]))
-
-            virial_trace_array_vac = np.sum(virial_array_vac[:, :3, :], axis=1) / 3.0
             spline_virial_list_vac.append(CubicSpline(volume_array_vac, virial_trace_array_vac[:, idesc]))
 
         for icoord in range(bcc_vac.Natom * 3):

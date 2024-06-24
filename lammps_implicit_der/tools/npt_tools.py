@@ -85,6 +85,9 @@ def compute_energy_volume(system, epsilon_array, compute_forces=False):
 
 def create_perturbed_system(Theta_perturb, LammpsClass, snapcoeff_filename, snapparam_filename=None,
                             data_path=None, alat=3.185, ncell_x=2, logname='perturb.log', fix_box_relax=False, minimize=True, verbose=False, comm=None):
+    """
+    Create an instance of LammpsClass with  potential parameters from Theta_perturb numpy array.
+    """
 
     # system_tmp is created only to save the SNAP potential files
     system_tmp = LammpsClass(data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
@@ -161,7 +164,7 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
             mpi_print('Minimization did not converge for s_box_relax', comm=comm)
             return None
 
-        mpi_print(f'   box/relax steps: {s_box_relax.minimization_nstep}', comm=comm)
+        #mpi_print(f'   box/relax steps: {s_box_relax.minimization_nstep}', comm=comm)
 
     with trun.add('NVT minimization'):
         # For full implicit derivative. Theta0

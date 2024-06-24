@@ -65,7 +65,7 @@ class SNAP():
             data_path = os.path.join(script_dir, 'data_files')
 
         if snapcoeff_filename is None:
-            raise RuntimeError(f'snapcoeff_filename must be provided')
+            raise RuntimeError('snapcoeff_filename must be provided')
 
         snapcoeff_path = os.path.join(data_path, snapcoeff_filename)
 

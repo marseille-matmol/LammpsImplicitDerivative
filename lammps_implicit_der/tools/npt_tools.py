@@ -83,8 +83,11 @@ def compute_energy_volume(system, epsilon_array, compute_forces=False):
     return result_dict
 
 
-def create_perturbed_system(Theta_ens, delta, LammpsClass, snapcoeff_filename, snapparam_filename=None,
-                            data_path=None, sample=1, alat=3.185, ncell_x=2, logname='perturb.log', fix_box_relax=False, minimize=True, verbose=False, comm=None):
+def create_perturbed_system(Theta_perturb, LammpsClass, snapcoeff_filename, snapparam_filename=None,
+                            data_path=None, alat=3.185, ncell_x=2, logname='perturb.log', fix_box_relax=False, minimize=True, verbose=False, comm=None):
+    """
+    Create an instance of LammpsClass with  potential parameters from Theta_perturb numpy array.
+    """
 
     # system_tmp is created only to save the SNAP potential files
     system_tmp = LammpsClass(data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
@@ -95,7 +98,7 @@ def create_perturbed_system(Theta_ens, delta, LammpsClass, snapcoeff_filename, s
 
     element = system_tmp.pot.elem_list[0]
 
-    Theta_perturb = Theta_ens['Theta_mean'] + delta * (Theta_ens['Theta_ens_list'][sample] - Theta_ens['Theta_mean'])
+    #Theta_perturb = Theta_ens['Theta_mean'] + delta * (Theta_ens['Theta_ens_list'][sample] - Theta_ens['Theta_mean'])
 
     # Set the perturbed parameters
     system_tmp.pot.Theta_dict[element]['Theta'] = Theta_perturb
@@ -134,7 +137,7 @@ def create_perturbed_system(Theta_ens, delta, LammpsClass, snapcoeff_filename, s
     return system_perturb
 
 
-def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sample,
+def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
                                 snapcoeff_filename, snapparam_filename,
                                 virial_trace, virial_der0, descriptor_array, volume_array,
                                 dX_dTheta_inhom, force_der0=None,
@@ -149,9 +152,9 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sa
 
     with trun.add('NPT minimization'):
         # For the ground truth - fix box/relax. Theta1
-        s_box_relax = create_perturbed_system(Theta_ens, delta, LammpsClass, logname='s_box_relax.log',
+        s_box_relax = create_perturbed_system(Theta_perturb, LammpsClass, logname='s_box_relax.log',
                                               data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
-                                              sample=sample, alat=alat, ncell_x=ncell_x, fix_box_relax=True, minimize=True, verbose=False, comm=comm)
+                                              alat=alat, ncell_x=ncell_x, fix_box_relax=True, minimize=True, verbose=False, comm=comm)
 
         if comm is not None:
             comm.Barrier()
@@ -161,7 +164,7 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sa
             mpi_print('Minimization did not converge for s_box_relax', comm=comm)
             return None
 
-        mpi_print(f'   box/relax steps: {s_box_relax.minimization_nstep}', comm=comm)
+        #mpi_print(f'   box/relax steps: {s_box_relax.minimization_nstep}', comm=comm)
 
     with trun.add('NVT minimization'):
         # For full implicit derivative. Theta0
@@ -263,8 +266,6 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_ens, delta, sa
     result_dict = {
         'trun': trun,
         # Parameters
-        'sample': sample,
-        'delta': delta,
         'Theta_pert': Theta_pert,
         # Volumes
         'volume0': volume0,

@@ -111,12 +111,12 @@ def main():
         virial_array_vac = en_vol_vac_dict['virial_array']
         force_array_vac = en_vol_vac_dict['force_array']
 
+        virial_trace_array_pure = np.sum(virial_array_pure[:, :3, :], axis=1) / 3.0
+        virial_trace_array_vac = np.sum(virial_array_vac[:, :3, :], axis=1) / 3.0
+
         for idesc in range(bcc_pure.Ndesc):
 
-            virial_trace_array_pure = np.sum(virial_array_pure[:, :3, :], axis=1) / 3.0
             spline_virial_list_pure.append(CubicSpline(volume_array_pure, virial_trace_array_pure[:, idesc]))
-
-            virial_trace_array_vac = np.sum(virial_array_vac[:, :3, :], axis=1) / 3.0
             spline_virial_list_vac.append(CubicSpline(volume_array_vac, virial_trace_array_vac[:, idesc]))
 
         for icoord in range(bcc_vac.Natom * 3):
@@ -146,12 +146,11 @@ def main():
             Theta_ens = pickle.load(file)
 
         #delta_array = np.linspace(-100.0, 100.0, 11)
-        #delta_array = np.linspace(-10.0, 10.0, 3)
-        delta_array = np.linspace(-50.0, 50.0, 101)
+        delta_array = np.linspace(-20.0, 20.0, 3)
+        #delta_array = np.linspace(-50.0, 50.0, 101)
         # For energy-volume curves
-        #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 15)
-        #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 25)
-        epsilon_array_en_vol = np.linspace(-0.05, 0.05, 61)
+        #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 61)
+        epsilon_array_en_vol = np.linspace(-0.05, 0.05, 5)
 
         run_dict['delta_array'] = delta_array
 
@@ -190,16 +189,20 @@ def main():
                 sample_dict[d_str]['pure'] = {}
                 sample_dict[d_str]['vac'] = {}
 
+                Theta_perturb = Theta_ens['Theta_mean'] + delta * (Theta_ens['Theta_ens_list'][sample] - Theta_ens['Theta_mean'])
+
+                sample_dict[d_str]['Theta_perturb'] = Theta_perturb.copy()
+
                 mpi_print('   Eergy-volume curves...', comm=comm)
                 with trun.add('en.-vol. curves'):
 
-                    bcc_pure_tmp = create_perturbed_system(Theta_ens, delta, Bcc, logname='vac_tmp.log',
+                    bcc_pure_tmp = create_perturbed_system(Theta_perturb, Bcc, logname='vac_tmp.log',
                                                            snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename, comm=comm,
-                                                           sample=sample, alat=alat, ncell_x=ncell_x, fix_box_relax=False, minimize=True, verbose=False)
+                                                           alat=alat, ncell_x=ncell_x, fix_box_relax=False, minimize=True, verbose=False)
 
-                    bcc_vac_tmp = create_perturbed_system(Theta_ens, delta, BccVacancy, logname='vac_tmp.log',
+                    bcc_vac_tmp = create_perturbed_system(Theta_perturb, BccVacancy, logname='vac_tmp.log',
                                                           snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename, comm=comm,
-                                                          sample=sample, alat=alat_vac, ncell_x=ncell_x, fix_box_relax=False, minimize=True, verbose=False)
+                                                          alat=alat_vac, ncell_x=ncell_x, fix_box_relax=False, minimize=True, verbose=False)
 
                     if bcc_pure_tmp is None or bcc_vac_tmp is None:
                         mpi_print('   Error in creating perturbed systems.', comm=comm)
@@ -215,7 +218,8 @@ def main():
 
                 mpi_print('   NPT minimization...', comm=comm)
                 with trun.add('npt'):
-                    pure_dict = run_npt_implicit_derivative(Bcc, alat, ncell_x, Theta_ens, delta, sample,
+
+                    pure_dict = run_npt_implicit_derivative(Bcc, alat, ncell_x, Theta_perturb,
                                                             snapcoeff_filename, snapparam_filename,
                                                             virial_trace_pure, virial_der_pure0, descriptor_array_pure, volume_array_pure,
                                                             dX_dTheta_pure_inhom, comm=comm, trun=trun_npt)
@@ -223,7 +227,7 @@ def main():
                     if comm is not None:
                         comm.Barrier()
 
-                    vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_ens, delta, sample,
+                    vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_perturb,
                                                            snapcoeff_filename, snapparam_filename,
                                                            virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
                                                            dX_dTheta_vac_inhom, force_der0=force_der_vac0, comm=comm, trun=trun_npt)

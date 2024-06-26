@@ -415,7 +415,7 @@ def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change
         vol_no_change_array = np.zeros_like(vol_form)
         vol_no_change_array[:] = vol_form_true0
         kwargs = method_plot_dict['formation']['energy_pred0'].copy()
-        kwargs.pop('marker', None)
+        #kwargs.pop('marker', None)
         ax.plot(delta_array_sample, vol_no_change_array, zorder=-1, **kwargs)
 
     for i, vol_key in enumerate(vol_key_list):
@@ -516,11 +516,23 @@ def plot_formation_volume_error_bins(ax, bin_error_dict, method_plot_dict, splin
     ax.set_ylabel('Formation Volume Error ($\mathrm{\AA}^3$)')
 
 
-def plot_formation_energy_bins(ax, bin_energy_dict, method_plot_dict, spline_fill=True):
+def plot_formation_energy_bins(ax, run_dict, bin_energy_dict, method_plot_dict, spline_fill=True, plot_diff=False):
 
     en_key_list = ['energy_pred0', 'energy_hom_pred', 'energy_inhom_pred', 'energy_full_pred']
 
+    delta_array = run_dict['delta_array']
+    idelta0 = np.argmin(np.abs(delta_array))
+
+    en_vac_true0 = run_dict['sample_0'][f'delta_{idelta0}']['vac']['npt']['energy_true']
+    en_pure_true0 = run_dict['sample_0'][f'delta_{idelta0}']['pure']['npt']['energy_true']
+    E_form_true0 = en_vac_true0 - en_pure_true0 * run_dict['Natom vac'] / run_dict['Natom pure']
+
     E_form_bin_centers = bin_energy_dict['E_form_bin_centers']
+
+    if plot_diff:
+        dE = E_form_true0
+    else:
+        dE = 0.0
 
     for i, en_key in enumerate(en_key_list):
 
@@ -528,17 +540,25 @@ def plot_formation_energy_bins(ax, bin_energy_dict, method_plot_dict, spline_fil
         bin_perc_16 = bin_energy_dict[en_key]['perc_16']
         bin_perc_84 = bin_energy_dict[en_key]['perc_84']
 
-        ax.plot(E_form_bin_centers, bin_average, **method_plot_dict['formation'][en_key])
+        plot_kwargs = method_plot_dict['formation'][en_key].copy()
+        plot_kwargs['ms'] = 14
+        plot_kwargs['lw'] = 5.0
+
+        ax.plot(E_form_bin_centers-dE, bin_average-dE, **plot_kwargs)
 
         if spline_fill:
             dE_grid, bin_16_interp = interpolate(E_form_bin_centers, bin_perc_16)
             dE_grid, bin_84_interp = interpolate(E_form_bin_centers, bin_perc_84)
-            ax.fill_between(dE_grid, bin_16_interp, bin_84_interp, alpha=0.2, color=method_plot_dict['formation'][en_key]['c'])
+            ax.fill_between(dE_grid-dE, bin_16_interp-dE, bin_84_interp-dE, alpha=0.2, color=method_plot_dict['formation'][en_key]['c'])
         else:
-            ax.fill_between(E_form_bin_centers, bin_perc_16, bin_perc_84, color=method_plot_dict['formation'][en_key]['c'], alpha=0.2)
+            ax.fill_between(E_form_bin_centers-dE, bin_perc_16-dE, bin_perc_84-dE, color=method_plot_dict['formation'][en_key]['c'], alpha=0.2)
 
-    ax.set_xlabel('True Formation Energy (eV)')
-    ax.set_ylabel('Predicted Formation Energy (eV)')
+    if plot_diff:
+        ax.set_xlabel('Formation Energy Change (eV)')
+        ax.set_ylabel('Pred. Form. Energy Change(eV)')
+    else:
+        ax.set_xlabel('True Formation Energy (eV)')
+        ax.set_ylabel('Predicted Formation Energy (eV)')
 
 
 def plot_formation_volume_bins(ax, run_dict, bin_vol_dict, method_plot_dict, spline_fill=True):
@@ -560,7 +580,7 @@ def plot_formation_volume_bins(ax, run_dict, bin_vol_dict, method_plot_dict, spl
     vol_no_change_array = np.zeros_like(V_bin_centers)
     vol_no_change_array[:] = vol_form_true0
     kwargs = method_plot_dict['formation']['energy_pred0'].copy()
-    kwargs.pop('marker', None)
+    #kwargs.pop('marker', None)
     ax.plot(atomic_volume, vol_no_change_array, zorder=-1, **kwargs)
 
     for i, vol_key in enumerate(vol_key_list):
@@ -696,7 +716,12 @@ def plot_LJ_error(ax, LJ_dict, method_plot_dict):
 
     fsize = 24
     ax.set_xlabel(r"Lennard-Jones Parameter $\sigma_{\rm AB}$", fontsize=fsize)
-    ax.set_ylabel(r'Error ($\epsilon^{\rm LJ}$)', fontsize=fsize)
+    #eps_unicode = '\U+03F5'
+    # \U+03F5 is the unicode for the greek letter epsilon
+    eps_unicode = '\u03F5'
+
+    ax.set_ylabel('Energy error'+f' ({eps_unicode}'+r'$^{\rm LJ}$)', fontsize=fsize)
+    #ax.set_ylabel(r'Error ($\epsilon^{\rm LJ}$)', fontsize=fsize)
 
 
 def plot_LJ_distortion(ax, LJ_dict, method_plot_dict):
@@ -709,7 +734,7 @@ def plot_LJ_distortion(ax, LJ_dict, method_plot_dict):
 
     label_dict = {'Constant': 'Constant / Homogeneous',
                   'Inhomogeneous': 'Inhomogeneous',
-                  'True': 'True',
+                  'True': 'True (Const. Vol.)',
                   }
 
     sigma_AB = LJ_dict['sigma_AB']
@@ -1068,7 +1093,6 @@ def compute_form_volume_bins(run_dict, V_range=None, V_num_bins=50):
 
     for vol_key in vol_key_list:
         bin_vals = bin_vol_dict[vol_key]['bin_vals']
-        print('SUKA', bin_vals)
         bin_vol_dict[vol_key]['median'] = np.array([np.percentile(vals, 50) if bin_vals else np.nan for vals in bin_vals])
         bin_vol_dict[vol_key]['perc_16'] = np.array([np.percentile(vals, 16) if bin_vals else np.nan for vals in bin_vals])
         bin_vol_dict[vol_key]['perc_84'] = np.array([np.percentile(vals, 84) if bin_vals else np.nan for vals in bin_vals])
@@ -1272,6 +1296,8 @@ def main():
     print(f'Number of atoms in vacancy system: {run_dict["Natom vac"]}')
 
     # filter data
+    num_samples_initial = 0
+    print(f'Initial total number of ')
     run_dict = filter_data(run_dict)
     run_dict = filter_data_energy_volume(run_dict, atol=1e-2, rtol=50.0)
 
@@ -1279,7 +1305,7 @@ def main():
     #run_dict = cut_data(run_dict, delta_min=-50.0, delta_max=50.0)
 
     average_dict = average_data(run_dict)
-    bin_error_dict = compute_error_bins(run_dict, E_range=(-1.5, 1.5), V_range=(-3, 3), dE_num_bins=15, dV_num_bins=15)
+    bin_error_dict = compute_error_bins(run_dict, E_range=(-2.0, 2.0), V_range=(-3, 3), dE_num_bins=15, dV_num_bins=15)
 
     # Plot success_matrix
     plot_succ_matrix = False
@@ -1296,10 +1322,8 @@ def main():
     #sample = 20
     #sample = 62
 
-    V_num_bins = 20
-    E_form_num_bins = 20
-    #bin_vol_dict = compute_form_volume_bins(run_dict, V_range=None, V_num_bins=20)
-    #bin_en_dict = compute_formation_energy_bins(run_dict, E_form_range=None, E_form_num_bins=20)
+    bin_vol_dict = compute_form_volume_bins(run_dict, V_range=None, V_num_bins=20)
+    bin_en_dict = compute_formation_energy_bins(run_dict, E_form_range=None, E_form_num_bins=20)
 
     #plot_coordinate_error = True
     plot_coordinate_error = False
@@ -1487,8 +1511,8 @@ def main():
                 fig.savefig(os.path.join(plot_dir, f'coord_error_sample_{sample:03d}.pdf'))
                 plt.close()
 
-    #plot_av_data = True
-    plot_av_data = False
+    plot_av_data = True
+    #plot_av_data = False
     if plot_av_data:
 
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
@@ -1511,8 +1535,8 @@ def main():
 
         plt.show()
 
-    #plot_av_data_bins = True
-    plot_av_data_bins = False
+    plot_av_data_bins = True
+    #plot_av_data_bins = False
     if plot_av_data_bins:
 
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
@@ -1585,7 +1609,7 @@ def main():
         ax2 = fig.add_subplot(gs0[0:2, 2])
         ax3 = fig.add_subplot(gs0[0:2, 3])
 
-        plt.subplots_adjust(left=0.05, right=0.99, bottom=0.13, top=0.96, wspace=0.24, hspace=0.01)
+        plt.subplots_adjust(left=0.05, right=0.99, bottom=0.13, top=0.96, wspace=0.24, hspace=0.02)
 
         # AXIS 0
         plot_formation_volume(ax0_top, run_dict, sample1, method_plot_dict)
@@ -1603,12 +1627,15 @@ def main():
         plot_formation_volume_bins(ax1, run_dict, bin_vol_dict, method_plot_dict, spline_fill=spline_fill)
 
         # AXIS 2
-        plot_formation_energy_bins(ax2, bin_en_dict, method_plot_dict, spline_fill=spline_fill)
+        plot_formation_energy_bins(ax2, run_dict, bin_en_dict, method_plot_dict, spline_fill=spline_fill, plot_diff=True)
 
         # Get the max and mix of ax2
         x_min, x_max = ax2.get_xlim()
         # plot the diagonal line
-        ax2.plot([x_min, x_max], [x_min, x_max], ls='--', color='black', lw=2)
+        l = ax2.plot([x_min, x_max], [x_min, x_max], ls='--', color='black', lw=4)
+
+        # legend only for dashed line - ideal
+        ax2.legend([l[0]], ['Ideal'], fontsize=20, frameon=False)
 
         #ax2.set_ylim(-0.3, 0.6)
         #ax2.set_xlim(5, 15)
@@ -1644,8 +1671,74 @@ def main():
 
         plt.show()
 
-    #plot_LJ_2x1 = True
-    plot_LJ_2x1 = False
+    plot_av_data_bins_1x3_NEW = True
+    #plot_av_data_bins_1x3_NEW = False
+    if plot_av_data_bins_1x3_NEW:
+
+        sample1 = 20
+
+        #fig, axes = plt.subplots(1, 4, figsize=(22, 6))
+        #plt.subplots_adjust(left=0.05, right=0.985, bottom=0.13, top=0.96, wspace=0.24, hspace=0.27)
+        fig = plt.figure(figsize=(20, 6))
+        gs0 = gridspec.GridSpec(2, 3, figure=fig)
+
+        # with this grid, split the first plot into two vertically
+        # and for 2,3,4 create axes
+        ax0_top = fig.add_subplot(gs0[0, 0])
+        ax0_bot = fig.add_subplot(gs0[1, 0])
+
+        ax1 = fig.add_subplot(gs0[0:2, 1])
+        ax2 = fig.add_subplot(gs0[0:2, 2])
+        #ax3 = fig.add_subplot(gs0[0:2, 3])
+
+        plt.subplots_adjust(left=0.055, right=0.99, bottom=0.13, top=0.96, wspace=0.24, hspace=0.02)
+
+        # AXIS 0
+        plot_formation_volume(ax0_top, run_dict, sample1, method_plot_dict)
+        plot_formation_energy(ax0_bot, run_dict, sample1, method_plot_dict)
+
+        ax0_top.set_ylabel('Formation\nVolume ($\mathrm{\AA}^3$)')
+        ax0_bot.set_ylabel('Formation\nEnergy (eV)')
+
+        ax0_top.set_xticklabels([])
+
+        ax0_top.set_ylim(6.0, 21.0)
+
+        spline_fill = True
+        #spline_fill = False
+
+        # AXIS 1
+        plot_formation_volume_bins(ax1, run_dict, bin_vol_dict, method_plot_dict, spline_fill=spline_fill)
+
+        # AXIS 2
+        plot_formation_energy_error_bins(ax2, bin_error_dict, method_plot_dict, spline_fill=spline_fill)
+
+        ax1.set_ylim(5, 17)
+
+        ax2.set_ylim(ymax=0.175)
+        # For ax3 multiple locator by 0.05
+        ax2.yaxis.set_major_locator(MultipleLocator(0.05))
+
+        # no legend box around it
+        ax0_top.legend(loc='upper left', fontsize=16, frameon=False)
+
+        # iterate over the lines of the legend and set the marker size to 10
+        for line in ax0_top.get_legend().get_lines():
+            line.set_markersize(10)
+            line.set_linewidth(3)
+
+        # a,b, c labels
+        label_list = ['a', 'b', 'c', 'd']
+        pos_list = [(-0.18, 1.05), (-0.18, 1.02), (-0.15, 1.02), (-0.17, 1.02)]
+        for i, ax in enumerate([ax0_top, ax0_bot, ax1, ax2]):
+            ax.text(pos_list[i][0], pos_list[i][1], label_list[i], transform=ax.transAxes, fontsize=30, fontweight='bold', va='top', ha='left')
+
+        fig.savefig(os.path.join(plot_dir, 'average_data_bins_1x3.pdf'))
+
+        plt.show()
+
+    plot_LJ_2x1 = True
+    #plot_LJ_2x1 = False
     if plot_LJ_2x1:
 
         LJ_dict_path = '/Users/imaliyov/Papers/Potential-Perturbation/LJ_notebook/LATTICE-DIST/LJ_dict.pkl'

@@ -36,7 +36,7 @@ def get_min(en_vol_dict, ncell_x):
 
 def main():
 
-    trun = TimingGroup('RUN GLOBAL', sort=False)
+    trun = TimingGroup('RUN SCRIPT', sort=False)
     trun.add('total', level=2).start()
 
     comm, rank = initialize_mpi()
@@ -146,7 +146,7 @@ def main():
             Theta_ens = pickle.load(file)
 
         #delta_array = np.linspace(-100.0, 100.0, 11)
-        delta_array = np.linspace(-20.0, 20.0, 3)
+        delta_array = np.linspace(-20.0, 20.0, 5)
         #delta_array = np.linspace(-50.0, 50.0, 101)
         # For energy-volume curves
         #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 61)
@@ -252,6 +252,12 @@ def main():
             if rank == 0:
                 print(trun.timings['sample'])
 
+    mpi_print('', comm=comm)
+    mpi_print(f'{"s_pred SYSTEM":*^70}', comm=comm)
+    mpi_print(pure_dict['trun_s_pred'], comm=comm)
+    mpi_print(f'{"s_box_relax SYSTEM":*^70}', comm=comm)
+    mpi_print(pure_dict['trun_s_box_relax'], comm=comm)
+
     mpi_print(trun_npt, comm=comm)
 
     # Save run_dict to pickle
@@ -265,5 +271,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# Exception: ERROR on proc 0: Neighbor list overflow, boost neigh_modify one (src/npair_full_bin_atomonly.cpp:87

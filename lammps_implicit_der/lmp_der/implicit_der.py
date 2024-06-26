@@ -498,6 +498,7 @@ class LammpsImplicitDer:
         self.cell[1][2] = yz
         self.inv_cell = np.linalg.inv(self.cell)
 
+    @measure_runtime_and_calls
     def apply_strain(self, cell, update_system=True):
         """
         Apply strain to the system
@@ -673,25 +674,28 @@ class LammpsImplicitDer:
                                                         ftol=ftol,
                                                         maxiter=maxiter,
                                                         min_style=min_style)
-            return dX_dTheta
 
         elif method == 'sparse':
-            res_dict = self.implicit_derivative_sparse(alpha=alpha,
-                                                       adaptive_alpha=adaptive_alpha,
-                                                       atol=atol,
-                                                       maxiter=maxiter)
-            return res_dict['dX_dTheta']
+            dX_dTheta = self.implicit_derivative_sparse(alpha=alpha,
+                                                        adaptive_alpha=adaptive_alpha,
+                                                        atol=atol,
+                                                        maxiter=maxiter)
 
         elif method == 'inverse':
             if hess_mask is not None:
-                 mpi_print('WARNING: hess_mask is not yet implemented in the inverse method', comm=self.comm)
-            return self.implicit_derivative_inverse()
+                mpi_print('WARNING: hess_mask is not yet implemented in the inverse method', comm=self.comm)
+
+            dX_dTheta = self.implicit_derivative_inverse()
 
         elif method == 'dense':
-            return self.implicit_derivative_dense(hess_mask=hess_mask)
+            dX_dTheta = self.implicit_derivative_dense(hess_mask=hess_mask)
 
         else:
             raise ValueError(f'Unknown method for implicit derivative: {method}')
+
+        self.dX_dTheta = dX_dTheta.copy()
+
+        return dX_dTheta
 
     def implicit_derivative_sparse(self,
                                    alpha=0.01,
@@ -731,7 +735,7 @@ class LammpsImplicitDer:
         F0 = self.forces(dX0, alpha=0.0)
 
         # result holder
-        res_dict = {'dX_dTheta': [], 'err': [], 'calls': []}
+        dX_dTheta = np.zeros((self.Ndesc, self.Natom * 3))
 
         if self.verbose and self.rank == 0:
             iterator = tqdm(self.mixed_hessian, desc='Impl. Der. Sparse')
@@ -740,8 +744,6 @@ class LammpsImplicitDer:
 
         # One linear solutions per parameter
         for idesc, Cl in enumerate(iterator):
-            # initialize step counter
-            nstep = 0
 
             # determine the alpha_factor
             if adaptive_alpha:
@@ -755,21 +757,9 @@ class LammpsImplicitDer:
 
             # perform iterative linear solution routine LGMRES: Ax = b, solve for x
             # linop - linear operator which can produce Ax
-            dX_dTheta = lgmres(linop, Cl, x0=dX0, atol=atol, maxiter=maxiter)[0]
+            dX_dTheta[idesc, :] = lgmres(linop, Cl, x0=dX0, atol=atol, maxiter=maxiter)[0]
 
-            # log results
-            res_dict['dX_dTheta'] += [dX_dTheta]
-            res_dict['err'] += [np.linalg.norm(matvec(dX_dTheta) - Cl)]
-            res_dict['calls'] += [nstep]
-
-        # convert to dictionary of numpy arrays
-        res_dict = {k: np.array(res_dict[k]) for k in res_dict}
-
-        # store internally
-        self.dX_dTheta = res_dict['dX_dTheta'].copy()
-
-        # return values
-        return res_dict
+        return dX_dTheta
 
     def implicit_derivative_energy(self,
                                    alpha=0.5,
@@ -812,7 +802,7 @@ class LammpsImplicitDer:
             min_style {min_style}
         """)
 
-        self.dX_dTheta = np.zeros((self.Ndesc, self.Natom * 3))
+        dX_dTheta = np.zeros((self.Ndesc, self.Natom * 3))
 
         self.impl_der_stats['energy'] = {}
         self.impl_der_stats['energy']['alpha_array'] = np.zeros(self.Ndesc)
@@ -931,7 +921,7 @@ class LammpsImplicitDer:
             #mpi_print(idesc, Cl, np.max(np.abs(dX_tmp)), alpha_factor)
 
             # Store to idesc row of dX_dTheta
-            self.dX_dTheta[idesc, :] = dX_tmp / alpha_factor
+            dX_dTheta[idesc, :] = dX_tmp / alpha_factor
 
             # Stats
             self.impl_der_stats['energy']['calls'][idesc] = int(self.lmp.get_thermo("step"))
@@ -952,7 +942,7 @@ class LammpsImplicitDer:
             unfix mixedHessianRow
         """)
 
-        return self.dX_dTheta
+        return dX_dTheta
 
     def implicit_derivative_inverse(self):
         """Compute implicit derivative from Hessian inverse
@@ -969,7 +959,9 @@ class LammpsImplicitDer:
         H_inv = np.linalg.pinv(hessian)
 
         # Matrix multiplication to get dX_dTheta
-        return (H_inv @ self.mixed_hessian.T).T
+        dX_dTheta = (H_inv @ self.mixed_hessian.T).T
+
+        return dX_dTheta
 
     def implicit_derivative_dense(self, hess_mask=None):
         """Compute implicit derivative from Hessian inverse
@@ -1005,33 +997,57 @@ class LammpsImplicitDer:
         return dX_dTheta
 
     @measure_runtime_and_calls
-    def perturb(self, dTheta, return_X=True):
-        """Evaluate energy and position perturbations
+    def implicit_derivative_hom(self, dL=1e-3):
+        """
+        Compute the homogenous implicit derivative.
+        strain_pred = dTheta @ dL_dTheta,
+        where strain_pred is the predicted strain.
 
-        Parameters
-        ----------
-        dTheta : vector of parameter perturbations
-        return_X : bool, return position perturbations or not
+        Pressure P, volume V, energy E, strain L:
+        P = -dE/dV, V=L^3, P(V) = 0; P(V+dV) = 0 -> P(L+dL) = 0
 
-        Returns dE and dX_dTheta
+        E = D @ Theta, where D is the descriptor matrix
+        P = -dD/dV @ Theta, dV = 3L^2 dL, L != 0
+
+        dL_dTheta = - (dD/dL) / [ (d^2L/dL^2) @ Theta ]
+
+        Compute with the finite difference method:
+        dD/dL = D(L+dL) - D(L-dL) / 2*dL
+        d^2L/dL^2 = (D(L+dL) - 2D(L) + D(L-dL)) / dL^2
         """
 
-        # Check if implicit derivative has been computed
-        if self.dX_dTheta is None:
-            mpi_print("Evaluating implicit derivative with default parameters", comm=self.comm)
-            self.implicit_derivative_sparse(return_values=False)
+        cell0 = self.cell.copy()
 
-        # check if dTheta dimension is correct
-        assert dTheta.size == self.Ndesc
-        dX_dTheta = dTheta @ self.dX_dTheta
+        # Compute D(L)
+        self.gather_D_dD()
+        Desc0 = self.dU_dTheta.copy()
 
-        # compute energy perturbation
-        dE = self.dU_dTheta @ dTheta - 0.5 * np.dot(dTheta @ self.mixed_hessian, dX_dTheta)
+        # Compute D(L+dL)
+        cell_plus = cell0 + np.eye(3) * dL
+        self.apply_strain(cell_plus)
+        self.gather_D_dD()
+        Desc_plus = self.dU_dTheta.copy()
 
-        if return_X:
-            return dE, dX_dTheta
-        else:
-            return dE
+        # Compute D(L-dL)
+        cell_minus = cell0 - np.eye(3) * dL
+        self.apply_strain(cell_minus)
+        self.gather_D_dD()
+        Desc_minus = self.dU_dTheta.copy()
+
+        # Compute derivatives
+        dD_dL = (Desc_plus - Desc_minus) / (2.0 * dL)
+        d2L_dL2 = (Desc_plus + Desc_minus - 2.0 * Desc0) / (dL**2)
+
+        # Compute the homogenous implicit derivative
+        dL_dTheta = -dD_dL / np.dot(self.Theta, d2L_dL2)
+
+        # Set to the original cell
+        self.apply_strain(cell0)
+        self.gather_D_dD()
+
+        self.dL_dTheta = dL_dTheta.copy()
+
+        return dL_dTheta
 
     @measure_runtime_and_calls
     def write_xyz_file(self, filename="coordinates.xyz", verbose=False):

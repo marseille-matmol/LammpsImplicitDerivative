@@ -44,6 +44,8 @@ def setup_method_plot_dict():
             'volume_pred': {'label': 'Homogeneous', 'marker': 'o', 'c': 'blue', 'ms': 13}, # goldenrod
             'volume_pred_full': {'label': 'Hom. + Inhom.', 'marker': 'o', 'c': 'red', 'ms': 8},
             'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange'},
+            'volume_pred_FD': {'label': 'From FD', 'marker': 'o', 'c': 'tab:green', 'ls':'--'},
+            'volume_pred_FD2': {'label': 'From FD2', 'marker': 'o', 'c': 'tab:brown'},
         },
         'pure': {
             'energy_true': {'label': 'Bulk True', 'marker': 's', 'c': 'black', 'ls': '--'},
@@ -53,6 +55,7 @@ def setup_method_plot_dict():
             'energy_full_pred': {'label': 'Bulk Hom. + Inhom.', 'marker': 's', 'c': 'red', 'ls': '--'},
             'volume_pred': {'label': 'Homogeneous', 'marker': 'o', 'c': 'blue', 'ls': '--'}, # goldenrod
             'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange', 'ls': '--'},
+            'volume_pred_FD': {'label': 'From FD', 'marker': 'o', 'c': 'tab:green', 'ls': '--'},
         },
         'vac': {
             'energy_true': {'label': 'Vac. True', 'marker': 'o', 'c': 'black'},
@@ -62,6 +65,7 @@ def setup_method_plot_dict():
             'energy_full_pred': {'label': 'Vac. Hom. + Inhom.', 'marker': 'o', 'c': 'red'},
             'volume_pred': {'label': 'Homogeneous', 'marker': 'o', 'c': 'blue'}, # goldenrod
             'volume_pred_DT': {'label': 'From D@T', 'marker': 'o', 'c': 'tab:orange'},
+            'volume_pred_FD': {'label': 'From FD', 'marker': 'o', 'c': 'tab:green'},
         }
     }
 
@@ -401,7 +405,7 @@ def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change
 
     # vol_key_list = ['volume_pred', 'volume_pred_DT']
     #vol_key_list = ['volume_pred_full', 'volume_true']
-    vol_key_list = ['volume_pred', 'volume_pred_full', 'volume_true']
+    vol_key_list = ['volume_pred', 'volume_pred_full', 'volume_true']#, 'volume_pred_FD']
 
     if plot_no_change:
         vol_form = compute_formation_property(run_dict, sample, 'volume_true')
@@ -489,7 +493,7 @@ def plot_formation_energy_error_bins(ax, bin_error_dict, method_plot_dict, splin
 def plot_formation_volume_error_bins(ax, bin_error_dict, method_plot_dict, spline_fill=True):
 
     # vol_key_list = ['volume_pred', 'volume_pred_DT']
-    vol_key_list = ['volume_pred', 'volume_pred_full']
+    vol_key_list = ['volume_pred', 'volume_pred_full']#, 'volume_pred_FD']
 
     dV_bin_centers = bin_error_dict['volume']['bin_centers']
 
@@ -627,7 +631,7 @@ def plot_formation_volume_error_average(ax, average_dict, method_plot_dict):
 
     delta_array = average_dict['detla_array']
 
-    vol_key_list = ['volume_pred', 'volume_pred_DT']
+    vol_key_list = ['volume_pred', 'volume_pred_DT'] #, 'volume_pred_FD']
 
     for i, vol_key in enumerate(vol_key_list):
 
@@ -818,7 +822,7 @@ def average_data(run_dict):
     average_dict['error']['formation'] = {}
 
     en_key_list = ['energy_pred0', 'energy_hom_pred', 'energy_inhom_pred', 'energy_full_pred']
-    vol_key_list = ['volume_pred', 'volume_pred_DT']
+    vol_key_list = ['volume_pred', 'volume_pred_DT'] #, 'volume_pred_FD']
     prop_key_list = en_key_list + vol_key_list
 
     # For all the deltas, create empty lists
@@ -1093,9 +1097,10 @@ def compute_form_volume_bins(run_dict, V_range=None, V_num_bins=50):
 
     for vol_key in vol_key_list:
         bin_vals = bin_vol_dict[vol_key]['bin_vals']
-        bin_vol_dict[vol_key]['median'] = np.array([np.percentile(vals, 50) if bin_vals else np.nan for vals in bin_vals])
-        bin_vol_dict[vol_key]['perc_16'] = np.array([np.percentile(vals, 16) if bin_vals else np.nan for vals in bin_vals])
-        bin_vol_dict[vol_key]['perc_84'] = np.array([np.percentile(vals, 84) if bin_vals else np.nan for vals in bin_vals])
+        # To compute percentiles, bin_vals should not be empty, vals should not be empty
+        bin_vol_dict[vol_key]['median'] = np.array([np.percentile(vals, 50) if bin_vals else np.nan for vals in bin_vals if vals])
+        bin_vol_dict[vol_key]['perc_16'] = np.array([np.percentile(vals, 16) if bin_vals else np.nan for vals in bin_vals if vals])
+        bin_vol_dict[vol_key]['perc_84'] = np.array([np.percentile(vals, 84) if bin_vals else np.nan for vals in bin_vals if vals])
 
     return bin_vol_dict
 
@@ -1174,9 +1179,10 @@ def compute_formation_energy_bins(run_dict, E_form_range=None, E_form_num_bins=5
 
     for en_key in en_key_list:
         bin_vals = bin_en_dict[en_key]['bin_vals']
-        bin_en_dict[en_key]['median'] = np.array([np.percentile(vals, 50) if bin_vals else np.nan for vals in bin_vals])
-        bin_en_dict[en_key]['perc_16'] = np.array([np.percentile(vals, 16) if bin_vals else np.nan for vals in bin_vals])
-        bin_en_dict[en_key]['perc_84'] = np.array([np.percentile(vals, 84) if bin_vals else np.nan for vals in bin_vals])
+        # To compute percentiles, bin_vals should not be empty, vals should not be empty
+        bin_en_dict[en_key]['median'] = np.array([np.percentile(vals, 50) if bin_vals else np.nan for vals in bin_vals if vals])
+        bin_en_dict[en_key]['perc_16'] = np.array([np.percentile(vals, 16) if bin_vals else np.nan for vals in bin_vals if vals])
+        bin_en_dict[en_key]['perc_84'] = np.array([np.percentile(vals, 84) if bin_vals else np.nan for vals in bin_vals if vals])
 
     return bin_en_dict
 
@@ -1490,11 +1496,13 @@ def main():
 
             # Formation volume
             plot_formation_volume(axes[1, 1], run_dict, sample, method_plot_dict)
+            axes[1, 1].legend()
 
             # Formation energies
             plot_formation_energy(axes[0, 0], run_dict, sample, method_plot_dict)
             axes[0, 1].set_title(f'ncell_x={run_dict["ncell_x"]}; Natom={run_dict["Natom pure"]}; sample {sample}',
                                  y=1.15, x=-0.2, fontsize=25)
+            axes[0, 0].legend()
 
             # Formation energies error
             plot_formation_energy_error(axes[1, 0], run_dict, method_plot_dict, sample, legend=False, error_type='rel')

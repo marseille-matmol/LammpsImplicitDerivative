@@ -200,6 +200,14 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
         strain_pred = ((volume0 + dV_pred) / volume0)**(1/3)
         cell_pred = np.dot(cell0, np.eye(3) * strain_pred)
 
+        # Finite diff prediction
+        dL_dTheta = s_pred.implicit_derivative_hom()
+        dL_pred = dTheta @ dL_dTheta
+        L0 = volume0**(1/3)
+        V_pred_FD = (L0 + dL_pred)**3
+        strain_pred_FD = ((V_pred_FD) / volume0)**(1/3)
+        cell_pred_FD = np.dot(cell0, np.eye(3) * strain_pred_FD)
+
         # Energy for given Theta as E(V|Theta) = D(V) Theta
         # descriptor_array: ngrid x Ndesc
         # Theta: Ndesc
@@ -227,6 +235,11 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
         s_pred.apply_strain(cell_pred_DT, update_system=True)
         energy_hom_pred_DT = s_pred.dU_dTheta @ Theta_pert
         coord_error_hom_DT = coord_error(X_coord_true, s_pred.X_coord)
+        s_pred.apply_strain(cell0, update_system=True)
+
+        s_pred.apply_strain(cell_pred_FD, update_system=True)
+        energy_hom_pred_FD = s_pred.dU_dTheta @ Theta_pert
+        coord_error_hom_FD = coord_error(X_coord_true, s_pred.X_coord)
         s_pred.apply_strain(cell0, update_system=True)
 
     # Inhomogeneous contribution
@@ -265,6 +278,8 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
 
     result_dict = {
         'trun': trun,
+        'trun_s_pred': s_pred.timings,
+        'trun_s_box_relax': s_box_relax.timings,
         # Parameters
         'Theta_pert': Theta_pert,
         # Volumes
@@ -272,6 +287,7 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
         'volume_true': volume_true,
         'volume_pred': volume0 + dV_pred,
         'volume_pred_DT': volume_pred_DT,
+        'volume_pred_FD': V_pred_FD,
         # Energies
         'energy0': energy0,
         'energy_true': energy_true,
@@ -281,11 +297,13 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
         'energy_inhom_pred': energy_inhom_pred,
         'energy_full_pred': energy_full_pred,
         'energy_full_pred_DT': energy_full_pred_DT,
+        'energy_hom_pred_FD': energy_hom_pred_FD,
         # Coord. errors
         'coord_error_full': coord_error_full,
         'coord_error_full_DT': coord_error_full_DT,
         'coord_error_hom': coord_error_hom,
         'coord_error_hom_DT': coord_error_hom_DT,
+        'coord_error_hom_FD': coord_error_hom_FD,
         'coord_error_inhom': coord_error_inhom,
         'coord_error0': coord_error0,
     }

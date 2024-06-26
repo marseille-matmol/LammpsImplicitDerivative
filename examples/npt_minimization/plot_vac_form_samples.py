@@ -405,7 +405,7 @@ def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change
 
     # vol_key_list = ['volume_pred', 'volume_pred_DT']
     #vol_key_list = ['volume_pred_full', 'volume_true']
-    vol_key_list = ['volume_pred', 'volume_pred_full', 'volume_true', 'volume_pred_FD']
+    vol_key_list = ['volume_pred', 'volume_pred_full', 'volume_true']#, 'volume_pred_FD']
 
     if plot_no_change:
         vol_form = compute_formation_property(run_dict, sample, 'volume_true')
@@ -493,7 +493,7 @@ def plot_formation_energy_error_bins(ax, bin_error_dict, method_plot_dict, splin
 def plot_formation_volume_error_bins(ax, bin_error_dict, method_plot_dict, spline_fill=True):
 
     # vol_key_list = ['volume_pred', 'volume_pred_DT']
-    vol_key_list = ['volume_pred', 'volume_pred_full', 'volume_pred_FD']
+    vol_key_list = ['volume_pred', 'volume_pred_full']#, 'volume_pred_FD']
 
     dV_bin_centers = bin_error_dict['volume']['bin_centers']
 
@@ -631,7 +631,7 @@ def plot_formation_volume_error_average(ax, average_dict, method_plot_dict):
 
     delta_array = average_dict['detla_array']
 
-    vol_key_list = ['volume_pred', 'volume_pred_DT', 'volume_pred_FD']
+    vol_key_list = ['volume_pred', 'volume_pred_DT'] #, 'volume_pred_FD']
 
     for i, vol_key in enumerate(vol_key_list):
 
@@ -822,7 +822,7 @@ def average_data(run_dict):
     average_dict['error']['formation'] = {}
 
     en_key_list = ['energy_pred0', 'energy_hom_pred', 'energy_inhom_pred', 'energy_full_pred']
-    vol_key_list = ['volume_pred', 'volume_pred_DT', 'volume_pred_FD']
+    vol_key_list = ['volume_pred', 'volume_pred_DT'] #, 'volume_pred_FD']
     prop_key_list = en_key_list + vol_key_list
 
     # For all the deltas, create empty lists
@@ -1483,8 +1483,8 @@ def main():
 
         plt.show()
 
-    #plot_samples = False
-    plot_samples = True
+    plot_samples = False
+    #plot_samples = True
     if plot_samples:
 
         for sample in tqdm(run_dict['sample_list']):

@@ -392,6 +392,7 @@ class LammpsImplicitDer:
 
         self.mixed_hessian = dD[:, 1, :, :].reshape((-1, self.Ndesc)).T
 
+    @measure_runtime_and_calls
     def compute_virial(self):
         """Compute virial"""
 
@@ -418,6 +419,7 @@ class LammpsImplicitDer:
         except Exception as e:
             mpi_print(f'Error in compute_virial: {e}', verbose=self.verbose, comm=self.comm)
 
+    @measure_runtime_and_calls
     def gather_virial(self):
         """Gather virial"""
 
@@ -997,9 +999,29 @@ class LammpsImplicitDer:
         return dX_dTheta
 
     @measure_runtime_and_calls
-    def implicit_derivative_hom(self, dL=1e-3):
+    def implicit_derivative_hom(self, method='dVirial', dL=1e-3):
         """
-        Compute the homogenous implicit derivative.
+        Wrapper for the homogenous implicit derivative calculation.
+        """
+
+        if method == 'dVirial':
+            dL_dTheta = self.implicit_derivative_hom_dVirial(dL=dL)
+
+        elif method == 'd2Desc':
+            dL_dTheta = self.implicit_derivative_hom_d2Desc(dL=dL)
+
+        else:
+            raise ValueError(f'Unknown method for homogenous implicit derivative: {method}')
+
+        self.dL_dTheta = dL_dTheta.copy()
+
+        return dL_dTheta
+
+    def implicit_derivative_hom_d2Desc(self, dL=1e-3):
+        """
+        Compute the homogenous implicit derivative with finite differences applied
+        to the first and second derivatives of descriptor verctors.
+
         strain_pred = dTheta @ dL_dTheta,
         where strain_pred is the predicted strain.
 
@@ -1045,7 +1067,45 @@ class LammpsImplicitDer:
         self.apply_strain(cell0)
         self.gather_D_dD()
 
-        self.dL_dTheta = dL_dTheta.copy()
+        return dL_dTheta
+
+    def implicit_derivative_hom_dVirial(self, dL=1e-3):
+        """
+        Compute the homogenous implicit derivative with finite differences applied
+        to the virial derivative.
+
+        dL_dTheta_j = - Virial_j / [ (dVirial/dL) @ Theta ]
+        """
+        cell0 = self.cell.copy()
+
+        if self.virial is None:
+            self.compute_virial()
+            self.gather_virial()
+
+        virial_trace0 = np.sum(self.virial, axis=0)
+        virial_trace0 = np.sum(virial_trace0[:3, :], axis=0) / 3.0
+
+        # Compute the virial derivative
+        cell_plus = cell0 + np.eye(3) * dL
+
+        self.apply_strain(cell_plus)
+        self.gather_virial()
+        virial_trace_plus = np.sum(self.virial, axis=0)
+        virial_trace_plus = np.sum(virial_trace_plus[:3, :], axis=0) / 3.0
+
+        cell_minus = cell0 - np.eye(3) * dL
+        self.apply_strain(cell_minus)
+        self.gather_virial()
+        virial_trace_minus = np.sum(self.virial, axis=0)
+        virial_trace_minus = np.sum(virial_trace_minus[:3, :], axis=0) / 3.0
+
+        dVirial_dL = (virial_trace_plus - virial_trace_minus) / (2.0 * dL)
+
+        # Compute the homogenous implicit derivative
+        dL_dTheta = - virial_trace0 / np.dot(self.Theta, dVirial_dL)
+
+        # Set to the original cell
+        self.apply_strain(cell0)
 
         return dL_dTheta
 

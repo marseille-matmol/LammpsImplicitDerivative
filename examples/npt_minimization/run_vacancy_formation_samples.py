@@ -126,16 +126,6 @@ def main():
         virial_der_vac0 = np.array([spline_virial_list_vac[idesc](volume_vac_min, nu=1) for idesc in range(bcc_vac.Ndesc)])
         force_der_vac0 = np.array([spline_force_list_vac[icoord](volume_vac_min, nu=1) for icoord in range(bcc_vac.Natom * 3)])
 
-        bcc_pure.compute_virial()
-        bcc_pure.gather_virial()
-        virial_pure = np.sum(bcc_pure.virial, axis=0)
-        virial_trace_pure = np.sum(virial_pure[:3, :], axis=0) / 3.0
-
-        bcc_vac.compute_virial()
-        bcc_vac.gather_virial()
-        virial_vac = np.sum(bcc_vac.virial, axis=0)
-        virial_trace_vac = np.sum(virial_vac[:3, :], axis=0) / 3.0
-
     with trun.add('dX_dTheta inhom'):
         dX_dTheta_pure_inhom = bcc_pure.implicit_derivative(method=impl_der_method)
         dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method=impl_der_method)
@@ -145,19 +135,20 @@ def main():
         with open('Theta_ens.pkl', 'rb') as file:
             Theta_ens = pickle.load(file)
 
-        #delta_array = np.linspace(-100.0, 100.0, 11)
         delta_array = np.linspace(-20.0, 20.0, 5)
-        #delta_array = np.linspace(-50.0, 50.0, 101)
+        #delta_array = np.linspace(-25.0, 25.0, 251)
         # For energy-volume curves
-        #epsilon_array_en_vol = np.linspace(-0.05, 0.05, 61)
-        epsilon_array_en_vol = np.linspace(-0.05, 0.05, 5)
+        # epsilon_array_en_vol_pure = np.linspace(-0.05, 0.05, 15)
+        # epsilon_array_en_vol_vac = np.linspace(-0.05, 0.05, 5)
+
+        epsilon_array_en_vol_pure = np.linspace(-0.05, 0.05, 5)
+        epsilon_array_en_vol_vac = np.linspace(-0.05, 0.05, 3)
 
         run_dict['delta_array'] = delta_array
 
-        run_dict['epsilon_array_en_vol'] = epsilon_array_en_vol
+        run_dict['epsilon_array_en_vol_pure'] = epsilon_array_en_vol_pure
+        run_dict['epsilon_array_en_vol_vac'] = epsilon_array_en_vol_vac
 
-        descriptor_array_pure = en_vol_pure_dict['descriptor_array']
-        descriptor_array_vac = en_vol_vac_dict['descriptor_array']
         volume_array_pure = en_vol_pure_dict['volume_array']
         volume_array_vac = en_vol_vac_dict['volume_array']
 
@@ -210,8 +201,8 @@ def main():
                         sample_dict[d_str]['vac'] = None
                         continue
 
-                    en_vol_pure_dict = compute_energy_volume(bcc_pure_tmp, epsilon_array_en_vol)
-                    en_vol_vac_dict = compute_energy_volume(bcc_vac_tmp, epsilon_array_en_vol)
+                    en_vol_pure_dict = compute_energy_volume(bcc_pure_tmp, epsilon_array_en_vol_pure)
+                    en_vol_vac_dict = compute_energy_volume(bcc_vac_tmp, epsilon_array_en_vol_vac)
 
                     sample_dict[d_str]['pure']['en_vol'] = en_vol_pure_dict
                     sample_dict[d_str]['vac']['en_vol'] = en_vol_vac_dict
@@ -221,16 +212,15 @@ def main():
 
                     pure_dict = run_npt_implicit_derivative(Bcc, alat, ncell_x, Theta_perturb,
                                                             snapcoeff_filename, snapparam_filename,
-                                                            virial_trace_pure, virial_der_pure0, descriptor_array_pure, volume_array_pure,
-                                                            dX_dTheta_pure_inhom, comm=comm, trun=trun_npt)
+                                                            virial_der_pure0, dX_dTheta_pure_inhom, comm=comm, trun=trun_npt)
 
                     if comm is not None:
                         comm.Barrier()
 
                     vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_perturb,
                                                            snapcoeff_filename, snapparam_filename,
-                                                           virial_trace_vac, virial_der_vac0, descriptor_array_vac, volume_array_vac,
-                                                           dX_dTheta_vac_inhom, force_der0=force_der_vac0, comm=comm, trun=trun_npt)
+                                                           virial_der_vac0, dX_dTheta_vac_inhom,
+                                                           force_der0=force_der_vac0, comm=comm, trun=trun_npt)
 
                     if comm is not None:
                         comm.Barrier()

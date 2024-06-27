@@ -139,8 +139,7 @@ def create_perturbed_system(Theta_perturb, LammpsClass, snapcoeff_filename, snap
 
 def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
                                 snapcoeff_filename, snapparam_filename,
-                                virial_trace, virial_der0, descriptor_array, volume_array,
-                                dX_dTheta_inhom, force_der0=None,
+                                virial_der0, dX_dTheta_inhom, force_der0=None,
                                 data_path=None, comm=None, trun=None):
 
     if trun is None:
@@ -195,29 +194,24 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
 
     # Predict the volume change
     with trun.add('volume prediction'):
-        # Predict the volume change
-        dV_pred = - np.dot(virial_trace, dTheta) / np.dot(virial_der0, Theta0)
-        strain_pred = ((volume0 + dV_pred) / volume0)**(1/3)
-        cell_pred = np.dot(cell0, np.eye(3) * strain_pred)
 
-        # Finite diff prediction
-        dL_dTheta = s_pred.implicit_derivative_hom()
+        # Finite diff Desc prediction
+        """
+        dL_dTheta = s_pred.implicit_derivative_hom(method='d2Desc')
         dL_pred = dTheta @ dL_dTheta
         L0 = volume0**(1/3)
-        V_pred_FD = (L0 + dL_pred)**3
-        strain_pred_FD = ((V_pred_FD) / volume0)**(1/3)
-        cell_pred_FD = np.dot(cell0, np.eye(3) * strain_pred_FD)
+        V_pred_d2Desc = (L0 + dL_pred)**3
+        strain_pred_d2Desc = ((V_pred_d2Desc) / volume0)**(1/3)
+        cell_pred_d2Desc = np.dot(cell0, np.eye(3) * strain_pred_d2Desc)
+        """
 
-        # Energy for given Theta as E(V|Theta) = D(V) Theta
-        # descriptor_array: ngrid x Ndesc
-        # Theta: Ndesc
-        energy_grid = np.einsum('ij,j->i', descriptor_array, Theta_pert)
-        # Volume at the minimum energy
-        idx_min = np.argmin(energy_grid)
-        volume_pred_DT = volume_array[idx_min]
-
-        strain_pred_DT = ((volume_pred_DT) / volume0)**(1/3)
-        cell_pred_DT = np.dot(cell0, np.eye(3) * strain_pred_DT)
+        # Finite diff Virial presdiction
+        dL_dTheta = s_pred.implicit_derivative_hom(method='dVirial')
+        dL_pred = dTheta @ dL_dTheta
+        L0 = volume0**(1/3)
+        V_pred = (L0 + dL_pred)**3
+        strain_pred = ((V_pred) / volume0)**(1/3)
+        cell_pred = np.dot(cell0, np.eye(3) * strain_pred)
 
         # Inhomogeneous correction to volume that requires the derivative of the forces
         if force_der0 is not None:
@@ -230,16 +224,6 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
         s_pred.apply_strain(cell_pred, update_system=True)
         energy_hom_pred = s_pred.dU_dTheta @ Theta_pert
         coord_error_hom = coord_error(X_coord_true, s_pred.X_coord)
-        s_pred.apply_strain(cell0, update_system=True)
-
-        s_pred.apply_strain(cell_pred_DT, update_system=True)
-        energy_hom_pred_DT = s_pred.dU_dTheta @ Theta_pert
-        coord_error_hom_DT = coord_error(X_coord_true, s_pred.X_coord)
-        s_pred.apply_strain(cell0, update_system=True)
-
-        s_pred.apply_strain(cell_pred_FD, update_system=True)
-        energy_hom_pred_FD = s_pred.dU_dTheta @ Theta_pert
-        coord_error_hom_FD = coord_error(X_coord_true, s_pred.X_coord)
         s_pred.apply_strain(cell0, update_system=True)
 
     # Inhomogeneous contribution
@@ -268,12 +252,6 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
         coord_error_full = coord_error(X_coord_true, s_pred.X_coord)
         s_pred.apply_strain(cell0, update_system=True)
 
-        # argmin volume prediction
-        s_pred.apply_strain(cell_pred_DT, update_system=True)
-        energy_full_pred_DT = s_pred.dU_dTheta @ Theta_pert
-        coord_error_full_DT = coord_error(X_coord_true, s_pred.X_coord)
-        s_pred.apply_strain(cell0, update_system=True)
-
     trun.timings[total_tag].stop()
 
     result_dict = {
@@ -285,32 +263,20 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
         # Volumes
         'volume0': volume0,
         'volume_true': volume_true,
-        'volume_pred': volume0 + dV_pred,
-        'volume_pred_DT': volume_pred_DT,
-        'volume_pred_FD': V_pred_FD,
+        'volume_pred': V_pred,
+        'volume_pred_full': V_pred if force_der0 is None else V_pred + dV_pred_inhom,
         # Energies
         'energy0': energy0,
         'energy_true': energy_true,
         'energy_pred0': energy_pred0,
         'energy_hom_pred': energy_hom_pred,
-        'energy_hom_pred_DT': energy_hom_pred_DT,
         'energy_inhom_pred': energy_inhom_pred,
         'energy_full_pred': energy_full_pred,
-        'energy_full_pred_DT': energy_full_pred_DT,
-        'energy_hom_pred_FD': energy_hom_pred_FD,
         # Coord. errors
         'coord_error_full': coord_error_full,
-        'coord_error_full_DT': coord_error_full_DT,
         'coord_error_hom': coord_error_hom,
-        'coord_error_hom_DT': coord_error_hom_DT,
-        'coord_error_hom_FD': coord_error_hom_FD,
         'coord_error_inhom': coord_error_inhom,
         'coord_error0': coord_error0,
     }
-
-    if force_der0 is not None:
-        result_dict['volume_pred_full'] = volume0 + dV_pred + dV_pred_inhom
-    else:
-        result_dict['volume_pred_full'] = volume0 + dV_pred
 
     return result_dict

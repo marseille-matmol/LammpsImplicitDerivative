@@ -234,13 +234,11 @@ def main():
                 sample_dict['conv_idelta_list'] = conv_idelta_list
                 run_dict[s_str] = copy.deepcopy(sample_dict)
 
-                if rank == 0:
-                    with open(f'{s_str}.pkl', 'wb') as file:
-                        pickle.dump(sample_dict, file)
-
             trun.timings['sample'].stop()
+            mpi_print(trun.timings['sample'], comm=comm)
             if rank == 0:
-                print(trun.timings['sample'])
+                with open(f'{s_str}.pkl', 'wb') as file:
+                    pickle.dump(sample_dict, file)
 
     mpi_print('', comm=comm)
     mpi_print(f'{"s_pred SYSTEM":*^70}', comm=comm)

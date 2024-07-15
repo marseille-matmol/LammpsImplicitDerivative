@@ -48,7 +48,7 @@ class Bcc(LammpsImplicitDer):
 
         self.Theta = self.pot.Theta_dict[self.element]['Theta']
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         boundary p p p
         lattice bcc {self.alat} origin 0.01 0.01 0.01
         """)
@@ -56,7 +56,7 @@ class Bcc(LammpsImplicitDer):
         # Setup the coordinates from scratch
         if self.datafile is None:
 
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             # create a block of atoms
             region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
             create_box 1 C
@@ -66,11 +66,11 @@ class Bcc(LammpsImplicitDer):
         # Read from a datafile
         else:
             mpi_print(f'Reading datafile {self.datafile}', verbose=self.verbose, comm=self.comm)
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             read_data {self.datafile}
             """)
 
-        self.lmp.commands_string(f'mass * 45.')
+        self.lmp_commands_string(f'mass * 45.')
 
         self.run_init(setup_snap=setup_snap)
 
@@ -108,7 +108,7 @@ class BccBinary(LammpsImplicitDer):
         # Potential parameters: ONLY MOLYBDENUM
         self.Theta = self.pot.Theta_dict['Mo']['Theta']
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         boundary p p p
         lattice bcc {self.alat} origin 0.01 0.01 0.01
         """)
@@ -116,7 +116,7 @@ class BccBinary(LammpsImplicitDer):
         # Setup the coordinates from scratch
         if self.datafile is None:
 
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             # create a block of atoms
             region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
             create_box 2 C
@@ -128,11 +128,11 @@ class BccBinary(LammpsImplicitDer):
         # Read from a datafile
         else:
             mpi_print(f'Reading datafile {self.datafile}', verbose=self.verbose, comm=self.comm)
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             read_data {self.datafile}
             """)
 
-        self.lmp.commands_string(f'mass * 45.')
+        self.lmp_commands_string(f'mass * 45.')
 
         self.run_init(setup_snap=setup_snap)
 
@@ -171,12 +171,12 @@ class BccVacancy(LammpsImplicitDer):
         # Potential parameters, hardcoded for tungsten
         self.Theta = self.pot.Theta_dict['W']['Theta']
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         boundary p p p
         lattice bcc {self.alat} origin 0.01 0.01 0.01
         """)
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         # create a block of atoms
         region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
         create_box 1 C
@@ -193,7 +193,7 @@ class BccVacancy(LammpsImplicitDer):
             id_del = 10
 
         self.id_del = id_del
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         # delete one atom
         # Create a group called 'del' with the atom to be deleted
         group del id {id_del}
@@ -201,7 +201,7 @@ class BccVacancy(LammpsImplicitDer):
         """)
 
         # W mass in a.m.u.
-        self.lmp.commands_string(f'mass * 184.')
+        self.lmp_commands_string(f'mass * 184.')
 
         self.run_init()
 
@@ -238,7 +238,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
         # Potential parameters: ONLY MOLYBDENUM
         self.Theta = self.pot.Theta_dict['Mo']['Theta']
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         boundary p p p
         lattice bcc {self.alat} origin 0.01 0.01 0.01
         """)
@@ -246,14 +246,14 @@ class BccBinaryVacancy(LammpsImplicitDer):
         # Setup the coordinates from scratch
         if self.datafile is None:
 
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             # create a block of atoms
             region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
             create_box 2 C
             create_atoms 1 region C
             """)
             if custom_create_script is None:
-                self.lmp.commands_string(f"""
+                self.lmp_commands_string(f"""
                 set group all type/fraction 2 {specie_B_concentration} 12393
                 # delete one atom
                 # Create a group called 'del' with the atom to be deleted
@@ -261,16 +261,16 @@ class BccBinaryVacancy(LammpsImplicitDer):
                 delete_atoms group del
                 """)
             else:
-                self.lmp.commands_string(custom_create_script)
+                self.lmp_commands_string(custom_create_script)
 
         # Read from a datafile
         else:
             mpi_print(f'Reading datafile {self.datafile}', verbose=self.verbose, comm=self.comm)
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             read_data {self.datafile}
             """)
 
-        self.lmp.commands_string(f'mass * 45.')
+        self.lmp_commands_string(f'mass * 45.')
 
         self.run_init()
 
@@ -308,7 +308,7 @@ class BccSIA(LammpsImplicitDer):
         # Potential parameters, hardcoded for tungsten
         self.Theta = self.pot.Theta_dict['W']['Theta']
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         boundary p p p
         lattice bcc {self.alat} origin {origin_pos} {origin_pos} {origin_pos}
         """)
@@ -319,7 +319,7 @@ class BccSIA(LammpsImplicitDer):
         # Setup the coordinates from scratch
         if self.datafile is None:
 
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             # create a block of atoms
             region C block 0 {self.ncell_x} 0 {self.ncell_y} 0 {self.ncell_z} units lattice
             create_box 1 C
@@ -334,11 +334,11 @@ class BccSIA(LammpsImplicitDer):
         # Read from a datafile
         else:
 
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             read_data {self.datafile}
             """)
 
         # W mass in a.m.u.
-        self.lmp.commands_string(f'mass * 184.')
+        self.lmp_commands_string(f'mass * 184.')
 
         self.run_init()

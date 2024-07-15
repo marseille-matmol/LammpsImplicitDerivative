@@ -62,7 +62,6 @@ def setup_method_plot_dict():
             'volume_pred': {'label': 'Homogeneous', 'marker': 'o', 'c': 'blue'}, # goldenrod
         }
     }
-
     return method_plot_dict
 
 
@@ -252,6 +251,11 @@ def plot_formation_energy(ax, run_dict, sample, method_plot_dict):
         kwargs = method_plot_dict['formation'][en_key].copy()
         kwargs.pop('marker', None)
         kwargs['lw'] = 6.0
+
+        if en_key == 'energy_full_pred':
+            # custom ls
+            kwargs['ls'] = (0, (3, 2))
+            kwargs['zorder'] = 3
 
         ax.plot(delta_array_sample, E_form, **kwargs)
 
@@ -443,6 +447,7 @@ def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change
         kwargs = method_plot_dict['formation']['energy_pred0'].copy()
         kwargs.pop('marker', None)
         kwargs['lw'] = lw
+
         ax.plot(delta_array_sample, vol_no_change_array, zorder=-1, **kwargs)
 
     for i, vol_key in enumerate(vol_key_list):
@@ -450,6 +455,12 @@ def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change
         kwargs = method_plot_dict['formation'][vol_key].copy()
         kwargs.pop('marker', None)
         kwargs['lw'] = lw
+
+        if vol_key == 'volume_pred_full':
+            # custom ls
+            kwargs['ls'] = (0, (3, 2))
+            kwargs['zorder'] = 3
+
         ax.plot(delta_array_sample, vol_form, **kwargs)
 
     ax.set_xlabel('Perturbation Magnitude $\lambda$')
@@ -714,10 +725,12 @@ def plot_formation_volume_error_average(ax, average_dict, method_plot_dict, av_s
         if spline_fill and vol_key == 'volume_pred':
             dE_grid, form_error_16_interp = interpolate(delta_array, form_error_16)
             dE_grid, form_error_84_interp = interpolate(delta_array, form_error_84)
-            ax.fill_between(dE_grid, form_error_16_interp, form_error_84_interp, alpha=0.2)
+            ax.fill_between(dE_grid, form_error_16_interp, form_error_84_interp, alpha=0.2,
+                            color=method_plot_dict['formation'][vol_key]['c'])
 
         elif vol_key == 'volume_pred':
-            ax.fill_between(delta_array, form_error_16_interp, form_error_84_interp, alpha=0.2)
+            ax.fill_between(delta_array, form_error_16_interp, form_error_84_interp, alpha=0.2,
+                            color=method_plot_dict['formation'][vol_key]['c'])
 
     ax.set_xlabel('Perturbation Magnitude $\lambda$')
 
@@ -1536,14 +1549,15 @@ def main():
 
         plt.show()
 
-    #plot_2x2_two_samples = True
-    plot_2x2_two_samples = False
+    plot_2x2_two_samples = True
+    #plot_2x2_two_samples = False
     if plot_2x2_two_samples:
 
         sample1 = 20
         sample2 = 80
 
-        fig, axes = plt.subplots(2, 2, figsize=(14, 9), sharex='col', sharey='row')
+        #fig, axes = plt.subplots(2, 2, figsize=(14, 9), sharex='col', sharey='row')
+        fig, axes = plt.subplots(2, 2, figsize=(12, 9), sharex='col', sharey='row')
         #plt.subplots_adjust(left=0.07, right=0.98, bottom=0.07, top=0.97, wspace=0.2, hspace=0.01)
         plt.subplots_adjust(left=0.07, right=0.98, bottom=0.07, top=0.97, wspace=0.01, hspace=0.01)
         plot_formation_volume(axes[0, 0], run_dict, sample1, method_plot_dict2)
@@ -1567,7 +1581,8 @@ def main():
 
         id_list = [1, 2, 1, 2]
         for i, idx in enumerate([(0, 0), (0, 1), (1, 0), (1, 1)]):
-            text = rf'$\Theta^{(0)} + \lambda\, \delta \Theta^{{({id_list[i]})}}$'
+            #text = rf'$\Theta^{(0)} + \lambda\, \delta \Theta^{{({id_list[i]})}}$'
+            text = rf'$\Theta(\lambda, m={({id_list[i]})})$'
             axes[idx].text(0.96, 0.05, text, transform=axes[idx].transAxes, fontsize=45,
                            color='silver', verticalalignment='bottom', horizontalalignment='right')
 
@@ -1832,15 +1847,16 @@ def main():
         for line in ax0_top.get_legend().get_lines():
             line.set_markersize(10)
             #line.set_markersize(0)
-            line.set_linewidth(3)
+            line.set_linewidth(4)
+            #line.set_linestyle('-')
 
         spline_fill = True
         #spline_fill = False
 
         # AXIS 1
         #ax1_data = 'form_volume_bins'
-        ax1_data = 'form_volume_error_bins'
-        #ax1_data = 'form_volume_error_average'
+        #ax1_data = 'form_volume_error_bins'
+        ax1_data = 'form_volume_error_average'
 
         if ax1_data == 'form_volume_bins':
             plot_formation_volume_bins(ax1, run_dict, bin_vol_dict, method_plot_dict, spline_fill=spline_fill, atomic_V_range=(16.06, 16.19))
@@ -1857,24 +1873,39 @@ def main():
             plot_formation_volume_error_average(ax1, average_dict, method_plot_dict, spline_fill=spline_fill, av_suffix=av_suffix)
 
             if av_suffix == '_abs':
-                ax1.set_xlim(-20, 20)
-                ax1.set_ylim(-0.02, 1.0)
+                ax1.set_xlim(-10, 10)
+                ax1.set_ylim(-0.05, 1.2)
                 xmin, xmax = ax1.get_xlim()
                 ax1.plot([xmin, xmax], [0.0, 0.0], ls='-', color='black', lw=2, zorder=0)
             elif av_suffix == '':
                 ax1.set_xlim(-20, 20)
                 ax1.set_ylim(-0.5, 0.5)
 
+        # FOR PRESENTATION, COMMENT OUT
+        ax1.plot([0.0, 0.0], [0.0, 0.0], ls='-', color='black', lw=5, zorder=0, label='True')
+        ax1.legend(loc='upper left', fontsize=20,
+                   facecolor='white', edgecolor='white', frameon=True, framealpha=1.0)
+
         # Inset plot in ax1
         inset_plot = None
         #inset_plot = 'scatter'
         #inset_plot = 'form_volume_bins'
         if inset_plot == 'scatter':
-            ax_inset = ax1.inset_axes([0.6, 0.1, 0.35, 0.35])
+            #ax_inset = ax1.inset_axes([0.6, 0.1, 0.35, 0.35])
+            ax_inset = ax1.inset_axes([0.32, 0.57, 0.4, 0.4])
             plot_formation_volume_scatter(ax_inset, run_dict, method_plot_dict, label_fsize=10, tick_fsize=10, V_form_range=(11.0, 12.0), delta_range=(-1.0,1.0))
+
+            # multiple locator by 0.5
+            ax_inset.xaxis.set_major_locator(MultipleLocator(0.5))
+            ax_inset.yaxis.set_major_locator(MultipleLocator(0.5))
+
+            fsize = 14
+            ax_inset.set_xlabel(r'True $V_f$ ($\mathrm{\AA^3}$)', fontsize=fsize)
+            ax_inset.set_ylabel(r'Predicted $V_f$ ($\mathrm{\AA^3}$)', fontsize=fsize)
+
         elif inset_plot == 'form_volume_bins':
             #ax_inset = ax1.inset_axes([0.6, 0.1, 0.35, 0.35])
-            ax_inset = ax1.inset_axes([0.56, 0.55, 0.4, 0.4])
+            ax_inset = ax1.inset_axes([0.3, 0.3, 0.4, 0.4])
             plot_formation_volume_bins(ax_inset, run_dict, bin_vol_dict, method_plot_dict, fill=False, label_fsize=12, tick_fsize=10, atomic_V_range=(16.06, 16.21))
             ax_inset.set_xlim(16.055, 16.215)
             ax_inset.set_ylim(10.35, 12.35)
@@ -1890,16 +1921,16 @@ def main():
         xmin, xmax = l.get_xdata().min(), l.get_xdata().max()
         ax2.plot([xmin, xmax], [0.0, 0.0], ls='-', color='black', lw=2, zorder=0)
 
-        #inset_plot_ax2 = None
-        inset_plot_ax2 = 'zoom'
+        inset_plot_ax2 = None
+        #inset_plot_ax2 = 'zoom'
         if inset_plot_ax2 == 'zoom':
-            ax2_inset = ax2.inset_axes([0.3, 0.48, 0.4, 0.4])
+            ax2_inset = ax2.inset_axes([0.3, 0.57, 0.4, 0.4])
             plot_formation_energy_error_bins(ax2_inset, bin_error_dict, method_plot_dict,
                                              spline_fill=spline_fill, label_fsize=12, tick_fsize=10, print_labels=False, fill=False)
             # y axis major locator by 0.005
             ax2_inset.yaxis.set_major_locator(MultipleLocator(0.005))
             ax2_inset.axhline(0.0, ls='-', color='black', lw=2, zorder=0)
-            ax2_inset.set_xlim(-0.3, 0.3)
+            ax2_inset.set_xlim(-0.4, 0.4)
             ax2_inset.set_ylim(-0.001, 0.01)
 
         # a,b, c labels

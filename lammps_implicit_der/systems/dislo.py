@@ -62,7 +62,9 @@ class ScrewDislo(LammpsImplicitDer):
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,
                                    data_path=self.data_path,
-                                   snapparam_filename=self.snapparam_filename, comm=self.comm)
+                                   snapparam_filename=self.snapparam_filename,
+                                   zbl_dict=self.zbl_dict,
+                                   comm=self.comm)
 
         # Potential parameters: if binary, the substitutional element parameters ONLY
         if self.binary:
@@ -70,7 +72,7 @@ class ScrewDislo(LammpsImplicitDer):
         else:
             self.Theta = self.pot.Theta_dict[element]['Theta']
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         clear
 
         units metal
@@ -89,10 +91,10 @@ class ScrewDislo(LammpsImplicitDer):
 
         if fix_border_atoms:
 
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             # Fix the border atoms
             # Define the cylinder region
-            region fixed_cyl cylinder {fixed_cyl_axis} {fixed_cyl_x1} {fixed_cyl_x2} {fixed_cyl_r} {fixed_cyl_lo} {fixed_cyl_hi} units lattice side out
+            region fixed_cyl cylinder {fixed_cyl_axis} {fixed_cyl_x1} {fixed_cyl_x2} {fixed_cyl_r} {fixed_cyl_lo} {fixed_cyl_hi} units box side out
 
             # Define the group of atoms in the cylinder
             group fixed_atoms region fixed_cyl
@@ -104,7 +106,7 @@ class ScrewDislo(LammpsImplicitDer):
             fix freeze fixed_atoms setforce 0.0 0.0 0.0
             """)
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         # Neighbors
         # Add skin distance of 2 A to the cutoff radius to create a buffer zone?
         # bin - the method to build the neighbor list (binning)

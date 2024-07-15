@@ -77,9 +77,7 @@ def test_run_npt(comm):
 
     res_dict = run_npt_implicit_derivative(BccVacancy, alat, ncell_x, Theta_perturb,
                                            snapcoeff_filename, snapparam_filename,
-                                           virial_trace_vac, virial_der_vac0, descriptor_array_vac,
-                                           volume_array_vac,
-                                           dX_dTheta_vac_inhom, data_path='./refs')
+                                           virial_der_vac0, dX_dTheta_vac_inhom, data_path='./refs')
 
     volume0_desired = 253.1556139760
     volume_true_desired = 234.1690107103

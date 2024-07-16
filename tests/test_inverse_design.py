@@ -2,6 +2,7 @@
 Test of the inverse design routines.
 Integration tests.
 """
+import shutil
 import pytest
 import numpy as np
 
@@ -45,6 +46,8 @@ def test_minimze(bcc_vacancy, bcc_vacancy_target, comm):
                                         minimize_at_iters=False,
                                         apply_hard_constraints=False,
                                         )
+
+    shutil.rmtree('minim_output')
 
     numiter_desired = 1
     error_array_desired = np.array([0.0325912346, 0.0256618410])

@@ -20,6 +20,7 @@ class SNAP():
                  snapcoeff_path=None,
                  snapparam_path=None,
                  comm=None,
+                 zbl_dict=None,
                  ):
 
         self.snapcoeff_path = snapcoeff_path
@@ -51,11 +52,22 @@ class SNAP():
 
         self.snapparam_dict = snapparam_dict
 
+        # ZBL part of potential
+        # Hard coded for two elements
+        self.set_zbl = False
+        if zbl_dict is not None:
+            self.set_zbl = True
+            self.zbl_charge1 = zbl_dict['charge1']
+            self.zbl_charge2 = zbl_dict['charge2']
+            self.zbl_rcut1 = zbl_dict['rcut1']
+            self.zbl_rcut2 = zbl_dict['rcut2']
+
     @classmethod
     def from_files(cls,
                    snapcoeff_filename,
                    data_path=None,
                    snapparam_filename=None,
+                   zbl_dict=None,
                    comm=None,
                    ):
 
@@ -152,6 +164,7 @@ class SNAP():
                    snapparam_dict=snapparam_dict,
                    snapcoeff_path=snapcoeff_path,
                    snapparam_path=snapparam_path,
+                   zbl_dict=zbl_dict,
                    comm=comm,
                    )
 

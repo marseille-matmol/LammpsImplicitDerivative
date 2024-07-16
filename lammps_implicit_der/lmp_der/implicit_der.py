@@ -34,6 +34,9 @@ class LammpsImplicitDer:
                  fix_sel='all',
                  fix_box_relax=False,
                  box_relax_vmax=0.001,
+                 zbl_dict=None,
+                 dump_lmp_cmd=True,
+                 lmp_cmd_filename='commands.lammps',
                  verbose=True):
         """Set of methods for implicit derivative. Parent class.
 
@@ -97,9 +100,15 @@ class LammpsImplicitDer:
 
         self.force_call_counter = 0
         self.lmp = None
-        self.pot = None
         self.cell = None
         self.Natom = None
+
+        self.dump_lmp_cmd = dump_lmp_cmd
+        self.lmp_cmd_filename = lmp_cmd_filename
+
+        # Potential attrs
+        self.pot = None
+        self.zbl_dict = zbl_dict
 
         # Assume a unary system by default, change in the child class if needed
         self.binary = False
@@ -127,7 +136,7 @@ class LammpsImplicitDer:
         self.print_run_info()
         # Initialize LAMMPS simulation
         self.lmp = lammps(cmdargs=self.cmdargs, comm=self.comm)
-        self.lmp.commands_string("""
+        self.lmp_commands_string("""
         # Reset simulation state
         clear
         # Configure how atoms are mapped to store and access
@@ -153,6 +162,14 @@ class LammpsImplicitDer:
             out_str += f'{self.pot}\n'
 
         return out_str
+
+    def lmp_commands_string(self, commands):
+
+        self.lmp.commands_string(commands)
+
+        if self.dump_lmp_cmd and self.rank == 0:
+            with open(self.lmp_cmd_filename, 'a') as f:
+                f.write(commands+'\n')
 
     def copy(self):
         """Return a copy of the object.
@@ -252,12 +269,12 @@ class LammpsImplicitDer:
         # Fix box relax if specified
         # {'fix 1 all box/relax aniso 0.0 dilate partial' if False else ''}
         if self.fix_box_relax:
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             fix boxrelax all box/relax iso 0.0 vmax {self.box_relax_vmax}
             """)
 
         # Minimization
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         min_style {algo}
         minimize 0 {ftol} {maxiter} {maxeval}
         """)
@@ -296,7 +313,18 @@ class LammpsImplicitDer:
 
         mpi_print('Setting SNAP potential', comm=self.comm, verbose=self.verbose)
 
-        self.lmp.commands_string(f"""
+        if self.pot.set_zbl:
+            mpi_print('Setting ZBL', comm=self.comm, verbose=self.verbose)
+            mpi_print(' '*10 + f'{self.pot.zbl_rcut1=} {self.pot.zbl_rcut2=}', comm=self.comm)
+            mpi_print(' '*10 + f'{self.pot.zbl_charge1=} {self.pot.zbl_charge2=}', comm=self.comm)
+            self.lmp_commands_string(f"""
+                pair_style hybrid/overlay zbl {self.pot.zbl_rcut1} {self.pot.zbl_rcut2} snap
+                pair_coeff 1 1 zbl {self.pot.zbl_charge1} {self.pot.zbl_charge1}
+                pair_coeff 1 2 zbl {self.pot.zbl_charge1} {self.pot.zbl_charge2}
+                pair_coeff 2 2 zbl {self.pot.zbl_charge2} {self.pot.zbl_charge2}
+            """)
+
+        self.lmp_commands_string(f"""
         pair_style snap
 
         # Take coefficients from files W.snapcoeff and W.snapparam
@@ -342,7 +370,7 @@ class LammpsImplicitDer:
             self.pot.Theta_dict['weights']
 
         try:
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             # descriptors
             compute D all sna/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
 
@@ -388,7 +416,7 @@ class LammpsImplicitDer:
 
         dD = np.ctypeslib.as_array(
                 self.lmp.gather("c_dD", 1, 3*2*self.Ndesc)
-            ).reshape((-1, 2, 3, self.Ndesc))
+            ).reshape((-1, 2, 3, self.Ndesc)) # n atom types, 3 coordinates, n descriptors
 
         self.mixed_hessian = dD[:, 1, :, :].reshape((-1, self.Ndesc)).T
 
@@ -411,7 +439,7 @@ class LammpsImplicitDer:
             self.pot.Theta_dict['weights']
 
         try:
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             # descriptors
             compute virial all snav/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
             run 0
@@ -513,7 +541,7 @@ class LammpsImplicitDer:
         C = cell.copy()
 
         try:
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             change_box all triclinic
             change_box all x final 0.0 {C[0,0]} y final 0.0 {C[1,1]} z final 0.0 {C[2,2]} xy final {C[0,1]} xz final {C[0,2]} yz final {C[1,2]} remap units box
             run 0
@@ -544,6 +572,8 @@ class LammpsImplicitDer:
         """
         # update positions
         x = self._X_coord + alpha * dx.flatten()
+        #if dx is not None:
+        #    x += alpha * dx.flatten()
 
         # apply pbc
         x = self.minimum_image(x)
@@ -795,7 +825,7 @@ class LammpsImplicitDer:
         # alphaClx = alpha * d/dT_l (dU/dx), N vector
         # alphaCly = alpha * d/dT_l (dU/dy)
         # The alphaClx, alphaCly, and alphaClz names are defined here
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
             fix mixedHessianRow all property/atom d_alphaClx d_alphaCly d_alphaClz
 
             #compute deltaX all displace/atom
@@ -868,7 +898,7 @@ class LammpsImplicitDer:
             # Now, we have a column of mixed Hessian passed and positions passed to LAMMPS
 
             # build the energy and force function
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
 
                 # Retrieve alpha * C_l
                 compute alphaCl all property/atom d_alphaClx d_alphaCly d_alphaClz
@@ -903,11 +933,11 @@ class LammpsImplicitDer:
             self.impl_der_stats['energy']['f0_norm'][idesc] = self.lmp.get_thermo("fnorm")
 
             if self.fix_box_relax:
-                self.lmp.commands_string(f"""
+                self.lmp_commands_string(f"""
                     fix boxrelax all box/relax iso 0.0 vmax {self.box_relax_vmax}
                 """)
 
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
                 minimize 0. {ftol} {maxiter} {maxiter}
             """)
 
@@ -931,13 +961,13 @@ class LammpsImplicitDer:
             self.impl_der_stats['energy']['f1_norm'][idesc] = f1_norm
 
             # disable commands
-            self.lmp.commands_string("""
+            self.lmp_commands_string("""
                 uncompute alphaCl
                 unfix addForce
                 uncompute deltaX
             """)
 
-        self.lmp.commands_string("""
+        self.lmp_commands_string("""
             variable aClx delete
             variable aCly delete
             variable aClz delete
@@ -1130,3 +1160,32 @@ class LammpsImplicitDer:
 
         if verbose:
             mpi_print(f"Coordinates saved to {filename}", comm=self.comm)
+
+    """
+    # LAMMPS: compute D all sna/atom **params**
+    Ndesc = 55 # e.g.
+    Nspec = 2
+
+    # shape of (N,Ndesc)
+    D_all = np.ctypeslib.as_array(\
+        lmp.gather("c_D", 1, Ndesc)).reshape((-1, Ndesc))
+
+    # 1: W 2: C
+    specie = np.ctypeslib.as_array(lmp.gather("type",0,1)).astype(int)
+
+    # note shape: (N_spec,Ndesc)
+    D = np.asarray([D_all[specie==s+1].sum(0) for s in range(Nspec)])
+
+    # LAMMPS: compute dD all snad/atom **params**
+    # note shape: (N,Nspec,3,Ndesc) (could use np.swapaxes)
+
+    dD = np.ctypeslib.as_array(\
+        lmp.gather("c_dD", 1, Nspec*3*Ndesc)
+        ).reshape((-1, Nspec, 3, Ndesc))
+
+    # LAMMPS: compute ddD all snav/atom **params**
+    # note shape: (N,Nspec,6,Ndesc)
+    V = np.ctypeslib.as_array(\
+        lmp.gather("c_ddD", 1, Nspec*6*Ndesc)
+        ).reshape((-1, Nspec, 6, Ndesc))
+    """

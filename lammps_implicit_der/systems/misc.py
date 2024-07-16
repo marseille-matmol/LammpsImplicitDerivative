@@ -34,7 +34,7 @@ class VacW(LammpsImplicitDer):
         # Potential parameters
         self.Theta = self.pot.Theta_dict['W']['Theta']
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         boundary p p p
 
         # Read the coordinates in .lmp format
@@ -71,7 +71,7 @@ class BccVacancyConcentration(LammpsImplicitDer):
         # Potential parameters, hardcoded for tungsten
         self.Theta = self.pot.Theta_dict['W']['Theta']
 
-        self.lmp.commands_string(f"""
+        self.lmp_commands_string(f"""
         atom_style atomic
         boundary p p p
         lattice bcc {alat}
@@ -81,7 +81,7 @@ class BccVacancyConcentration(LammpsImplicitDer):
         # Setup the coordinates from scratch
         if self.datafile is None:
 
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             create_box 1 box
             create_atoms 1 region box
 
@@ -100,7 +100,7 @@ class BccVacancyConcentration(LammpsImplicitDer):
 
         # Read from a datafile
         else:
-            self.lmp.commands_string(f"""
+            self.lmp_commands_string(f"""
             read_data {self.datafile}
             """)
 

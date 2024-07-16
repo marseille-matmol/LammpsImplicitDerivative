@@ -45,7 +45,8 @@ def test_run_npt(comm):
     pot_perturb = SNAP.from_files('W_perturb.snapcoeff', data_path='./refs', comm=comm)
     Theta_perturb = pot_perturb.Theta_dict['W']['Theta'].copy()
 
-    bcc_vac = BccVacancy(alat=alat, ncell_x=ncell_x, minimize=True, logname=None, data_path='./refs/', snapcoeff_filename='W_perturb.snapcoeff', verbose=False, comm=None)
+    bcc_vac = BccVacancy(alat=alat, ncell_x=ncell_x, minimize=True, logname=None, data_path='./refs/',
+                         snapcoeff_filename='W_perturb.snapcoeff', verbose=False, comm=comm)
 
     dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method='dense')
 
@@ -56,13 +57,10 @@ def test_run_npt(comm):
     volume_array_vac = en_vol_dict['volume_array']
     virial_array_vac = en_vol_dict['virial_array']
     energy_array = en_vol_dict['energy_array']
-    descriptor_array_vac = en_vol_dict['descriptor_array']
 
     # virial
     bcc_vac.compute_virial()
     bcc_vac.gather_virial()
-    virial_vac = np.sum(bcc_vac.virial, axis=0)
-    virial_trace_vac = np.sum(virial_vac[:3, :], axis=0) / 3.0
 
     # virial derivative
     spline_list_vac = []
@@ -77,36 +75,34 @@ def test_run_npt(comm):
 
     res_dict = run_npt_implicit_derivative(BccVacancy, alat, ncell_x, Theta_perturb,
                                            snapcoeff_filename, snapparam_filename,
-                                           virial_trace_vac, virial_der_vac0, descriptor_array_vac,
-                                           volume_array_vac,
-                                           dX_dTheta_vac_inhom, data_path='./refs')
+                                           virial_der_vac0, dX_dTheta_vac_inhom, data_path='./refs')
 
     volume0_desired = 253.1556139760
     volume_true_desired = 234.1690107103
-    volume_pred_desired = 181.4196460743
-    volume_pred_DT_desired = 253.1556139760
-    volume_pred_full_desired = 181.4196460743
+    volume_pred_desired = 192.0956114462
+    volume_pred_full_desired = 192.0956114462
     energy0_desired = -80.3652746790
     energy_true_desired = -298.0019653030
     energy_pred0_desired = -291.8781171140
-    energy_hom_pred_desired = -244.8617275906
-    energy_hom_pred_DT_desired = -291.8781171140
+    energy_hom_pred_desired = -261.7611209474
     energy_inhom_pred_desired = -291.9562001894
-    energy_full_pred_desired = -246.1417920058
-    energy_full_pred_DT_desired = -291.9562001894
-    coord_error_full_desired = 0.9678246410
+    energy_full_pred_desired = -262.9750024118
+    coord_error_full_desired = 0.7668165511
+    coord_error_hom_desired = 0.7898012372
+    coord_error_inhom_desired = 0.2970626250
+    coord_error0_desired = 0.3126601018
 
     np.testing.assert_allclose(res_dict['volume0'], volume0_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['volume_true'], volume_true_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['volume_pred'], volume_pred_desired, atol=1e-8)
-    np.testing.assert_allclose(res_dict['volume_pred_DT'], volume_pred_DT_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['volume_pred_full'], volume_pred_full_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['energy0'], energy0_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['energy_true'], energy_true_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['energy_pred0'], energy_pred0_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['energy_hom_pred'], energy_hom_pred_desired, atol=1e-8)
-    np.testing.assert_allclose(res_dict['energy_hom_pred_DT'], energy_hom_pred_DT_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['energy_inhom_pred'], energy_inhom_pred_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['energy_full_pred'], energy_full_pred_desired, atol=1e-8)
-    np.testing.assert_allclose(res_dict['energy_full_pred_DT'], energy_full_pred_DT_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['coord_error_full'], coord_error_full_desired, atol=1e-8)
+    np.testing.assert_allclose(res_dict['coord_error_hom'], coord_error_hom_desired, atol=1e-8)
+    np.testing.assert_allclose(res_dict['coord_error_inhom'], coord_error_inhom_desired, atol=1e-8)
+    np.testing.assert_allclose(res_dict['coord_error0'], coord_error0_desired, atol=1e-8)

@@ -179,9 +179,10 @@ def minimize_loss(sim,
     if verbosity < 2:
         sim.verbose = False
 
-    mpi_print('\n'+'='*80, comm=comm)
-    mpi_print('='*23 + 'Running the parameter optimization' + '='*23, comm=comm)
-    mpi_print('='*80 + '\n', comm=comm)
+    if verbosity > 0:
+        mpi_print('\n'+'='*80, comm=comm)
+        mpi_print('='*23 + 'Running the parameter optimization' + '='*23, comm=comm)
+        mpi_print('='*80 + '\n', comm=comm)
 
     if apply_hard_constraints:
 
@@ -225,7 +226,7 @@ def minimize_loss(sim,
 
     # Compute the initial error
     error_array[0] = loss_function(sim.minimum_image, sim.X_coord, X_target)
-    mpi_print(f'{"Initial error":>30}: {error_array[0]:.3e}\n', comm=comm)
+    mpi_print(f'{"Initial error":>30}: {error_array[0]:.3e}\n', comm=comm, verbose=verbosity > 0)
 
     minim_dict['iter'] = {}
     minim_dict['iter'][0] = {}
@@ -343,7 +344,7 @@ def minimize_loss(sim,
             minim_dict['iter'][i]['dX_target'] = dX_target
 
             # Update the parameters in the pot object
-            mpi_print(f'\n  >>Updating the potential parameters for {sub_element}', comm=comm)
+            mpi_print(f'\n  >>Updating the potential parameters for {sub_element}', comm=comm, verbose=verbosity > 1)
             sim.pot.Theta_dict[sub_element]['Theta'] = sim.Theta
 
             # Update the potential parameters
@@ -440,7 +441,7 @@ def minimize_loss(sim,
             min_Theta = sim.Theta.copy()
 
         if error_array[i] < error_tol:
-            mpi_print('Convergence reached!', comm=comm)
+            mpi_print('Convergence reached!', comm=comm, verbose=verbosity > 0)
             minim_dict['converged'] = True
             break
 
@@ -453,12 +454,12 @@ def minimize_loss(sim,
         if comm is not None:
             comm.Barrier()
 
-    mpi_print('='*80+'\n', comm=comm)
+    mpi_print('='*80+'\n', comm=comm, verbose=verbosity > 0)
 
     minim_dict['loop_completed'] = True
     minim_dict['numiter'] = i
-    minim_dict['error_array'] = error_array[:i]
-    #minim_dict['sim_final'] = sim.to_dict()
+    minim_dict['error_array'] = error_array[:i+1]
+
     minim_dict['X_final'] = min_X
     minim_dict['Theta_final'] = min_Theta
     trun.timings['total'].stop()

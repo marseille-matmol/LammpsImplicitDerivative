@@ -1,5 +1,5 @@
 """
-Tests of the implicit derivative.
+Tests of the inhomogeneous implicit derivative.
 """
 import pytest
 import numpy as np
@@ -7,7 +7,7 @@ import numpy as np
 from lammps_implicit_der.systems import BccVacancy
 
 
-# To save time, compute th BccVacancy object only once
+# To save time, compute the BccVacancy object only once
 @pytest.fixture(scope="module")
 def bcc_vacancy(comm):
     return BccVacancy(alat=3.163, ncell_x=2, minimize=True, logname=None, del_coord=[0.0, 0.0, 0.0],

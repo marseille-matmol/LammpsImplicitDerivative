@@ -208,9 +208,9 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
         # Finite diff Virial presdiction
         dL_dTheta = s_pred.implicit_derivative_hom(method='dVirial')
         dL_pred = dTheta @ dL_dTheta
-        L0 = volume0**(1/3)
+        L0 = volume0**(1.0/3.0)
         V_pred = (L0 + dL_pred)**3
-        strain_pred = ((V_pred) / volume0)**(1/3)
+        strain_pred = ((V_pred) / volume0)**(1.0/3.0)
         cell_pred = np.dot(cell0, np.eye(3) * strain_pred)
 
         # Inhomogeneous correction to volume that requires the derivative of the forces

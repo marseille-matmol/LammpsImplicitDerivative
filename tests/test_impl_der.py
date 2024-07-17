@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 
 from lammps_implicit_der.systems import BccVacancy
+from lammps_implicit_der.tools import generate_masks
 
 
 # To save time, compute the BccVacancy object only once
@@ -49,6 +50,24 @@ def test_impl_der_dense(bcc_vacancy):
 
     dX_dTheta_desired = np.load('./refs/test_impl_der_dense.npy')
     dX_dTheta = bcc_vacancy.implicit_derivative(method='dense')
+
+    dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
+
+    np.testing.assert_allclose(dX_dTheta, dX_dTheta_desired, atol=1e-7)
+
+
+def test_impl_der_dense_hess_mask(bcc_vacancy, comm):
+
+    idx_sort = sort_coord(bcc_vacancy.X_coord)
+    hess_mask, hess_mask_3D = generate_masks.generate_mask_radius(bcc_vacancy.X_coord[idx_sort], radius=2.7,
+                                                                  center_coord=np.array([0.0, 0.0, 0.0]),
+                                                                  comm=comm, verbose=False)
+
+    np.testing.assert_allclose(np.sum(hess_mask), 12)
+    np.testing.assert_allclose(np.sum(hess_mask_3D), 4)
+
+    dX_dTheta_desired = np.load('./refs/test_impl_der_dense_hess_mask.npy')
+    dX_dTheta = bcc_vacancy.implicit_derivative(method='dense', hess_mask=hess_mask)
 
     dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
 

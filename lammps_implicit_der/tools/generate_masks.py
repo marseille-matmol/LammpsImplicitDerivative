@@ -10,6 +10,25 @@ from .utils import mpi_print
 
 
 def generate_mask_dX(dX, threshold=0.12, comm=None):
+    """
+    Generate the mask for the Hessian calculation based on the magnitude of the displacement vector.
+
+    Parameters
+    ----------
+    dX : np.ndarray
+        The displacement vector.
+
+    threshold : float
+        The threshold for the magnitude of the displacement vector.
+
+    comm : MPI.COMM
+        The MPI communicator.
+
+    Returns
+    -------
+    hess_mask : np.ndarray
+        The mask for the Hessian calculation.
+    """
 
     if dX.ndim != 1:
         raise ValueError('dX must be a 1D flat array.')
@@ -25,12 +44,12 @@ def generate_mask_dX(dX, threshold=0.12, comm=None):
     ntotal = len(hess_mask)
     natom_mask = nmask // 3
     mpi_print(f'>>>dX mask. Number of elements in the mask: {nmask} out of {ntotal} ({nmask/ntotal:.1%})', comm=comm)
-    mpi_print(f'>>>Number of atoms in the mask: {natom_mask}', comm=comm)
+    mpi_print(f'>>>Number of atoms in the mask: {natom_mask} out of {len(dX_3D)}', comm=comm)
 
     return hess_mask, hess_mask_3D
 
 
-def generate_mask_radius(X_coord, radius=5.0, center_coord=np.array([0.0, 0.0, 0.0]), center_specie=None, species=None, comm=None):
+def generate_mask_radius(X_coord, radius=5.0, center_coord=np.array([0.0, 0.0, 0.0]), center_specie=None, species=None, comm=None, verbose=True):
 
     if X_coord.ndim != 1:
         raise ValueError('X_coord must be a 1D flat array.')
@@ -55,9 +74,9 @@ def generate_mask_radius(X_coord, radius=5.0, center_coord=np.array([0.0, 0.0, 0
     ntotal = len(hess_mask)
     natom_mask = nmask // 3
 
-    mpi_print(f'>>>Radius mask. Center of the mask: {center_coord}, with radius of {radius} A', comm=comm)
-    mpi_print(f'>>>Number of elements in the mask: {nmask} out of {ntotal} ({nmask/ntotal:.1%})', comm=comm)
-    mpi_print(f'>>>Number of atoms in the mask: {natom_mask}', comm=comm)
+    mpi_print(f'>>>Radius mask. Center of the mask: {center_coord}, with radius of {radius} A', comm=comm, verbose=verbose)
+    mpi_print(f'>>>Number of elements in the mask: {nmask} out of {ntotal} ({nmask/ntotal:.1%})', comm=comm, verbose=verbose)
+    mpi_print(f'>>>Number of atoms in the mask: {natom_mask} out of {len(X_3D)}', comm=comm, verbose=verbose)
 
     return hess_mask, hess_mask_3D
 

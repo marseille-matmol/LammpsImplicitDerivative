@@ -60,7 +60,7 @@ def compute_energy_volume(system, epsilon_array, compute_forces=False):
         pressure_array[i] = system.pressure
 
         if compute_forces:
-            force_array[i, :] = system.forces(dx=np.zeros(system.Natom*3))
+            force_array[i, :] = system.compute_forces(dx=np.zeros(system.Natom*3))
 
     # Reapply the original cell
     system.apply_strain(initial_cell)

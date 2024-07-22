@@ -131,7 +131,7 @@ class SimpleLammps:
 
         return g,np.append(C_A,C_B,axis=1)
 
-    def forces(self,dx,alpha = 0.1):
+    def compute_forces(self,dx,alpha = 0.1):
         """
             Evaluate forces for given position
             Uses [F(X+alpha * dX)-F(X) ] /alpha -> H.dX as alpha -> 0
@@ -179,12 +179,12 @@ class SimpleLammps:
 
         elif method=="LinearOperator":
             dX0 = np.zeros_like(self.x)
-            F0 = self.forces(dX0,alpha) # reinitialize LAMMPS
+            F0 = self.compute_forces(dX0,alpha) # reinitialize LAMMPS
 
             # Linear operator from matrix-vector product function
             def mv(dx):
                 alpha_x = alpha/max(np.abs(dx).max(),1.0)
-                return (F0-self.forces(dx,alpha_x))/alpha_x
+                return (F0-self.compute_forces(dx,alpha_x))/alpha_x
             L = LinearOperator((self.N,self.N),matvec=mv,rmatvec=mv)
 
             # One linear solution per parameter
@@ -254,10 +254,10 @@ class SimpleLammps:
         for i in tqdm(range(self.N)):
 
             dx_v[i] = dx
-            H[i] = -self.forces(dx_v,alpha=1.0)
+            H[i] = -self.compute_forces(dx_v,alpha=1.0)
 
             dx_v *= -1.0
-            H[i] -= -self.forces(dx_v,alpha=1.0)
+            H[i] -= -self.compute_forces(dx_v,alpha=1.0)
 
             dx_v[i] = 0.0
 

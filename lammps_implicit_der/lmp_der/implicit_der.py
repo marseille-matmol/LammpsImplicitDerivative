@@ -568,7 +568,7 @@ class LammpsImplicitDer:
         return X_vector - (correction * self.periodicity).flatten()
 
     @measure_runtime_and_calls
-    def forces(self, dx_vector=None, alpha=0.05):
+    def compute_forces(self, dx_vector=None, alpha=0.05):
         """
         Evaluate forces for given position
         Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
@@ -649,15 +649,15 @@ class LammpsImplicitDer:
             dx_vector[i] = dx
 
             # compute forces: F(X + alpha * dX_dTheta)
-            hessian[i, :] = -self.forces(dx_vector, alpha=1.0)
+            hessian[i, :] = -self.compute_forces(dx_vector, alpha=1.0)
             # Memory-efficient
-            # hessian[i,:] = -self.forces(dx_vector, alpha=1.0)[self.mask]
+            # hessian[i,:] = -self.compute_forces(dx_vector, alpha=1.0)[self.mask]
 
             # compute forces: F(X - alpha * dX_dTheta) and subtract
             dx_vector[i] = -dx
-            hessian[i, :] -= -self.forces(dx_vector, alpha=1.0)
+            hessian[i, :] -= -self.compute_forces(dx_vector, alpha=1.0)
             # Memory-efficient
-            # hessian[i,:] -= -self.forces(dx_vector, alpha=1.0)[self.mask]
+            # hessian[i,:] -= -self.compute_forces(dx_vector, alpha=1.0)[self.mask]
 
             dx_vector[i] = 0.0
 
@@ -767,7 +767,7 @@ class LammpsImplicitDer:
         # Compute the force at the initial position,
         # Analytically, it must be zero, but for numerical reasons, it is small
         dX0 = np.zeros_like(self._X_coord)
-        F0 = self.forces(dX0, alpha=0.0)
+        F0 = self.compute_forces(dX0, alpha=0.0)
 
         # result holder
         dX_dTheta = np.zeros((self.Ndesc, self.Natom * 3))
@@ -787,7 +787,7 @@ class LammpsImplicitDer:
                 alpha_factor = alpha
 
             # define linear operator with matrix-vector product matvec()
-            matvec = lambda dx: (F0-self.forces(dx, alpha_factor)) / alpha_factor
+            matvec = lambda dx: (F0-self.compute_forces(dx, alpha_factor)) / alpha_factor
             linop = LinearOperator((self.N, self.N), matvec=matvec, rmatvec=matvec)
 
             # perform iterative linear solution routine LGMRES: Ax = b, solve for x

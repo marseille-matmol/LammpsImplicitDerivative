@@ -995,7 +995,7 @@ class LammpsImplicitDer:
 
         return dX_dTheta
 
-    def implicit_derivative_dense(self, hess_mask=None):
+    def implicit_derivative_dense(self, hessian=None, hess_mask=None):
         """Compute implicit derivative from Hessian inverse
 
         Returns
@@ -1004,10 +1004,11 @@ class LammpsImplicitDer:
             implicit derivative
         """
 
-        hessian = self.compute_hessian(hess_mask=hess_mask)
+        if hessian is None:
+            hessian = self.compute_hessian(hess_mask=hess_mask)
 
-        # Lift the diagonal of the Hessian to avoid singularities
-        hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
+            # Lift the diagonal of the Hessian to avoid singularities
+            hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
 
         # Use linalg.solve to find dX_dTheta in H.dX_dTheta = C
         if hess_mask is not None:
@@ -1021,7 +1022,6 @@ class LammpsImplicitDer:
                 dX_dTheta[:, hess_mask] = np.linalg.solve(hessian_mask, self.mixed_hessian.T[hess_mask, :]).T
 
         else:
-
             mpi_print(f'Computing dX_dTheta with linalg.solve, Hessian shape: {hessian.shape}', comm=self.comm, verbose=self.verbose)
             with self.timings.add('linalg.solve') as t:
                 dX_dTheta = np.linalg.solve(hessian, self.mixed_hessian.T).T

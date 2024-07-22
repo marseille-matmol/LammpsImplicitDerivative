@@ -60,7 +60,7 @@ def compute_energy_volume(system, epsilon_array, compute_forces=False):
         pressure_array[i] = system.pressure
 
         if compute_forces:
-            force_array[i, :] = system.compute_forces(dx=np.zeros(system.Natom*3))
+            force_array[i, :] = system.compute_forces()
 
     # Reapply the original cell
     system.apply_strain(initial_cell)
@@ -91,7 +91,7 @@ def create_perturbed_system(Theta_perturb, LammpsClass, snapcoeff_filename, snap
 
     # system_tmp is created only to save the SNAP potential files
     system_tmp = LammpsClass(data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
-                             ncell_x=ncell_x, alat=alat, logname='tmp.log', minimize=False, verbose=False, comm=comm)
+                             ncell_x=ncell_x, alat=alat, logname=None, minimize=False, verbose=False, comm=comm)
 
     if len(system_tmp.pot.elem_list) > 1:
         raise RuntimeError('Implemented for single element systems only')
@@ -139,8 +139,9 @@ def create_perturbed_system(Theta_perturb, LammpsClass, snapcoeff_filename, snap
 
 def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
                                 snapcoeff_filename, snapparam_filename,
-                                virial_der0, dX_dTheta_inhom, force_der0=None,
-                                data_path=None, comm=None, trun=None):
+                                dX_dTheta_inhom, dL_dTheta_hom, force_der0=None, virial_der0=None,
+                                data_path=None, comm=None, trun=None,
+                                log_box_relax='s_box_relax.log', log_pred='s_pred.log'):
 
     if trun is None:
         trun = TimingGroup('NPT implicit derivative')
@@ -151,7 +152,7 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
 
     with trun.add('NPT minimization'):
         # For the ground truth - fix box/relax. Theta1
-        s_box_relax = create_perturbed_system(Theta_perturb, LammpsClass, logname='s_box_relax.log',
+        s_box_relax = create_perturbed_system(Theta_perturb, LammpsClass, logname=log_box_relax,
                                               data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
                                               alat=alat, ncell_x=ncell_x, fix_box_relax=True, minimize=True, verbose=False, comm=comm)
 
@@ -167,7 +168,7 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
 
     with trun.add('NVT minimization'):
         # For full implicit derivative. Theta0
-        s_pred = LammpsClass(alat=alat, ncell_x=ncell_x, minimize=True, logname='s_pred.log',
+        s_pred = LammpsClass(alat=alat, ncell_x=ncell_x, minimize=True, logname=log_pred,
                              data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename, verbose=False, comm=comm)
         if comm is not None:
             comm.Barrier()
@@ -195,19 +196,10 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
     # Predict the volume change
     with trun.add('volume prediction'):
 
-        # Finite diff Desc prediction
-        """
-        dL_dTheta = s_pred.implicit_derivative_hom(method='d2Desc')
-        dL_pred = dTheta @ dL_dTheta
-        L0 = volume0**(1/3)
-        V_pred_d2Desc = (L0 + dL_pred)**3
-        strain_pred_d2Desc = ((V_pred_d2Desc) / volume0)**(1/3)
-        cell_pred_d2Desc = np.dot(cell0, np.eye(3) * strain_pred_d2Desc)
-        """
-
         # Finite diff Virial presdiction
-        dL_dTheta = s_pred.implicit_derivative_hom(method='dVirial')
-        dL_pred = dTheta @ dL_dTheta
+        #dL_dTheta = s_pred.implicit_derivative_hom(method='dVirial')
+        #dL_pred = dTheta @ dL_dTheta # dL_dTheta_hom
+        dL_pred = dTheta @ dL_dTheta_hom
         L0 = volume0**(1.0/3.0)
         V_pred = (L0 + dL_pred)**3
         strain_pred = ((V_pred) / volume0)**(1.0/3.0)

@@ -130,6 +130,10 @@ def main():
         dX_dTheta_pure_inhom = bcc_pure.implicit_derivative(method=impl_der_method)
         dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method=impl_der_method)
 
+    with trun.add('dL_dTheta hom'):
+        dL_dTheta_pure_hom = bcc_pure.implicit_derivative_hom(method='dVirial')
+        dL_dTheta_vac_hom = bcc_vac.implicit_derivative_hom(method='dVirial')
+
     with trun.add('sample loop', level=1):
 
         with open('Theta_ens.pkl', 'rb') as file:
@@ -212,14 +216,15 @@ def main():
 
                     pure_dict = run_npt_implicit_derivative(Bcc, alat, ncell_x, Theta_perturb,
                                                             snapcoeff_filename, snapparam_filename,
-                                                            virial_der_pure0, dX_dTheta_pure_inhom, comm=comm, trun=trun_npt)
+                                                            dX_dTheta_pure_inhom, dL_dTheta_pure_hom, virial_der0=virial_der_pure0,
+                                                            comm=comm, trun=trun_npt)
 
                     if comm is not None:
                         comm.Barrier()
 
                     vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_perturb,
                                                            snapcoeff_filename, snapparam_filename,
-                                                           virial_der_vac0, dX_dTheta_vac_inhom,
+                                                           dX_dTheta_vac_inhom, dL_dTheta_vac_hom, virial_der0=virial_der_vac0,
                                                            force_der0=force_der_vac0, comm=comm, trun=trun_npt)
 
                     if comm is not None:

@@ -574,15 +574,12 @@ class LammpsImplicitDer:
         Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
         """
         # update positions
-        x = self._X_coord + alpha * dX_vector.flatten()
-        #if dx_vector is not None:
-        #    x += alpha * dx_vector.flatten()
-
-        # apply pbc
-        x = self.minimum_image(x)
+        X_tmp = self.X_coord.copy() #+ alpha * dX_vector.flatten()
+        if dX_vector is not None:
+            X_tmp += alpha * dX_vector.flatten()
 
         # send new positions to LAMMPS
-        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(x))
+        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_tmp))
         self.lmp.command("run 0")
 
         self.force_call_counter += 1
@@ -625,7 +622,7 @@ class LammpsImplicitDer:
 
         # We need to define a vector of displacements because the forces function
         # expects a vector of displacements
-        dx_vector = np.zeros_like(self._X_coord.flatten())
+        dX_vector = np.zeros_like(self._X_coord.flatten())
 
         # Iterate over the atoms
         if hess_mask is None:
@@ -646,20 +643,20 @@ class LammpsImplicitDer:
         for i in iterator:
 
             # displace posotion i by dx
-            dx_vector[i] = dx
+            dX_vector[i] = dx
 
             # compute forces: F(X + alpha * dX_dTheta)
-            hessian[i, :] = -self.compute_forces(dx_vector, alpha=1.0)
+            hessian[i, :] = -self.compute_forces(dX_vector=dX_vector, alpha=1.0)
             # Memory-efficient
-            # hessian[i,:] = -self.compute_forces(dx_vector, alpha=1.0)[self.mask]
+            # hessian[i,:] = -self.compute_forces(dX_vector, alpha=1.0)[self.mask]
 
             # compute forces: F(X - alpha * dX_dTheta) and subtract
-            dx_vector[i] = -dx
-            hessian[i, :] -= -self.compute_forces(dx_vector, alpha=1.0)
+            dX_vector[i] = -dx
+            hessian[i, :] -= -self.compute_forces(dX_vector=dX_vector, alpha=1.0)
             # Memory-efficient
-            # hessian[i,:] -= -self.compute_forces(dx_vector, alpha=1.0)[self.mask]
+            # hessian[i,:] -= -self.compute_forces(dX_vector, alpha=1.0)[self.mask]
 
-            dx_vector[i] = 0.0
+            dX_vector[i] = 0.0
 
         hessian /= 2.0*dx
 
@@ -767,7 +764,7 @@ class LammpsImplicitDer:
         # Compute the force at the initial position,
         # Analytically, it must be zero, but for numerical reasons, it is small
         dX0 = np.zeros_like(self._X_coord)
-        F0 = self.compute_forces(dX0, alpha=0.0)
+        F0 = self.compute_forces()
 
         # result holder
         dX_dTheta = np.zeros((self.Ndesc, self.Natom * 3))
@@ -787,7 +784,7 @@ class LammpsImplicitDer:
                 alpha_factor = alpha
 
             # define linear operator with matrix-vector product matvec()
-            matvec = lambda dx: (F0-self.compute_forces(dx, alpha_factor)) / alpha_factor
+            matvec = lambda dX: (F0-self.compute_forces(dX_vector=dX, alpha=alpha_factor)) / alpha_factor
             linop = LinearOperator((self.N, self.N), matvec=matvec, rmatvec=matvec)
 
             # perform iterative linear solution routine LGMRES: Ax = b, solve for x

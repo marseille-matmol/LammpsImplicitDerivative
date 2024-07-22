@@ -34,7 +34,7 @@ class Bcc(LammpsImplicitDer):
         self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
-            raise RuntimeError('snapcoeff_filename must be specified for Bcc')
+            raise RuntimeError('snapcoeff_filename must be specified for Bcc class')
 
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,

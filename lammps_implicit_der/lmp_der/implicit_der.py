@@ -23,6 +23,7 @@ class LammpsImplicitDer:
                  snapcoeff_filename=None,
                  snapparam_filename=None,
                  datafile=None,
+                 input_script=None,
                  data_path=None,
                  minimize=True,
                  minimize_algo='cg',
@@ -86,6 +87,7 @@ class LammpsImplicitDer:
         self.snapcoeff_filename = snapcoeff_filename
         self.snapparam_filename = snapparam_filename
         self.datafile = datafile
+        self.input_script = input_script
 
         self.logname = logname
 
@@ -360,10 +362,11 @@ class LammpsImplicitDer:
             raise RuntimeError('Potential must be defined')
 
         # Read the potential parameters from the potential object
-        rcutfac, twojmax, rfac0 = \
+        rcutfac, twojmax, rfac0, quadraticflag = \
             self.pot.snapparam_dict['rcutfac'], \
             self.pot.snapparam_dict['twojmax'], \
-            self.pot.snapparam_dict['rfac0']
+            self.pot.snapparam_dict['rfac0'], \
+            self.pot.snapparam_dict['quadraticflag']
 
         radii, weights = \
             self.pot.Theta_dict['radii'], \
@@ -372,10 +375,10 @@ class LammpsImplicitDer:
         try:
             self.lmp_commands_string(f"""
             # descriptors
-            compute D all sna/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
+            compute D all sna/atom {rcutfac} {rfac0} {twojmax} {radii} {weights} quadraticflag {quadraticflag}
 
             # derivatives of descriptors
-            compute dD all snad/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
+            compute dD all snad/atom {rcutfac} {rfac0} {twojmax} {radii} {weights} quadraticflag {quadraticflag}
 
             # potential energy per atom
             compute E all pe/atom
@@ -565,15 +568,15 @@ class LammpsImplicitDer:
         return X_vector - (correction * self.periodicity).flatten()
 
     @measure_runtime_and_calls
-    def forces(self, dx, alpha=0.05):
+    def forces(self, dx_vector=None, alpha=0.05):
         """
         Evaluate forces for given position
         Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
         """
         # update positions
-        x = self._X_coord + alpha * dx.flatten()
-        #if dx is not None:
-        #    x += alpha * dx.flatten()
+        x = self._X_coord + alpha * dx_vector.flatten()
+        #if dx_vector is not None:
+        #    x += alpha * dx_vector.flatten()
 
         # apply pbc
         x = self.minimum_image(x)

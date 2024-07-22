@@ -568,13 +568,13 @@ class LammpsImplicitDer:
         return X_vector - (correction * self.periodicity).flatten()
 
     @measure_runtime_and_calls
-    def compute_forces(self, dx_vector=None, alpha=0.05):
+    def compute_forces(self, dX_vector=None, alpha=0.05):
         """
         Evaluate forces for given position
         Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
         """
         # update positions
-        x = self._X_coord + alpha * dx_vector.flatten()
+        x = self._X_coord + alpha * dX_vector.flatten()
         #if dx_vector is not None:
         #    x += alpha * dx_vector.flatten()
 

@@ -23,6 +23,7 @@ class LammpsImplicitDer:
                  snapcoeff_filename=None,
                  snapparam_filename=None,
                  datafile=None,
+                 input_script=None,
                  data_path=None,
                  minimize=True,
                  minimize_algo='cg',
@@ -86,6 +87,7 @@ class LammpsImplicitDer:
         self.snapcoeff_filename = snapcoeff_filename
         self.snapparam_filename = snapparam_filename
         self.datafile = datafile
+        self.input_script = input_script
 
         self.logname = logname
 
@@ -360,10 +362,7 @@ class LammpsImplicitDer:
             raise RuntimeError('Potential must be defined')
 
         # Read the potential parameters from the potential object
-        rcutfac, twojmax, rfac0 = \
-            self.pot.snapparam_dict['rcutfac'], \
-            self.pot.snapparam_dict['twojmax'], \
-            self.pot.snapparam_dict['rfac0']
+        rcutfac, twojmax, rfac0, quadraticflag = [self.pot.snapparam_dict[k] for k in ['rcutfac', 'twojmax', 'rfac0', 'quadraticflag']]
 
         radii, weights = \
             self.pot.Theta_dict['radii'], \
@@ -372,10 +371,10 @@ class LammpsImplicitDer:
         try:
             self.lmp_commands_string(f"""
             # descriptors
-            compute D all sna/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
+            compute D all sna/atom {rcutfac} {rfac0} {twojmax} {radii} {weights} quadraticflag {quadraticflag}
 
             # derivatives of descriptors
-            compute dD all snad/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
+            compute dD all snad/atom {rcutfac} {rfac0} {twojmax} {radii} {weights} quadraticflag {quadraticflag}
 
             # potential energy per atom
             compute E all pe/atom
@@ -428,11 +427,8 @@ class LammpsImplicitDer:
         if self.pot is None:
             raise RuntimeError('Potential must be defined')
 
-        # Read the potential parameters from the potential object
-        rcutfac, twojmax, rfac0 = \
-            self.pot.snapparam_dict['rcutfac'], \
-            self.pot.snapparam_dict['twojmax'], \
-            self.pot.snapparam_dict['rfac0']
+        # Unpack the potential parameters
+        rcutfac, twojmax, rfac0, quadraticflag = [self.pot.snapparam_dict[k] for k in ['rcutfac', 'twojmax', 'rfac0', 'quadraticflag']]
 
         radii, weights = \
             self.pot.Theta_dict['radii'], \
@@ -441,7 +437,7 @@ class LammpsImplicitDer:
         try:
             self.lmp_commands_string(f"""
             # descriptors
-            compute virial all snav/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
+            compute virial all snav/atom {rcutfac} {rfac0} {twojmax} {radii} {weights} quadraticflag {quadraticflag}
             run 0
             """)
         except Exception as e:
@@ -565,21 +561,18 @@ class LammpsImplicitDer:
         return X_vector - (correction * self.periodicity).flatten()
 
     @measure_runtime_and_calls
-    def forces(self, dx, alpha=0.05):
+    def compute_forces(self, dX_vector=None, alpha=0.05):
         """
         Evaluate forces for given position
         Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
         """
         # update positions
-        x = self._X_coord + alpha * dx.flatten()
-        #if dx is not None:
-        #    x += alpha * dx.flatten()
-
-        # apply pbc
-        x = self.minimum_image(x)
+        X_tmp = self.X_coord.copy() #+ alpha * dX_vector.flatten()
+        if dX_vector is not None:
+            X_tmp += alpha * dX_vector.flatten()
 
         # send new positions to LAMMPS
-        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(x))
+        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_tmp))
         self.lmp.command("run 0")
 
         self.force_call_counter += 1
@@ -622,7 +615,7 @@ class LammpsImplicitDer:
 
         # We need to define a vector of displacements because the forces function
         # expects a vector of displacements
-        dx_vector = np.zeros_like(self._X_coord.flatten())
+        dX_vector = np.zeros_like(self._X_coord.flatten())
 
         # Iterate over the atoms
         if hess_mask is None:
@@ -643,20 +636,20 @@ class LammpsImplicitDer:
         for i in iterator:
 
             # displace posotion i by dx
-            dx_vector[i] = dx
+            dX_vector[i] = dx
 
             # compute forces: F(X + alpha * dX_dTheta)
-            hessian[i, :] = -self.forces(dx_vector, alpha=1.0)
+            hessian[i, :] = -self.compute_forces(dX_vector=dX_vector, alpha=1.0)
             # Memory-efficient
-            # hessian[i,:] = -self.forces(dx_vector, alpha=1.0)[self.mask]
+            # hessian[i,:] = -self.compute_forces(dX_vector, alpha=1.0)[self.mask]
 
             # compute forces: F(X - alpha * dX_dTheta) and subtract
-            dx_vector[i] = -dx
-            hessian[i, :] -= -self.forces(dx_vector, alpha=1.0)
+            dX_vector[i] = -dx
+            hessian[i, :] -= -self.compute_forces(dX_vector=dX_vector, alpha=1.0)
             # Memory-efficient
-            # hessian[i,:] -= -self.forces(dx_vector, alpha=1.0)[self.mask]
+            # hessian[i,:] -= -self.compute_forces(dX_vector, alpha=1.0)[self.mask]
 
-            dx_vector[i] = 0.0
+            dX_vector[i] = 0.0
 
         hessian /= 2.0*dx
 
@@ -764,7 +757,7 @@ class LammpsImplicitDer:
         # Compute the force at the initial position,
         # Analytically, it must be zero, but for numerical reasons, it is small
         dX0 = np.zeros_like(self._X_coord)
-        F0 = self.forces(dX0, alpha=0.0)
+        F0 = self.compute_forces()
 
         # result holder
         dX_dTheta = np.zeros((self.Ndesc, self.Natom * 3))
@@ -784,7 +777,7 @@ class LammpsImplicitDer:
                 alpha_factor = alpha
 
             # define linear operator with matrix-vector product matvec()
-            matvec = lambda dx: (F0-self.forces(dx, alpha_factor)) / alpha_factor
+            matvec = lambda dX: (F0-self.compute_forces(dX_vector=dX, alpha=alpha_factor)) / alpha_factor
             linop = LinearOperator((self.N, self.N), matvec=matvec, rmatvec=matvec)
 
             # perform iterative linear solution routine LGMRES: Ax = b, solve for x
@@ -995,7 +988,7 @@ class LammpsImplicitDer:
 
         return dX_dTheta
 
-    def implicit_derivative_dense(self, hess_mask=None):
+    def implicit_derivative_dense(self, hessian=None, hess_mask=None):
         """Compute implicit derivative from Hessian inverse
 
         Returns
@@ -1004,10 +997,11 @@ class LammpsImplicitDer:
             implicit derivative
         """
 
-        hessian = self.compute_hessian(hess_mask=hess_mask)
+        if hessian is None:
+            hessian = self.compute_hessian(hess_mask=hess_mask)
 
-        # Lift the diagonal of the Hessian to avoid singularities
-        hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
+            # Lift the diagonal of the Hessian to avoid singularities
+            hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
 
         # Use linalg.solve to find dX_dTheta in H.dX_dTheta = C
         if hess_mask is not None:
@@ -1021,7 +1015,6 @@ class LammpsImplicitDer:
                 dX_dTheta[:, hess_mask] = np.linalg.solve(hessian_mask, self.mixed_hessian.T[hess_mask, :]).T
 
         else:
-
             mpi_print(f'Computing dX_dTheta with linalg.solve, Hessian shape: {hessian.shape}', comm=self.comm, verbose=self.verbose)
             with self.timings.add('linalg.solve') as t:
                 dX_dTheta = np.linalg.solve(hessian, self.mixed_hessian.T).T

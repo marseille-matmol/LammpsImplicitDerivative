@@ -126,7 +126,7 @@ def test_forces(comm):
      [-0.05229752523716957, 9.575673587391975e-16, 2.847605337023395e-15, 0.05229752523716957, -1.0269562977782698e-15, -2.9211995299477888e-15]
     )
 
-    np.testing.assert_allclose(bcc_system_tmp.forces(dx=dX_vector), forces_desired, atol=1e-12)
+    np.testing.assert_allclose(bcc_system_tmp.compute_forces(dX_vector=dX_vector), forces_desired, atol=1e-12)
 
 
 def test_hessian(comm):

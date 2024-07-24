@@ -69,6 +69,7 @@ class SNAP():
                    snapparam_filename=None,
                    zbl_dict=None,
                    comm=None,
+                   num_param_fix=None,
                    ):
 
         if data_path is None:
@@ -103,7 +104,13 @@ class SNAP():
             lines = [line.split('#')[0] for line in lines]
 
             # First line is the number of elements
-            num_el, num_params = [int(x) for x in lines[0].split()]
+            num_el, num_param = [int(x) for x in lines[0].split()]
+
+            # Total number of parameters including beta0, to get the line index correctly
+            num_param_total = num_param
+            if num_param_fix is not None:
+                # Parameters to read
+                num_param = num_param_fix
 
             line_index = 1
             elem_list = []
@@ -127,9 +134,9 @@ class SNAP():
 
                 # Theta values
                 # Subtract 1 since beta0 is already read
-                Theta_list = [float(lines[line_index + i]) for i in range(num_params - 1)]
+                Theta_list = [float(lines[line_index + i]) for i in range(num_param - 1)]
                 Theta_dict[elem_name]['Theta'] = np.array(Theta_list)
-                line_index += num_params - 1
+                line_index += num_param_total - 1
 
         # Store radii and weights as strings
         r_list = [Theta_dict[elem]['elem_params']['radius'] for elem in elem_list]
@@ -139,7 +146,11 @@ class SNAP():
         Theta_dict['weights'] = ' '.join(map(str, w_list))
 
         # Read the snapparam file into a dict
-        snapparam_dict = {}
+        # Fill with default values
+        snapparam_dict = {
+            'quadraticflag': 0,
+        }
+
         with open(snapparam_path, 'r') as f:
             # Ignore all lines starting with # and all empty lines
             lines = [line.strip() for line in f
@@ -196,8 +207,8 @@ class SNAP():
 
         with open(snapcoeff_path, 'w') as f:
             f.write(f"# SNAP coeffs for {' '.join(self.elem_list)}\n")
-            f.write(f"# Generated on {datetime.datetime.now().strftime('%B %d, %Y  %H:%M')}"
-                    f" by {os.path.basename(__file__)}\n")
+            f.write(f"# Generated on {datetime.datetime.now().strftime('%B %d, %Y, %H:%M')}"
+                    f" by {os.path.basename(__file__)}, lammps_implicit_der\n")
             f.write(f"\n")
             # num_param does not include beta0
             f.write(f"{self.num_el} {self.num_param+1}\n")
@@ -211,8 +222,8 @@ class SNAP():
 
         with open(snapparam_path, 'w') as f:
             f.write(f"# SNAP parameters for {' '.join(self.elem_list)}\n")
-            f.write(f"# Generated on {datetime.datetime.now().strftime('%B %d, %Y  %H:%M')}"
-                    f" by {os.path.basename(__file__)}\n")
+            f.write(f"# Generated on {datetime.datetime.now().strftime('%B %d, %Y, %H:%M')}"
+                    f" by {os.path.basename(__file__)}, lammps_implicit_der\n")
             f.write(f"\n")
             for key, value in self.snapparam_dict.items():
                 f.write(f"{key} {value}\n")

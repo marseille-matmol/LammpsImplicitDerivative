@@ -1,6 +1,7 @@
 """
 Physical systems classes
 """
+from .from_data import FromData
 from .bcc_lattices import Bcc, BccBinary, BccVacancy, BccBinaryVacancy, BccSIA
 from .dislo import ScrewDislo
 from .misc import VacW, BccVacancyConcentration

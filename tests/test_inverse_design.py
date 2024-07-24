@@ -30,7 +30,7 @@ def test_minimze(bcc_vacancy, bcc_vacancy_target, comm):
     X_target = X_start.copy() + bcc_vacancy.minimum_image(X_target-X_start)
 
     bcc_start = BccVacancy(alat=3.163, ncell_x=2, minimize=True, logname=None, del_coord=[0.0, 0.0, 0.0],
-                        data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
+                           data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     bcc_vacancy_final, minim_dict = error_tools.minimize_loss(
                                         bcc_start,
@@ -47,7 +47,10 @@ def test_minimze(bcc_vacancy, bcc_vacancy_target, comm):
                                         apply_hard_constraints=False,
                                         )
 
-    shutil.rmtree('minim_output')
+    comm.Barrier()
+
+    if comm is None or comm.rank == 0:
+        shutil.rmtree('minim_output')
 
     numiter_desired = 1
     error_array_desired = np.array([0.0325912346, 0.0256618410])

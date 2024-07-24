@@ -22,7 +22,7 @@ Any LAMMPS system class should inherit from this class.
 
 ### Important methods:
 
-* `forces()` - LAMMPS forces call, converts to `numpy` `ndarray`
+* `compute_forces()` - LAMMPS forces call, converts to `numpy` `ndarray`
 * `hessian()` - Hessian of a system implemented using finite differences (`dx` default is 0.001, but should be checked and changed if needed).
 * `implicit_derivative()` - implicit derivative wrapper, `method` keyword selects the derivative method, options are:
 
@@ -107,7 +107,7 @@ For the three systems implemented, `BccVacancy`, `BccBinaryVacancy`, and `Dislo`
 There, we create a non-perturbed system and a perturbed one, take the target positions from the perturbed system and call the minimize_loss function.
 
 For bcc vacancy and binary vacancy, we perturb randomly the potential parameters and save them to files, this is NOT done at each run.
-For the binary vacancy, only the Mo parameters are perturbed. 
+For the binary vacancy, only the Mo parameters are perturbed.
 In the minimization function, currently, we hardcoded to modify the Mo parameters if binary is True.
 
 For the dislocation system, the easy and hard core configurations were prepared in advance and stored in the LAMMPS data format.

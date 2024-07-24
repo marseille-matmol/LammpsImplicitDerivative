@@ -93,6 +93,10 @@ class Timing:
         self.total_runtime += self.t_delta
         self.call_count += 1
 
+    def reset(self):
+        self.total_runtime = 0.0
+        self.call_count = 0
+
     def __enter__(self):
         self.start()
         return self

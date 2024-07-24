@@ -362,11 +362,7 @@ class LammpsImplicitDer:
             raise RuntimeError('Potential must be defined')
 
         # Read the potential parameters from the potential object
-        rcutfac, twojmax, rfac0, quadraticflag = \
-            self.pot.snapparam_dict['rcutfac'], \
-            self.pot.snapparam_dict['twojmax'], \
-            self.pot.snapparam_dict['rfac0'], \
-            self.pot.snapparam_dict['quadraticflag']
+        rcutfac, twojmax, rfac0, quadraticflag = [self.pot.snapparam_dict[k] for k in ['rcutfac', 'twojmax', 'rfac0', 'quadraticflag']]
 
         radii, weights = \
             self.pot.Theta_dict['radii'], \
@@ -431,11 +427,8 @@ class LammpsImplicitDer:
         if self.pot is None:
             raise RuntimeError('Potential must be defined')
 
-        # Read the potential parameters from the potential object
-        rcutfac, twojmax, rfac0 = \
-            self.pot.snapparam_dict['rcutfac'], \
-            self.pot.snapparam_dict['twojmax'], \
-            self.pot.snapparam_dict['rfac0']
+        # Unpack the potential parameters
+        rcutfac, twojmax, rfac0, quadraticflag = [self.pot.snapparam_dict[k] for k in ['rcutfac', 'twojmax', 'rfac0', 'quadraticflag']]
 
         radii, weights = \
             self.pot.Theta_dict['radii'], \
@@ -444,7 +437,7 @@ class LammpsImplicitDer:
         try:
             self.lmp_commands_string(f"""
             # descriptors
-            compute virial all snav/atom {rcutfac} {rfac0} {twojmax} {radii} {weights}
+            compute virial all snav/atom {rcutfac} {rfac0} {twojmax} {radii} {weights} quadraticflag {quadraticflag}
             run 0
             """)
         except Exception as e:

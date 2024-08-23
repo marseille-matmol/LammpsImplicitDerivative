@@ -1137,6 +1137,8 @@ class LammpsImplicitDer:
         Taylor energy expansion up to the second order in dX
         """
 
+        raise NotImplemented('Not Implemented')
+
         if self.dU_dTheta is None:
             self.compute_D_dD()
             self.gather_D_dD()

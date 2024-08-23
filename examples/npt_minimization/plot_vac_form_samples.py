@@ -1556,6 +1556,9 @@ def main():
         sample1 = 20
         sample2 = 80
 
+        sample1 = 0
+        sample2 = 1
+
         #fig, axes = plt.subplots(2, 2, figsize=(14, 9), sharex='col', sharey='row')
         fig, axes = plt.subplots(2, 2, figsize=(12, 9), sharex='col', sharey='row')
         #plt.subplots_adjust(left=0.07, right=0.98, bottom=0.07, top=0.97, wspace=0.2, hspace=0.01)
@@ -1811,11 +1814,12 @@ def main():
 
         plt.show()
 
-    plot_av_data_bins_1x3_NEW = True
-    #plot_av_data_bins_1x3_NEW = False
+    #plot_av_data_bins_1x3_NEW = True
+    plot_av_data_bins_1x3_NEW = False
     if plot_av_data_bins_1x3_NEW:
 
         sample1 = 20
+        #sample1 = 0
 
         #fig, axes = plt.subplots(1, 4, figsize=(22, 6))
         #plt.subplots_adjust(left=0.05, right=0.985, bottom=0.13, top=0.96, wspace=0.24, hspace=0.27)

@@ -1132,6 +1132,22 @@ class LammpsImplicitDer:
 
         return dL_dTheta
 
+    def energy_expansion(self, dTheta):
+        """
+        Taylor energy expansion up to the second order in dX
+        """
+
+        if self.dU_dTheta is None:
+            self.compute_D_dD()
+            self.gather_D_dD()
+
+        # First order in dTheta (first order in dX is zero)
+        #dU = np.dot(self.dU_dTheta, dTheta)
+
+        print(self.dU_dTheta.shape)
+
+        return None
+
     @measure_runtime_and_calls
     def write_xyz_file(self, filename="coordinates.xyz", verbose=False):
         """Writes atomic coordinates to an .xyz file."""

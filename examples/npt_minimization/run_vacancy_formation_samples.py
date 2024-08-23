@@ -139,7 +139,8 @@ def main():
         with open('Theta_ens.pkl', 'rb') as file:
             Theta_ens = pickle.load(file)
 
-        delta_array = np.linspace(-20.0, 20.0, 5)
+        #delta_array = np.linspace(-20.0, 20.0, 5)
+        delta_array = np.linspace(-5.0, 5.0, 5)
         #delta_array = np.linspace(-25.0, 25.0, 251)
         # For energy-volume curves
         # epsilon_array_en_vol_pure = np.linspace(-0.05, 0.05, 15)

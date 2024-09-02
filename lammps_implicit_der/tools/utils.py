@@ -207,3 +207,82 @@ def get_size(array, name='array', dump=True, comm=None):
         mpi_print(f'===Size of {name:<10} {str(array.shape):<12} {str(array.dtype):<8}: {size:6.3f} {unit}', comm=comm)
 
     return size, unit
+
+
+def get_matrix_basis():
+
+    # Matrix-valued basis
+    basis_E = np.zeros((6, 3, 3), dtype=int)
+
+    # Cartesian basis vectors
+    ortho_e1 = np.array([1, 0, 0], dtype=int)
+    ortho_e2 = np.array([0, 1, 0], dtype=int)
+    ortho_e3 = np.array([0, 0, 1], dtype=int)
+
+    # Fill the matrix-valued basis
+    basis_E[0] = np.outer(ortho_e1, ortho_e1)
+    basis_E[1] = np.outer(ortho_e2, ortho_e2)
+    basis_E[2] = np.outer(ortho_e3, ortho_e3)
+
+    basis_E[3] = np.outer(ortho_e1, ortho_e2) + np.outer(ortho_e2, ortho_e1)
+    basis_E[4] = np.outer(ortho_e2, ortho_e3) + np.outer(ortho_e3, ortho_e2)
+    basis_E[5] = np.outer(ortho_e3, ortho_e1) + np.outer(ortho_e1, ortho_e3)
+
+    print_matrices = False
+    if print_matrices:
+        for i in range(6):
+            print(f'basis_E[{i}] = \n{basis_E[i]}')
+
+    return basis_E
+
+
+def matrix_3x3_from_Voigt(voigt_vector):
+    """
+    Convert Voigt vector to 3x3 matrix.
+
+    Parameters
+    ----------
+    voigt_vector : np.array
+        Voigt vector.
+
+    Returns
+    -------
+    matrix : np.array
+        3x3 matrix.
+    """
+
+    matrix = np.array([[voigt_vector[0], voigt_vector[5], voigt_vector[4]],
+                       [voigt_vector[5], voigt_vector[1], voigt_vector[3]],
+                       [voigt_vector[4], voigt_vector[3], voigt_vector[2]]])
+
+    return matrix
+
+
+def matrices_3x3_from_Voigt(voigt_vectors):
+    """
+    Convert an array of Voigt vectors to 3x3 matrices.
+
+    Parameters
+    ----------
+    voigt_vectors : np.array
+        Array of Voigt vectors, shape (N, 6)
+
+    Returns
+    -------
+    matrices : np.array
+        3x3 matrices, shape (N, 3, 3)
+    """
+    # Allocate array for the matrices
+    matrices = np.zeros((voigt_vectors.shape[0], 3, 3), dtype=voigt_vectors.dtype)
+
+    # Fill the diagonal
+    matrices[:, 0, 0] = voigt_vectors[:, 0]
+    matrices[:, 1, 1] = voigt_vectors[:, 1]
+    matrices[:, 2, 2] = voigt_vectors[:, 2]
+
+    # Fill off-diagonals
+    matrices[:, 0, 1] = matrices[:, 1, 0] = voigt_vectors[:, 5]  # Vxy
+    matrices[:, 0, 2] = matrices[:, 2, 0] = voigt_vectors[:, 4]  # Vxz
+    matrices[:, 1, 2] = matrices[:, 2, 1] = voigt_vectors[:, 3]  # Vyz
+
+    return matrices

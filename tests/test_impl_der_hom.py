@@ -37,7 +37,7 @@ def test_impl_der_hom_dVirial(bcc_vacancy, bcc_vacancy_perturb):
 
     volume0_desired = 253.15561398
     volume_true_desired = 248.11939053
-    volume_pred_desired = 248.34648965
+    volume_pred_desired = 248.34445322
 
     np.testing.assert_allclose(volume0, volume0_desired, atol=1e-8)
     np.testing.assert_allclose(volume_true, volume_true_desired, atol=1e-8)

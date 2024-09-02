@@ -467,7 +467,8 @@ def plot_formation_volume(ax, run_dict, sample, method_plot_dict, plot_no_change
     ax.set_ylabel('Formation Volume ($\mathrm{\AA}^3$)')
 
 
-def plot_formation_volume_scatter(ax, run_dict, method_plot_dict, label_fsize=20, tick_fsize=16, V_form_range=None, delta_range=None):
+def plot_formation_volume_scatter(ax, run_dict, method_plot_dict, label_fsize=20, tick_fsize=16,
+                                  V_form_range=None, delta_range=None, plot_no_change=True):
 
     vol_key_list = ['volume_pred', 'volume_pred_full']
 
@@ -482,13 +483,36 @@ def plot_formation_volume_scatter(ax, run_dict, method_plot_dict, label_fsize=20
         else:
             mask = np.ones_like(vol_form_true, dtype=bool)
 
+        if plot_no_change:
+            delta_array = run_dict['delta_array']
+            idelta0 = np.argmin(np.abs(delta_array))
+
+            vol_pure_true0 = run_dict['sample_0'][f'delta_{idelta0}']['pure']['npt']['volume_true']
+            vol_vac_true0 = run_dict['sample_0'][f'delta_{idelta0}']['vac']['npt']['volume_true']
+            vol_form_true0 = vol_vac_true0 - vol_pure_true0 * run_dict['Natom vac'] / run_dict['Natom pure']
+
+            vol_no_change_array = np.zeros_like(vol_form_true)
+            vol_no_change_array[:] = vol_form_true0
+            color = method_plot_dict['formation']['volume_pred0']['c']
+            ax.scatter(vol_form_true[mask], vol_no_change_array[mask], c=color, s=30, marker='o')
+
         for i, vol_key in enumerate(vol_key_list):
             vol_form = compute_formation_property(run_dict, sample, vol_key, delta_range=delta_range)
             color = method_plot_dict['formation'][vol_key]['c']
-            size = method_plot_dict['formation'][vol_key]['ms']*2
+            #size = method_plot_dict['formation'][vol_key]['ms'] * 2
+            size = method_plot_dict['formation'][vol_key]['ms'] * 5
             marker = method_plot_dict['formation'][vol_key]['marker']
 
             ax.scatter(vol_form_true[mask], vol_form[mask], color=color, s=size, marker=marker)
+
+    # Create the legend manually
+    ax.scatter([], [], c=method_plot_dict['formation']['volume_pred0']['c'], s=100, marker='o', label='Constant')
+    for i, vol_key in enumerate(vol_key_list):
+
+        s = 100 if i == 0 else 150
+
+        ax.scatter([], [], color=method_plot_dict['formation'][vol_key]['c'], s=s,
+                   marker=method_plot_dict['formation'][vol_key]['marker'], label=method_plot_dict['formation'][vol_key]['label'])
 
     # Plot diagonal line
     xmin, xmax = ax.get_xlim()
@@ -1554,10 +1578,12 @@ def main():
     if plot_2x2_two_samples:
 
         sample1 = 20
+        #sample1 = 44
         sample2 = 80
+        #sample2 = 44
 
-        sample1 = 0
-        sample2 = 1
+        #sample1 = 0
+        #sample2 = 1
 
         #fig, axes = plt.subplots(2, 2, figsize=(14, 9), sharex='col', sharey='row')
         fig, axes = plt.subplots(2, 2, figsize=(12, 9), sharex='col', sharey='row')
@@ -1573,6 +1599,12 @@ def main():
         plot_formation_energy(axes[1, 1], run_dict, sample2, method_plot_dict2)
 
         axes[0, 0].legend(fontsize=18, frameon=False)
+
+        # The last line of the legend must be the first one, but the rest in the same order
+        handles, labels = axes[0, 0].get_legend_handles_labels()
+        handles = [handles[-1]] + handles[:-1]
+        labels = [labels[-1]] + labels[:-1]
+        axes[0, 0].legend(handles, labels, fontsize=18, frameon=False)
 
         axes[0, 1].set_ylabel('')
         axes[1, 1].set_ylabel('')
@@ -1814,8 +1846,8 @@ def main():
 
         plt.show()
 
-    #plot_av_data_bins_1x3_NEW = True
-    plot_av_data_bins_1x3_NEW = False
+    plot_av_data_bins_1x3_NEW = True
+    #plot_av_data_bins_1x3_NEW = False
     if plot_av_data_bins_1x3_NEW:
 
         sample1 = 20
@@ -1886,9 +1918,10 @@ def main():
                 ax1.set_ylim(-0.5, 0.5)
 
         # FOR PRESENTATION, COMMENT OUT
-        ax1.plot([0.0, 0.0], [0.0, 0.0], ls='-', color='black', lw=5, zorder=0, label='True')
+        #ax1.plot([0.0, 0.0], [0.0, 0.0], ls='-', color='black', lw=5, zorder=0, label='True')
         ax1.legend(loc='upper left', fontsize=20,
                    facecolor='white', edgecolor='white', frameon=True, framealpha=1.0)
+
 
         # Inset plot in ax1
         inset_plot = None
@@ -1925,10 +1958,15 @@ def main():
         xmin, xmax = l.get_xdata().min(), l.get_xdata().max()
         ax2.plot([xmin, xmax], [0.0, 0.0], ls='-', color='black', lw=2, zorder=0)
 
+        # FOR PRESENTATION, COMMENT OUT
+        ax2.legend(loc='upper center', fontsize=20,
+                   facecolor='white', edgecolor='white', frameon=True, framealpha=1.0)
+
         inset_plot_ax2 = None
         #inset_plot_ax2 = 'zoom'
         if inset_plot_ax2 == 'zoom':
             ax2_inset = ax2.inset_axes([0.3, 0.57, 0.4, 0.4])
+
             plot_formation_energy_error_bins(ax2_inset, bin_error_dict, method_plot_dict,
                                              spline_fill=spline_fill, label_fsize=12, tick_fsize=10, print_labels=False, fill=False)
             # y axis major locator by 0.005
@@ -1981,6 +2019,36 @@ def main():
 
         plt.show()
 
+    plot_scatter_form_volume = True
+    if plot_scatter_form_volume:
+
+        fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+        plt.subplots_adjust(left=0.1, right=0.97, bottom=0.1, top=0.97)
+        ax.set_aspect('equal', 'box')
+
+        plot_formation_volume_scatter(ax, run_dict, method_plot_dict, V_form_range=(11.0, 12.0), delta_range=(-1.0,1.0))
+
+        # multiple locator by 0.5
+        #ax.xaxis.set_major_locator(MultipleLocator(0.5))
+        #ax.yaxis.set_major_locator(MultipleLocator(0.5))
+
+        fsize = 24
+        #ax.set_xlabel(r'True $V_f$ ($\mathrm{\AA^3}$)', fontsize=fsize)
+        #ax.set_ylabel(r'Predicted $V_f$ ($\mathrm{\AA^3}$)', fontsize=fsize)
+        ax.set_xlabel(r'True Formation Volume ($\mathrm{\AA^3}$)', fontsize=fsize)
+        ax.set_ylabel(r'Predicted Formation Volume ($\mathrm{\AA^3}$)', fontsize=fsize)
+
+        ax.legend(loc='upper left', fontsize=25,
+                  facecolor='white', edgecolor='white', frameon=True, framealpha=1.0)
+
+        ax.grid()
+
+        # equal aspect ratio
+
+
+        fig.savefig(os.path.join(plot_dir, 'scatter_form_volume.pdf'))
+
+        plt.show()
 
 if __name__ == '__main__':
     main()

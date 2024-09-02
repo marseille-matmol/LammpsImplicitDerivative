@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bcc vacancy systems.
+Bcc systems.
 Chlid classes of LammpsImplicitDer.
 """
 

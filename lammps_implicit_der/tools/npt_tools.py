@@ -39,7 +39,7 @@ def compute_energy_volume(system, epsilon_array, compute_forces=False):
 
         cell = np.dot(initial_cell, (np.eye(3) + M))
 
-        system.apply_strain(cell)
+        system.change_box(cell)
 
         volume = np.linalg.det(cell)
         volume_array[i] = volume
@@ -63,7 +63,7 @@ def compute_energy_volume(system, epsilon_array, compute_forces=False):
             force_array[i, :] = system.compute_forces()
 
     # Reapply the original cell
-    system.apply_strain(initial_cell)
+    system.change_box(initial_cell)
 
     energy_array /= system.ncell_x**3
 
@@ -213,10 +213,10 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
     # Homogeneous contribution: scale the system with the predicted volume change
     # And then return to the original volume with cell0
     with trun.add('homogeneous'):
-        s_pred.apply_strain(cell_pred, update_system=True)
+        s_pred.change_box(cell_pred, update_system=True)
         energy_hom_pred = s_pred.dU_dTheta @ Theta_pert
         coord_error_hom = coord_error(X_coord_true, s_pred.X_coord)
-        s_pred.apply_strain(cell0, update_system=True)
+        s_pred.change_box(cell0, update_system=True)
 
     # Inhomogeneous contribution
     with trun.add('inhomogeneous'):
@@ -239,10 +239,10 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
     # Full prediction
     with trun.add('full prediction'):
         # virial volume prediction
-        s_pred.apply_strain(cell_pred, update_system=True)
+        s_pred.change_box(cell_pred, update_system=True)
         energy_full_pred = s_pred.dU_dTheta @ Theta_pert
         coord_error_full = coord_error(X_coord_true, s_pred.X_coord)
-        s_pred.apply_strain(cell0, update_system=True)
+        s_pred.change_box(cell0, update_system=True)
 
     trun.timings[total_tag].stop()
 

@@ -70,13 +70,13 @@ def test_apply_strain(bcc_system):
 
     strain = 1.5
     cell_test = np.dot(cell0, np.eye(3) * strain)
-    bcc_system.apply_strain(cell_test, update_system=True)
+    bcc_system.change_box(cell_test, update_system=True)
 
     cell_desired = np.eye(3) * 3.163 * strain
 
     np.testing.assert_allclose(bcc_system.cell, cell_desired)
 
-    bcc_system.apply_strain(cell0, update_system=True)
+    bcc_system.change_box(cell0, update_system=True)
 
 
 def test_D_unary(bcc_system):

@@ -356,7 +356,7 @@ class SimpleLammps:
         else:
             return cell_matrix.copy()
 
-    def apply_strain(self,epsilon=np.zeros((3,3))):
+    def change_box(self,epsilon=np.zeros((3,3))):
         """
             Apply strain to the system
         """
@@ -372,15 +372,15 @@ class SimpleLammps:
         """
             Return dD/dV = change in D under change in supercell volume
         """
-        self.apply_strain(epsilon*np.eye(3)) # C(1+s)= C(1+e) => s=e
+        self.change_box(epsilon*np.eye(3)) # C(1+s)= C(1+e) => s=e
         D = 0.5*self.get_D_dD(return_dD=False)
 
         # C(1+e)(1+s) = C(1-e) => s = -2e/(1+e)
-        self.apply_strain(-2.0*epsilon/(1.0+epsilon)*np.eye(3))
+        self.change_box(-2.0*epsilon/(1.0+epsilon)*np.eye(3))
         D -= 0.5*self.get_D_dD(return_dD=False)
 
         # C(1-e)(1+s) = C => s = e/(1-e)
-        self.apply_strain(epsilon/(1.0-epsilon)*np.eye(3))
+        self.change_box(epsilon/(1.0-epsilon)*np.eye(3))
 
         V = np.linalg.det(self.get_cell())
 

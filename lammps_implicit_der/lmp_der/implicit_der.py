@@ -518,6 +518,10 @@ class LammpsImplicitDer:
         # Compute the descriptors and their derivatives
         self.gather_D_dD()
 
+        # Virial
+        self.compute_virial()
+        self.gather_virial()
+
         # Setup hard constraints
         hard_constraints_path = os.path.join(self.data_path, f'{self.pot.elmnts}_constraints.txt')
         if os.path.exists(hard_constraints_path):
@@ -541,6 +545,11 @@ class LammpsImplicitDer:
         self.cell[0][1] = xy
         self.cell[0][2] = xz
         self.cell[1][2] = yz
+
+        self.cell[1][0] = xy
+        self.cell[2][0] = xz
+        self.cell[2][1] = yz
+
         self.inv_cell = np.linalg.inv(self.cell)
 
     @measure_runtime_and_calls
@@ -1040,78 +1049,46 @@ class LammpsImplicitDer:
         return dX_dTheta
 
     @measure_runtime_and_calls
-    def implicit_derivative_hom(self, method='dVirial', delta_L=1e-3):
-        """
-        Wrapper for the homogenous implicit derivative calculation.
-        """
-
-        if method == 'dVirial':
-            dL_dTheta = self.implicit_derivative_hom_dVirial(delta_L=delta_L)
-
-        elif method == 'd2Desc':
-            dL_dTheta = self.implicit_derivative_hom_d2Desc(delta_L=delta_L)
-
-        else:
-            raise ValueError(f'Unknown method for homogenous implicit derivative: {method}')
-
-        self.dL_dTheta = dL_dTheta.copy()
-
-        return dL_dTheta
-
-    def implicit_derivative_hom_d2Desc(self, delta_L=1e-3):
+    def implicit_derivative_hom_iso(self, delta_Strain=1e-5):
         """
         Compute the homogenous implicit derivative with finite differences applied
-        to the first and second derivatives of descriptor verctors.
+        to the virial derivative.
+        Isotropic strain.
 
-        strain_pred = dTheta @ dL_dTheta,
-        where strain_pred is the predicted strain.
-
-        Pressure P, volume V, energy E, strain L:
-        P = -dE/dV, V=L^3, P(V) = 0; P(V+dV) = 0 -> P(L+dL) = 0
-
-        E = D @ Theta, where D is the descriptor matrix
-        P = -dD/dV @ Theta, dV = 3L^2 dL, L != 0
-
-        dL_dTheta = - (dD/dL) / [ (d^2L/dL^2) @ Theta ]
-
-        Compute with the finite difference method:
-        dD/dL = D(L+dL) - D(L-dL) / 2*dL
-        d^2L/dL^2 = (D(L+dL) - 2D(L) + D(L-dL)) / dL^2
+        dStrain_dTheta_j = - Virial_j / [ (dVirial/dStrain) @ Theta ]
         """
-
         cell0 = self.cell.copy()
 
         if self.virial is None:
             self.compute_virial()
             self.gather_virial()
 
-        # Compute D(L)
-        self.gather_D_dD()
-        Desc0 = self.dU_dTheta.copy()
+        virial_trace0 = np.sum(self.virial, axis=0)
+        virial_trace0 = np.sum(virial_trace0[:3, :], axis=0) / 3.0
 
-        # Compute D(L+delta_L)
-        cell_plus = cell0 + np.eye(3) * delta_L
-        self.change_box(cell_plus)
-        Desc_plus = self.dU_dTheta.copy()
+        # Compute the virial derivative
+        strain_matrix = np.eye(3) * (1.0 + delta_Strain)
+        # Check the ORDER: cell0 @strain_matrix OR strain_matrix @ cell0
+        cell_plus = cell0 @ strain_matrix
 
-        # Compute D(L-delta_L)
-        cell_minus = cell0 - np.eye(3) * delta_L
-        self.change_box(cell_minus)
-        Desc_minus = self.dU_dTheta.copy()
+        # change box RENAME
+        self.change_box(cell_plus, update_system=True)
+        # Sum over atoms
+        virial_trace_plus = np.sum(self.virial, axis=0)
+        # Take first 3 elements of the virial tensor
+        virial_trace_plus = np.sum(virial_trace_plus[:3, :], axis=0) / 3.0
 
-        # Compute derivatives
-        dD_dL = (Desc_plus - Desc_minus) / (2.0 * delta_L)
-        d2L_dL2 = (Desc_plus + Desc_minus - 2.0 * Desc0) / (delta_L**2)
+        dVirial_dStrain = (virial_trace_plus - virial_trace0) / delta_Strain
 
         # Compute the homogenous implicit derivative
-        dL_dTheta = -dD_dL / np.dot(self.Theta, d2L_dL2)
+        dStrain_dTheta = - virial_trace0 / np.dot(self.Theta, dVirial_dStrain)
 
         # Set to the original cell
         self.change_box(cell0)
 
-        return dL_dTheta
+        return dStrain_dTheta
 
-    def implicit_derivative_hom_dVirial(self, delta_L=1e-3):
+    def implicit_derivative_hom_dVirial_dL(self, delta_L=1e-3):
         """
         Compute the homogenous implicit derivative with finite differences applied
         to the virial derivative.
@@ -1128,15 +1105,8 @@ class LammpsImplicitDer:
         virial_trace0 = np.sum(virial_trace0[:3, :], axis=0) / 3.0
 
         # Compute the virial derivative
-        #cell_plus = cell0 * np.eye(3) * (1 + delta_L)
-
-        #strain_matrix = np.eye(3) * (1 + delta_epsilon)
-        # Check the ORDER: cell0 @strain_matrix or : strain_matrix @ cell0
-        #cell_plus = strain_matrix @ cell0
-
         cell_plus = cell0 + np.eye(3) * delta_L
 
-        # change box RENAME
         self.change_box(cell_plus, update_system=True)
         # Sum over atoms
         virial_trace_plus = np.sum(self.virial, axis=0)
@@ -1188,6 +1158,7 @@ class LammpsImplicitDer:
 
         for idx_m in range(6):
             cell_perturb = cell0 + delta_L * basis_E[idx_m]
+
             self.change_box(cell_perturb)
             pressure_tensor_3x3 = matrix_3x3_from_Voigt(self.pressure_tensor)
             #perturb_Em = 1.0 / ( weights[idx_m] * delta_L ) * (pressure_tensor_3x3 - pressure_tensor0)

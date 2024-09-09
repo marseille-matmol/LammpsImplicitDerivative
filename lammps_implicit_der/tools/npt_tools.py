@@ -197,7 +197,7 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
     with trun.add('volume prediction'):
 
         # Finite diff Virial presdiction
-        #dL_dTheta = s_pred.implicit_derivative_hom(method='dVirial')
+        #dL_dTheta = s_pred.implicit_derivative_hom_iso(method='dVirial')
         #dL_pred = dTheta @ dL_dTheta # dL_dTheta_hom
         dL_pred = dTheta @ dL_dTheta_hom
         L0 = volume0**(1.0/3.0)

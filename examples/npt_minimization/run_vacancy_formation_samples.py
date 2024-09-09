@@ -131,8 +131,8 @@ def main():
         dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method=impl_der_method)
 
     with trun.add('dL_dTheta hom'):
-        dL_dTheta_pure_hom = bcc_pure.implicit_derivative_hom(method='dVirial')
-        dL_dTheta_vac_hom = bcc_vac.implicit_derivative_hom(method='dVirial')
+        dL_dTheta_pure_hom = bcc_pure.implicit_derivative_hom_iso(method='dVirial')
+        dL_dTheta_vac_hom = bcc_vac.implicit_derivative_hom_iso(method='dVirial')
 
     with trun.add('sample loop', level=1):
 

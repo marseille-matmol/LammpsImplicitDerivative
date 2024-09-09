@@ -22,41 +22,33 @@ def bcc_vacancy_perturb(comm):
                       data_path='./refs', snapcoeff_filename='W_perturb3.snapcoeff', snapparam_filename='W.snapparam', verbose=False, comm=comm)
 
 
-def test_impl_der_hom_dVirial(bcc_vacancy, bcc_vacancy_perturb):
+def test_impl_der_hom_iso(bcc_vacancy, bcc_vacancy_perturb):
 
     volume0 = bcc_vacancy.volume
     L0 = volume0**(1.0/3.0)
+    cell0 = bcc_vacancy.cell.copy()
 
     volume_true = bcc_vacancy_perturb.volume
+    L_true = volume_true**(1.0/3.0)
+
+    Strain_true = (L_true - L0) / L0
 
     dTheta = bcc_vacancy_perturb.Theta - bcc_vacancy.Theta
 
-    dL_dTheta = bcc_vacancy.implicit_derivative_hom(method='dVirial')
-    dL_pred = dTheta @ dL_dTheta
-    volume_pred = (L0 + dL_pred)**3
+    dStrain_dTheta = bcc_vacancy.implicit_derivative_hom_iso(delta_Strain=1e-5)
+    Strain_pred = dTheta @ dStrain_dTheta
+    cell_pred = cell0 @ (np.eye(3) * (1.0 + Strain_pred))
+    volume_pred = np.linalg.det(cell_pred)
 
     volume0_desired = 253.15561398
     volume_true_desired = 248.11939053
-    volume_pred_desired = 248.34445322
+    Strain_true_desired = -0.00667573
+
+    volume_pred_desired = 248.34636447
+    Strain_pred_desired = -0.00637293
 
     np.testing.assert_allclose(volume0, volume0_desired, atol=1e-8)
     np.testing.assert_allclose(volume_true, volume_true_desired, atol=1e-8)
+    np.testing.assert_allclose(Strain_true, Strain_true_desired, atol=1e-8)
     np.testing.assert_allclose(volume_pred, volume_pred_desired, atol=1e-8)
-
-
-def test_impl_der_hom_d2Desc(bcc_vacancy, bcc_vacancy_perturb):
-
-    volume0 = bcc_vacancy.volume
-    L0 = volume0**(1.0/3.0)
-
-    dTheta = bcc_vacancy_perturb.Theta - bcc_vacancy.Theta
-
-    dL_dTheta = bcc_vacancy.implicit_derivative_hom(method='d2Desc')
-    dL_pred = dTheta @ dL_dTheta
-    volume_pred = (L0 + dL_pred)**3
-
-    volume_pred_desired = 248.34677882
-
-    np.testing.assert_allclose(volume_pred, volume_pred_desired, atol=1e-8)
-
-
+    np.testing.assert_allclose(Strain_pred, Strain_pred_desired, atol=1e-8)

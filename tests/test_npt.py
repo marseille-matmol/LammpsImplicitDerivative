@@ -61,7 +61,7 @@ def test_run_npt(comm):
                          snapcoeff_filename=snapcoeff_filename, verbose=False, comm=comm)
 
     dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method='dense')
-    dL_dTheta_vac_hom = bcc_vac.implicit_derivative_hom(method='dVirial')
+    dL_dTheta_vac_hom = bcc_vac.implicit_derivative_hom_iso(method='dVirial')
 
     # virial
     bcc_vac.compute_virial()

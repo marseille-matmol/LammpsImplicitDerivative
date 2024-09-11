@@ -606,6 +606,11 @@ class LammpsImplicitDer:
 
         # get the forces from LAMMPS: "f" - forces, 1 - type, LAMMPS_DOUBLE, 3 - values per atom
         force = np.ctypeslib.as_array(self.lmp.gather("f", 1, 3)).flatten()
+
+        # Scatter the initial coordinates back to LAMMPS
+        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
+        self.lmp.command("run 0")
+
         return force
 
     @measure_runtime_and_calls
@@ -1030,6 +1035,8 @@ class LammpsImplicitDer:
             # Lift the diagonal of the Hessian to avoid singularities
             hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
 
+        #return np.zeros((self.Ndesc, self.Natom * 3))
+
         # Use linalg.solve to find dX_dTheta in H.dX_dTheta = C
         if hess_mask is not None:
             dX_dTheta = np.zeros_like(self.mixed_hessian)
@@ -1059,9 +1066,7 @@ class LammpsImplicitDer:
         """
         cell0 = self.cell.copy()
 
-        if self.virial is None:
-            self.compute_virial()
-            self.gather_virial()
+        self.gather_virial()
 
         virial_trace0 = np.sum(self.virial, axis=0)
         virial_trace0 = np.sum(virial_trace0[:3, :], axis=0) / 3.0
@@ -1097,9 +1102,7 @@ class LammpsImplicitDer:
         """
         cell0 = self.cell.copy()
 
-        if self.virial is None:
-            self.compute_virial()
-            self.gather_virial()
+        self.gather_virial()
 
         virial_trace0 = np.sum(self.virial, axis=0)
         virial_trace0 = np.sum(virial_trace0[:3, :], axis=0) / 3.0
@@ -1130,9 +1133,9 @@ class LammpsImplicitDer:
 
         # Cell and pressure tensor at zero strain
         cell0 = self.cell.copy()
-        if self.virial is None:
-            self.compute_virial()
-            self.gather_virial()
+
+        self.gather_virial()
+
         self.get_pressure_tensor_from_virial()
         pressure_tensor0 = matrix_3x3_from_Voigt(self.pressure_tensor)
 

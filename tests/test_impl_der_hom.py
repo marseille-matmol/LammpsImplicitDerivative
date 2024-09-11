@@ -40,6 +40,8 @@ def test_impl_der_hom_iso(bcc_vacancy, bcc_vacancy_perturb):
     cell_pred = cell0 @ (np.eye(3) * (1.0 + Strain_pred))
     volume_pred = np.linalg.det(cell_pred)
 
+    dStrain_dTheta_0_desired = 5.756017590783412
+
     volume0_desired = 253.15561398
     volume_true_desired = 248.11939053
     Strain_true_desired = -0.00667573
@@ -47,6 +49,7 @@ def test_impl_der_hom_iso(bcc_vacancy, bcc_vacancy_perturb):
     volume_pred_desired = 248.34636447
     Strain_pred_desired = -0.00637293
 
+    np.testing.assert_allclose(dStrain_dTheta[0], dStrain_dTheta_0_desired, atol=1e-8)
     np.testing.assert_allclose(volume0, volume0_desired, atol=1e-8)
     np.testing.assert_allclose(volume_true, volume_true_desired, atol=1e-8)
     np.testing.assert_allclose(Strain_true, Strain_true_desired, atol=1e-8)

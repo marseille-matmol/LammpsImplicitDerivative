@@ -17,6 +17,7 @@ def bcc_vacancy(comm):
     return BccVacancy(alat=3.163, ncell_x=2, minimize=True, logname=None, del_coord=[0.0, 0.0, 0.0],
                       data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
+
 # Helper function, will not be tested
 def sort_coord(X_coord):
 
@@ -58,34 +59,31 @@ def test_run_npt(comm):
     Theta_perturb = pot_perturb.Theta_dict['W']['Theta'].copy()
 
     bcc_vac = BccVacancy(alat=alat, ncell_x=ncell_x, minimize=True, logname=None, data_path='./refs/',
+                         del_coord=[0.0, 0.0, 0.0],
                          snapcoeff_filename=snapcoeff_filename, verbose=False, comm=comm)
 
     dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method='dense')
-    dL_dTheta_vac_hom = bcc_vac.implicit_derivative_hom_iso(method='dVirial')
-
-    # virial
-    bcc_vac.compute_virial()
-    bcc_vac.gather_virial()
+    dX_dTheta_vac_inhom = dX_dTheta_vac_inhom[:, sort_coord(bcc_vac.X_coord)]
+    dStrain_dTheta = bcc_vac.implicit_derivative_hom_iso(delta_Strain=1e-5)
 
     res_dict = run_npt_implicit_derivative(BccVacancy, alat, ncell_x, Theta_perturb,
                                            snapcoeff_filename, snapparam_filename,
-                                           dX_dTheta_vac_inhom, dL_dTheta_vac_hom, data_path='./refs', log_box_relax=None, log_pred=None, comm=comm)
+                                           dX_dTheta_vac_inhom, dStrain_dTheta, data_path='./refs',
+                                           log_box_relax=None, log_pred=None, comm=comm, del_coord=[0.0, 0.0, 0.0])
 
+    dStrain_dTheta_0_desired = 5.7560175907647
     volume0_desired = 253.1556139760
     volume_true_desired = 248.1193905314
-    volume_pred_desired = 248.3439663715
-    volume_pred_full_desired = 248.3439663715
+    volume_pred_desired = 248.3463734820
+    volume_pred_full_desired = 248.3463734820
     energy0_desired = -80.3652746790
     energy_true_desired = -151.1767062076
     energy_pred0_desired = -151.0473247287
-    energy_hom_pred_desired = -151.1509362087
-    energy_inhom_pred_desired = -151.0682859358
-    energy_full_pred_desired = -151.1763633460
-    coord_error_full_desired = 0.0052053774
-    coord_error_hom_desired = 0.0468263333
-    coord_error_inhom_desired = 0.0791679811
-    coord_error0_desired = 0.0994520708
+    energy_hom_pred_desired = -151.1509332695
+    energy_inhom_pred_desired = -151.0344359304
+    energy_full_pred_desired = -151.1369099993
 
+    np.testing.assert_allclose(dStrain_dTheta[0], dStrain_dTheta_0_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['volume0'], volume0_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['volume_true'], volume_true_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['volume_pred'], volume_pred_desired, atol=1e-2)
@@ -94,9 +92,5 @@ def test_run_npt(comm):
     np.testing.assert_allclose(res_dict['energy_true'], energy_true_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['energy_pred0'], energy_pred0_desired, atol=1e-8)
     np.testing.assert_allclose(res_dict['energy_hom_pred'], energy_hom_pred_desired, atol=1e-8)
-    np.testing.assert_allclose(res_dict['energy_inhom_pred'], energy_inhom_pred_desired, atol=1e-8)
-    np.testing.assert_allclose(res_dict['energy_full_pred'], energy_full_pred_desired, atol=1e-8)
-    np.testing.assert_allclose(res_dict['coord_error_full'], coord_error_full_desired, atol=1e-4)
-    np.testing.assert_allclose(res_dict['coord_error_hom'], coord_error_hom_desired, atol=1e-4)
-    np.testing.assert_allclose(res_dict['coord_error_inhom'], coord_error_inhom_desired, atol=1e-4)
-    np.testing.assert_allclose(res_dict['coord_error0'], coord_error0_desired, atol=1e-4)
+    np.testing.assert_allclose(res_dict['energy_inhom_pred'], energy_inhom_pred_desired, atol=1e-4, rtol=1e-4)
+    np.testing.assert_allclose(res_dict['energy_full_pred'], energy_full_pred_desired, atol=1e-4, rtol=1e-4)

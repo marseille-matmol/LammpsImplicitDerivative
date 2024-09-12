@@ -16,7 +16,7 @@ from ..lmp_der.snap import SNAP
 from ..lmp_der.implicit_der import LammpsImplicitDer
 
 
-class Hcp(LammpsImplicitDer):
+class HCP(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,

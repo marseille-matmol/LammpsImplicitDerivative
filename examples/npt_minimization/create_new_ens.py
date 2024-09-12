@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 
-from lammps_implicit_der.systems import Bcc
+from lammps_implicit_der.systems import BCC
 
 
 def main():
@@ -39,7 +39,7 @@ def main():
     with open(os.path.join(path, 'Theta_ens_NEW.pkl'), 'wb') as file:
         pickle.dump(Theta_ens_NEW, file)
 
-    system_tmp = Bcc(alat=4.0, ncell_x=2, minimize=False, logname=None,
+    system_tmp = BCC(alat=4.0, ncell_x=2, minimize=False, logname=None,
                          snapcoeff_filename='W_NEW.snapcoeff', verbose=False)
 
     system_tmp.pot.Theta_dict['W']['Theta'] = Theta_average

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bcc systems.
+BCC systems.
 Chlid classes of LammpsImplicitDer.
 """
 
@@ -14,7 +14,7 @@ from ..lmp_der.snap import SNAP
 from ..lmp_der.implicit_der import LammpsImplicitDer
 
 
-class Bcc(LammpsImplicitDer):
+class BCC(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,
@@ -34,7 +34,7 @@ class Bcc(LammpsImplicitDer):
         self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
-            raise RuntimeError('snapcoeff_filename must be specified for Bcc class')
+            raise RuntimeError('snapcoeff_filename must be specified for BCC class')
 
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,
@@ -42,7 +42,7 @@ class Bcc(LammpsImplicitDer):
                                    snapparam_filename=self.snapparam_filename, comm=self.comm)
 
         if len(self.pot.elem_list) > 1:
-            raise RuntimeError('Bcc system must be a single element')
+            raise RuntimeError('BCC system must be a single element')
 
         self.element = self.pot.elem_list[0]
 
@@ -75,7 +75,7 @@ class Bcc(LammpsImplicitDer):
         self.run_init(setup_snap=setup_snap)
 
 
-class BccBinary(LammpsImplicitDer):
+class BCC_BINARY(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,
@@ -97,7 +97,7 @@ class BccBinary(LammpsImplicitDer):
         self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
-            raise RuntimeError('snapcoeff_filename must be specified for BccBinary')
+            raise RuntimeError('snapcoeff_filename must be specified for BCC_BINARY')
 
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,
@@ -137,7 +137,7 @@ class BccBinary(LammpsImplicitDer):
         self.run_init(setup_snap=setup_snap)
 
 
-class BccVacancy(LammpsImplicitDer):
+class BCC_VACANCY(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,
@@ -157,10 +157,10 @@ class BccVacancy(LammpsImplicitDer):
         self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
-            raise RuntimeError('snapcoeff_filename must be specified for BccVacancy')
+            raise RuntimeError('snapcoeff_filename must be specified for BCC_VACANCY')
 
         if del_coord is not None and id_del is not None:
-            raise RuntimeError('BccVacancy: id_del and del_coord cannot be both specified')
+            raise RuntimeError('BCC_VACANCY: id_del and del_coord cannot be both specified')
 
 
         # Load the SNAP potential instance
@@ -206,7 +206,7 @@ class BccVacancy(LammpsImplicitDer):
         self.run_init()
 
 
-class BccBinaryVacancy(LammpsImplicitDer):
+class BCC_BINARY_VACANCY(LammpsImplicitDer):
     @measure_runtime_and_calls
     def __init__(self,
                  ncell_x=3,
@@ -228,7 +228,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
         self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
-            raise RuntimeError('snapcoeff_filename must be specified for BccBinaryVacancy')
+            raise RuntimeError('snapcoeff_filename must be specified for BCC_BINARY_VACANCY')
 
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,
@@ -275,7 +275,7 @@ class BccBinaryVacancy(LammpsImplicitDer):
         self.run_init()
 
 
-class BccSIA(LammpsImplicitDer):
+class BCC_SIA(LammpsImplicitDer):
     """
     Self-interstitial atom in BCC lattice.
     """
@@ -298,7 +298,7 @@ class BccSIA(LammpsImplicitDer):
         self.ncell_z = ncell_z if ncell_z is not None else ncell_x
 
         if self.snapcoeff_filename is None:
-            raise RuntimeError('snapcoeff_filename must be specified for BccVacancy')
+            raise RuntimeError('snapcoeff_filename must be specified for BCC_VACANCY')
 
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,

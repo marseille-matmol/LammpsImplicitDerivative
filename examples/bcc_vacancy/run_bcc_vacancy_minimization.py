@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # local imports
 from lammps_implicit_der.tools import initialize_mpi, mpi_print, error_tools, TimingGroup, minimize_loss
-from lammps_implicit_der.systems import BccVacancy
+from lammps_implicit_der.systems import BCC_VACANCY
 
 
 def run_minimization(method,
@@ -30,7 +30,7 @@ def run_minimization(method,
     # If datafile is None, the system is initialized from scratch
     datafile = non_perturb_data if os.path.exists(non_perturb_data) else None
 
-    vac_non_perturb = BccVacancy(datafile=datafile,
+    vac_non_perturb = BCC_VACANCY(datafile=datafile,
                                  snapcoeff_filename='W.snapcoeff',
                                  ncell_x=3,
                                  verbose=True, comm=comm, logname='vac.log')
@@ -39,7 +39,7 @@ def run_minimization(method,
     if datafile is None:
         vac_non_perturb.write_data(non_perturb_data)
 
-    vac_perturb = BccVacancy(datafile=non_perturb_data,
+    vac_perturb = BCC_VACANCY(datafile=non_perturb_data,
                              snapcoeff_filename='W_perturbed.snapcoeff',
                              comm=comm, logname='vac_perturbed.log')
 

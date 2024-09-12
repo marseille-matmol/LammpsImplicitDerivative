@@ -126,7 +126,7 @@ def minimize_loss(sim,
     ----------
 
     sim : simulation object
-        Instance of the ImplicitDerivative class (child classes: BccVacancy, Dislo, ...)
+        Instance of the ImplicitDerivative class (child classes: BCC_VACANCY, DISLO, ...)
 
     X_target : numpy array
         Target positions.

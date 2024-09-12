@@ -61,7 +61,7 @@ class BccVacancyConcentration(LammpsImplicitDer):
         self.alat = alat
 
         if self.snapcoeff_filename is None:
-            raise RuntimeError('snapcoeff_filename must be specified for BccVacancy')
+            raise RuntimeError('snapcoeff_filename must be specified for BCC_VACANCY')
 
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,

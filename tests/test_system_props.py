@@ -5,13 +5,13 @@ import pytest
 import numpy as np
 import os
 
-from lammps_implicit_der.systems import BccVacancy, BccBinary, Bcc
+from lammps_implicit_der.systems import BCC_VACANCY, BCC_BINARY, BCC
 
 
-# To save time, compute th BccVacancy object only once
+# To save time, compute th BCC_VACANCY object only once
 @pytest.fixture(scope="module")
 def bcc_system(comm):
-    return Bcc(alat=3.163, ncell_x=1, minimize=False, logname=None,
+    return BCC(alat=3.163, ncell_x=1, minimize=False, logname=None,
                data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
 
@@ -98,7 +98,7 @@ def test_D_dD_binary(comm):
     if comm is not None and comm.Get_size() > 1:
         pytest.skip("Test is disabled when run with MPI. Wrong species generation.")
 
-    bcc_binary = BccBinary(alat=3.13, ncell_x=2, minimize=True, logname=None,
+    bcc_binary = BCC_BINARY(alat=3.13, ncell_x=2, minimize=True, logname=None,
                            data_path='./refs/', snapcoeff_filename='NiMo.snapcoeff', verbose=False, comm=comm)
 
     dU_dTheta_desired = np.load('./refs/test_system_props_dU_dTheta_binary.npy')
@@ -110,13 +110,13 @@ def test_D_dD_binary(comm):
 
 def test_scatter_coord(comm):
 
-    bcc_system_tmp = Bcc(alat=3.163, ncell_x=1, minimize=False, logname=None,
+    bcc_system_tmp = BCC(alat=3.163, ncell_x=1, minimize=False, logname=None,
                          data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
 
 def test_forces(comm):
 
-    bcc_system_tmp = Bcc(alat=3.163, ncell_x=1, minimize=False, logname=None,
+    bcc_system_tmp = BCC(alat=3.163, ncell_x=1, minimize=False, logname=None,
                          data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     dX_vector = np.zeros(bcc_system_tmp.Natom*3)
@@ -131,7 +131,7 @@ def test_forces(comm):
 
 def test_hessian(comm):
 
-    bcc_system_tmp = Bcc(alat=3.163, ncell_x=1, minimize=False, logname=None,
+    bcc_system_tmp = BCC(alat=3.163, ncell_x=1, minimize=False, logname=None,
                          data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     desired_hessian = np.load('./refs/test_system_props_hessian.npy')
@@ -143,14 +143,14 @@ def test_hessian(comm):
 
 def test_write_data(comm):
 
-    bcc_system_tmp = Bcc(alat=4.0, ncell_x=1, minimize=False, logname=None,
+    bcc_system_tmp = BCC(alat=4.0, ncell_x=1, minimize=False, logname=None,
                          data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     bcc_system_tmp.write_data('bcc.data')
 
     assert os.path.isfile('bcc.data')
 
-    bcc_from_data = Bcc(datafile='bcc.data', minimize=False, logname=None,
+    bcc_from_data = BCC(datafile='bcc.data', minimize=False, logname=None,
                         data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     np.testing.assert_allclose(bcc_system_tmp.energy, bcc_from_data.energy)
@@ -162,7 +162,7 @@ def test_write_data(comm):
 
 def test_pressure(comm):
 
-    bcc_system = Bcc(alat=3.163, ncell_x=2, minimize=False, logname=None,
+    bcc_system = BCC(alat=3.163, ncell_x=2, minimize=False, logname=None,
                      data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     bcc_system.compute_virial()

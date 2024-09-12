@@ -1180,9 +1180,9 @@ class LammpsImplicitDer:
         virial_S_prod = np.einsum('lm, mn -> ln', virial_basis_prod, S_matrix_inv)
 
         # The final expression dC/dTheta = - sum_{m=1}^{6} virial_S_prod_m * E_m
-        dC_dTheta = - np.einsum('lm, mab -> lab', virial_S_prod[:, :], basis_E[:, :, :])
+        dCell_dTheta = - np.einsum('lm, mab -> lab', virial_S_prod[:, :], basis_E[:, :, :])
 
-        return dC_dTheta
+        return dCell_dTheta
 
     def energy_expansion(self, dTheta):
         """

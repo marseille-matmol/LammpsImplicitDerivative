@@ -17,7 +17,7 @@ from ..lmp_der.snap import SNAP
 from ..lmp_der.implicit_der import LammpsImplicitDer
 
 
-class ScrewDislo(LammpsImplicitDer):
+class SCREW_DISLO(LammpsImplicitDer):
     """
     Screw dislocation system. By default, tungsten. Allows interstitial or substitutional defects.
     Requires a LAMMPS data file for coordinates ONLY.
@@ -52,12 +52,12 @@ class ScrewDislo(LammpsImplicitDer):
             self.fix_sel = 'all'
 
         if self.snapcoeff_filename is None:
-            raise RuntimeError('snapcoeff_filename must be specified for Dislo')
+            raise RuntimeError('snapcoeff_filename must be specified for DISLO')
 
         if self.datafile is None:
-            raise ValueError('datafile must be specified for Dislo')
+            raise ValueError('datafile must be specified for DISLO')
         elif not os.path.exists(self.datafile):
-            raise FileNotFoundError(f'ScrewDislo: datafile {self.datafile} does not exist.')
+            raise FileNotFoundError(f'SCREW_DISLO: datafile {self.datafile} does not exist.')
 
         # Load the SNAP potential instance
         self.pot = SNAP.from_files(self.snapcoeff_filename,

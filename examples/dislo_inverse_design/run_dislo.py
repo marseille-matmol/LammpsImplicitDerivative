@@ -6,13 +6,13 @@ import yaml
 
 # local imports
 from lammps_implicit_der.tools import initialize_mpi, mpi_print, error_tools, TimingGroup, minimize_loss
-from lammps_implicit_der.systems import ScrewDislo
+from lammps_implicit_der.systems import SCREW_DISLO
 from lammps_implicit_der.tools.io import setup_default_minimization_dict, load_parameters, print_parameters
 from lammps_implicit_der.tools.generate_masks import generate_mask_dX, generate_mask_radius, plot_mask
 
 def run_minimization(param_dict, comm=None):
 
-    trun = TimingGroup('Minimize Dislo')
+    trun = TimingGroup('Minimize DISLO')
     trun.add('total', level=2).start()
 
     # Unpack the parameter dictionary
@@ -45,9 +45,9 @@ def run_minimization(param_dict, comm=None):
     fixed_cyl_lo = param_dict['system']['fixed_cyl_lo']
     fixed_cyl_hi = param_dict['system']['fixed_cyl_hi']
 
-    mpi_print('Dislo start initial relaxation...', comm=comm)
+    mpi_print('DISLO start initial relaxation...', comm=comm)
     with trun.add('start init'):
-        dislo_start = ScrewDislo(snapcoeff_filename=snapcoeff_filename,
+        dislo_start = SCREW_DISLO(snapcoeff_filename=snapcoeff_filename,
                                  datafile=datafile_path_start,
                                  sub_element=sub_element,
                                  fixed_cyl_axis=fixed_cyl_axis,
@@ -61,9 +61,9 @@ def run_minimization(param_dict, comm=None):
                                  comm=comm,
                                  verbose=True)
 
-    mpi_print('Dislo target initialization (no relaxation)...', comm=comm)
+    mpi_print('DISLO target initialization (no relaxation)...', comm=comm)
     with trun.add('target init'):
-        dislo_target = ScrewDislo(snapcoeff_filename=snapcoeff_filename,
+        dislo_target = SCREW_DISLO(snapcoeff_filename=snapcoeff_filename,
                                   datafile=datafile_path_target,
                                   sub_element=sub_element,
                                   fixed_cyl_axis=fixed_cyl_axis,

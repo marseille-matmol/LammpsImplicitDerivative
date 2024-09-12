@@ -5,12 +5,12 @@ import os
 import numpy as np
 import pytest
 
-from lammps_implicit_der.systems import Bcc, BccBinary
+from lammps_implicit_der.systems import BCC, BCC_BINARY
 
 
 def test_pot_keys(comm):
 
-    bcc_binary = BccBinary(alat=3.13, specie_B_concentration=0.5, ncell_x=1,
+    bcc_binary = BCC_BINARY(alat=3.13, specie_B_concentration=0.5, ncell_x=1,
                            minimize=False, logname=None, data_path='./refs/', snapcoeff_filename='NiMo.snapcoeff', verbose=False, comm=comm)
 
     np.testing.assert_equal(bcc_binary.pot.elem_list, ['Ni', 'Mo'])
@@ -19,7 +19,7 @@ def test_pot_keys(comm):
 
 def test_pot_params(comm):
 
-    bcc_binary = BccBinary(alat=3.13, specie_B_concentration=0.5, ncell_x=1,
+    bcc_binary = BCC_BINARY(alat=3.13, specie_B_concentration=0.5, ncell_x=1,
                            minimize=False, logname=None, data_path='./refs/', snapcoeff_filename='NiMo.snapcoeff', verbose=False, comm=comm)
 
     radii_desired = '0.575 0.575'
@@ -39,7 +39,7 @@ def test_pot_params(comm):
 
 def test_pot_coeff(comm):
 
-    bcc_pure = Bcc(alat=3.18427, ncell_x=2, minimize=False, logname=None,
+    bcc_pure = BCC(alat=3.18427, ncell_x=2, minimize=False, logname=None,
                    data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
     coeffs = np.loadtxt('./refs/W.snapcoeff', skiprows=7)
 
@@ -48,7 +48,7 @@ def test_pot_coeff(comm):
 
 def test_write(comm):
 
-    bcc_binary = BccBinary(alat=3.13, specie_B_concentration=0.5, ncell_x=1,
+    bcc_binary = BCC_BINARY(alat=3.13, specie_B_concentration=0.5, ncell_x=1,
                            minimize=False, logname=None, data_path='./refs/', snapcoeff_filename='NiMo.snapcoeff', verbose=False, comm=comm)
 
     Theta0 = bcc_binary.pot.Theta_dict['Ni']['Theta'].copy()
@@ -62,7 +62,7 @@ def test_write(comm):
     assert os.path.isfile('test.snapcoeff')
     assert os.path.isfile('test.snapparam')
 
-    bcc_test = BccBinary(alat=3.13, specie_B_concentration=0.2, ncell_x=2,
+    bcc_test = BCC_BINARY(alat=3.13, specie_B_concentration=0.2, ncell_x=2,
                          minimize=False, logname=None, data_path='.', snapcoeff_filename='test.snapcoeff', verbose=False, comm=comm)
 
     np.testing.assert_allclose(bcc_test.pot.Theta_dict['Ni']['Theta'], Theta_test)

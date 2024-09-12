@@ -12,7 +12,7 @@ from lammps_implicit_der import LammpsImplicitDer, SNAP
 from lammps_implicit_der.tools import mpi_print, initialize_mpi, TimingGroup, plot_tools, \
                                       compute_energy_volume, create_perturbed_system, run_npt_implicit_derivative
 from lammps_implicit_der.tools.error_tools import coord_error
-from lammps_implicit_der.systems import BccVacancy, Bcc
+from lammps_implicit_der.systems import BCC_VACANCY, BCC
 #from lammps_implicit_der.tools.error_tools import coord_error
 
 from matplotlib.ticker import FormatStrFormatter, MultipleLocator

@@ -10,7 +10,7 @@ OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98
         atom_modify map array sort 0 0.0
         # metal units: Angstroms, eV, ps, etc.
         units metal
-        
+
 
         clear
 OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
@@ -35,13 +35,13 @@ Created 16 atoms
   create_atoms CPU = 0.000 seconds
 
         mass * 184.0
-        
+
 run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 WARNING: Communication cutoff is 0.0. No ghost atoms will be generated. Atoms may get lost. (src/comm_brick.cpp:210)
 Per MPI rank memory allocation (min/avg/max) = 2.301 | 2.301 | 2.301 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         0   0              0              0              0              0            
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         0   0              0              0              0              0
 Loop time of 9.58e-07 on 1 procs for 0 steps with 16 atoms
 
 104.4% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -71,9 +71,9 @@ Dangerous builds = 0
         pair_style snap
 
         # Take coefficients from files W.snapcoeff and W.snapparam
-        pair_coeff * * ../../lammps_implicit_der/data_files/W_NEW.snapcoeff ../../lammps_implicit_der/data_files/W_NEW.snapparam W
+        pair_coeff * * ../../lammps_implicit_der/data_files/W_REF.snapcoeff ../../lammps_implicit_der/data_files/W_REF.snapparam W
 SNAP Element = W, Radius 0.5, Weight 1
-Reading potential file ../../lammps_implicit_der/data_files/W_NEW.snapparam with DATE: 2017-02-20
+Reading potential file ../../lammps_implicit_der/data_files/W_REF.snapparam with DATE: 2017-02-20
 SNAP keyword rcutfac 5.0
 SNAP keyword twojmax 8
 SNAP keyword rfac0 0.99363
@@ -96,8 +96,8 @@ Neighbor list info ...
       stencil: full/bin/3d
       bin: standard
 Per MPI rank memory allocation (min/avg/max) = 3.557 | 3.557 | 3.557 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         0   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         0   0             -89.06089       0             -89.06089      -18.044
 Loop time of 8.34e-07 on 1 procs for 0 steps with 16 atoms
 
 119.9% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -125,22 +125,22 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-        
+
 reset_timestep 0
 
         min_style cg
         minimize 0 1e-08 1000 1000
 Per MPI rank memory allocation (min/avg/max) = 4.682 | 4.682 | 4.682 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         0   0             -89.06089       0             -89.06089      -18.044       
-         1   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         0   0             -89.06089       0             -89.06089      -18.044
+         1   0             -89.06089       0             -89.06089      -18.044
 Loop time of 0.0123359 on 1 procs for 1 steps with 16 atoms
 
 97.8% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 Minimization stats:
   Stopping criterion = force tolerance
-  Energy initial, next-to-last, final = 
+  Energy initial, next-to-last, final =
       -89.060889667491   -89.060889667491   -89.060889667491
   Force two-norm initial, final = 3.9534553e-14 4.305488e-14
   Force max component initial, final = 1.0214052e-14 1.1768364e-14
@@ -170,7 +170,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-        
+
 WARNING: lammps_gather: unknown compute id (src/library.cpp:3787)
 WARNING: lammps_gather: unknown compute id (src/library.cpp:3787)
 
@@ -208,8 +208,8 @@ Neighbor list info ...
       stencil: none
       bin: none
 Per MPI rank memory allocation (min/avg/max) = 4.693 | 4.693 | 4.693 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.06089       0             -89.06089      -18.044
 Loop time of 7.5e-07 on 1 procs for 0 steps with 16 atoms
 
 133.3% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -237,12 +237,12 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 4.693 | 4.693 | 4.693 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.06089       0             -89.06089      -18.044
 Loop time of 7.91e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -275,16 +275,16 @@ reset_timestep 0
         min_style cg
         minimize 0 1e-08 1000 1000
 Per MPI rank memory allocation (min/avg/max) = 34.86 | 34.86 | 34.86 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         0   0             -89.06089       0             -89.06089      -18.044       
-         1   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         0   0             -89.06089       0             -89.06089      -18.044
+         1   0             -89.06089       0             -89.06089      -18.044
 Loop time of 0.0122797 on 1 procs for 1 steps with 16 atoms
 
 98.7% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 Minimization stats:
   Stopping criterion = force tolerance
-  Energy initial, next-to-last, final = 
+  Energy initial, next-to-last, final =
       -89.060889667491   -89.060889667491   -89.060889667491
   Force two-norm initial, final = 4.305488e-14 3.6520053e-14
   Force max component initial, final = 1.1768364e-14 1.110223e-14
@@ -314,12 +314,12 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-        
+
 run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 33.73 | 33.73 | 33.73 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.06089       0             -89.06089      -18.044
 Loop time of 9.58e-07 on 1 procs for 0 steps with 16 atoms
 
 104.4% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -380,8 +380,8 @@ Neighbor list info ...
       stencil: none
       bin: none
 Per MPI rank memory allocation (min/avg/max) = 33.8 | 33.8 | 33.8 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.06089       0             -89.06089      -18.044
 Loop time of 7.5e-07 on 1 procs for 0 steps with 16 atoms
 
 133.3% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -409,12 +409,12 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 75.82 | 75.82 | 75.82 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.06089       0             -89.06089      -18.044
 Loop time of 7.08e-07 on 1 procs for 0 steps with 16 atoms
 
 141.2% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -489,8 +489,8 @@ Neighbor list info ...
       stencil: none
       bin: none
 Per MPI rank memory allocation (min/avg/max) = 75.55 | 75.55 | 75.55 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -80.90675       0             -80.90675       766512.41    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -80.90675       0             -80.90675       766512.41
 Loop time of 6.67e-07 on 1 procs for 0 steps with 16 atoms
 
 149.9% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -518,7 +518,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -534,8 +534,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -81.45468       0             -81.45468       737253.36    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -81.45468       0             -81.45468       737253.36
 Loop time of 5.42e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -563,7 +563,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -579,8 +579,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -81.9832        0             -81.9832        708172.86    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -81.9832        0             -81.9832        708172.86
 Loop time of 5.42e-07 on 1 procs for 0 steps with 16 atoms
 
 184.5% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -608,7 +608,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -624,8 +624,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -82.492297      0             -82.492297      679279.76    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -82.492297      0             -82.492297      679279.76
 Loop time of 6.66e-07 on 1 procs for 0 steps with 16 atoms
 
 300.3% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -653,7 +653,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -669,8 +669,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -82.981968      0             -82.981968      650582.71    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -82.981968      0             -82.981968      650582.71
 Loop time of 5.84e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -698,7 +698,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -714,8 +714,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -83.452215      0             -83.452215      622090.19    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -83.452215      0             -83.452215      622090.19
 Loop time of 5.41e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -743,7 +743,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -759,8 +759,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -83.903049      0             -83.903049      593810.51    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -83.903049      0             -83.903049      593810.51
 Loop time of 7.91e-07 on 1 procs for 0 steps with 16 atoms
 
 126.4% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -788,7 +788,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -804,8 +804,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -84.334488      0             -84.334488      565751.86    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -84.334488      0             -84.334488      565751.86
 Loop time of 7.5e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -833,7 +833,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -849,8 +849,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -84.746558      0             -84.746558      537922.35    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -84.746558      0             -84.746558      537922.35
 Loop time of 5.84e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -878,7 +878,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -894,8 +894,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -85.139289      0             -85.139289      510329.99    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -85.139289      0             -85.139289      510329.99
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 160.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -923,7 +923,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -939,8 +939,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -85.512724      0             -85.512724      482982.77    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -85.512724      0             -85.512724      482982.77
 Loop time of 5.84e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -968,7 +968,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -984,8 +984,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -85.86691       0             -85.86691       455888.63    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -85.86691       0             -85.86691       455888.63
 Loop time of 5.42e-07 on 1 procs for 0 steps with 16 atoms
 
 184.5% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1013,7 +1013,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1029,8 +1029,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -86.2019        0             -86.2019        429055.51    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -86.2019        0             -86.2019        429055.51
 Loop time of 6.67e-07 on 1 procs for 0 steps with 16 atoms
 
 149.9% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1058,7 +1058,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1074,8 +1074,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -86.51776       0             -86.51776       402491.36    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -86.51776       0             -86.51776       402491.36
 Loop time of 7.91e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1103,7 +1103,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1119,8 +1119,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -86.814558      0             -86.814558      376204.15    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -86.814558      0             -86.814558      376204.15
 Loop time of 6.66e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1148,7 +1148,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1164,8 +1164,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -87.092375      0             -87.092375      350201.87    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -87.092375      0             -87.092375      350201.87
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 160.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1193,7 +1193,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1209,8 +1209,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -87.351295      0             -87.351295      324492.6     
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -87.351295      0             -87.351295      324492.6
 Loop time of 7.08e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1238,7 +1238,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1254,8 +1254,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -87.591415      0             -87.591415      299084.43    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -87.591415      0             -87.591415      299084.43
 Loop time of 5.42e-07 on 1 procs for 0 steps with 16 atoms
 
 184.5% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1283,7 +1283,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1299,8 +1299,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -87.812836      0             -87.812836      273985.54    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -87.812836      0             -87.812836      273985.54
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1328,7 +1328,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1344,8 +1344,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.015671      0             -88.015671      249204.17    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.015671      0             -88.015671      249204.17
 Loop time of 5.83e-07 on 1 procs for 0 steps with 16 atoms
 
 171.5% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1373,7 +1373,7 @@ Total # of neighbors = 1792
 Ave neighs/atom = 112
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1389,8 +1389,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.20004       0             -88.20004       224748.63    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.20004       0             -88.20004       224748.63
 Loop time of 5.83e-07 on 1 procs for 0 steps with 16 atoms
 
 171.5% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1418,7 +1418,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1434,8 +1434,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.36607       0             -88.36607       200627.29    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.36607       0             -88.36607       200627.29
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1463,7 +1463,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1479,8 +1479,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.513901      0             -88.513901      176848.59    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.513901      0             -88.513901      176848.59
 Loop time of 5.41e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1508,7 +1508,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1524,8 +1524,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.643677      0             -88.643677      153421.04    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.643677      0             -88.643677      153421.04
 Loop time of 5.41e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1553,7 +1553,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1569,8 +1569,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.755556      0             -88.755556      130353.18    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.755556      0             -88.755556      130353.18
 Loop time of 5.83e-07 on 1 procs for 0 steps with 16 atoms
 
 171.5% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1598,7 +1598,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1614,8 +1614,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.849703      0             -88.849703      107653.61    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.849703      0             -88.849703      107653.61
 Loop time of 5e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1643,7 +1643,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1659,8 +1659,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.926291      0             -88.926291      85330.944    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.926291      0             -88.926291      85330.944
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 160.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1688,7 +1688,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1704,8 +1704,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.985505      0             -88.985505      63393.824    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.985505      0             -88.985505      63393.824
 Loop time of 7.5e-07 on 1 procs for 0 steps with 16 atoms
 
 133.3% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1733,7 +1733,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1749,8 +1749,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.027539      0             -89.027539      41850.883    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.027539      0             -89.027539      41850.883
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 160.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1778,7 +1778,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1794,8 +1794,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.052596      0             -89.052596      20710.735    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.052596      0             -89.052596      20710.735
 Loop time of 6.67e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1823,7 +1823,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1839,8 +1839,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.06089       0             -89.06089      -18.044
 Loop time of 7.5e-07 on 1 procs for 0 steps with 16 atoms
 
 133.3% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1868,7 +1868,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1884,8 +1884,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.052643      0             -89.052643     -20326.943    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.052643      0             -89.052643     -20326.943
 Loop time of 8.34e-07 on 1 procs for 0 steps with 16 atoms
 
 119.9% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1913,7 +1913,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1929,8 +1929,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.028089      0             -89.028089     -40207.535    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.028089      0             -89.028089     -40207.535
 Loop time of 6.67e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -1958,7 +1958,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -1974,8 +1974,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.987472      0             -88.987472     -59651.505    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.987472      0             -88.987472     -59651.505
 Loop time of 6.66e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2003,7 +2003,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2019,8 +2019,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.931043      0             -88.931043     -78650.675    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.931043      0             -88.931043     -78650.675
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2048,7 +2048,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2064,8 +2064,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.859067      0             -88.859067     -97197.029    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.859067      0             -88.859067     -97197.029
 Loop time of 6.67e-07 on 1 procs for 0 steps with 16 atoms
 
 149.9% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2093,7 +2093,7 @@ Total # of neighbors = 1408
 Ave neighs/atom = 88
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2109,8 +2109,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.771816      0             -88.771816     -115282.75    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.771816      0             -88.771816     -115282.75
 Loop time of 5.42e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2138,7 +2138,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2154,8 +2154,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.669572      0             -88.669572     -132900.22    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.669572      0             -88.669572     -132900.22
 Loop time of 7.5e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2183,7 +2183,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2199,8 +2199,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.552629      0             -88.552629     -150042.11    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.552629      0             -88.552629     -150042.11
 Loop time of 6.67e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2228,7 +2228,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2244,8 +2244,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.421289      0             -88.421289     -166701.34    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.421289      0             -88.421289     -166701.34
 Loop time of 5.42e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2273,7 +2273,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2289,8 +2289,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.275862      0             -88.275862     -182871.15    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.275862      0             -88.275862     -182871.15
 Loop time of 5.83e-07 on 1 procs for 0 steps with 16 atoms
 
 171.5% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2318,7 +2318,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2334,8 +2334,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -88.11667       0             -88.11667      -198545.11    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -88.11667       0             -88.11667      -198545.11
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2363,7 +2363,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2379,8 +2379,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -87.944042      0             -87.944042     -213717.18    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -87.944042      0             -87.944042     -213717.18
 Loop time of 5.42e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2408,7 +2408,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2424,8 +2424,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -87.758317      0             -87.758317     -228381.69    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -87.758317      0             -87.758317     -228381.69
 Loop time of 8.33e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2453,7 +2453,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2469,8 +2469,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -87.559842      0             -87.559842     -242533.41    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -87.559842      0             -87.559842     -242533.41
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 160.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2498,7 +2498,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2514,8 +2514,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -87.348973      0             -87.348973     -256167.56    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -87.348973      0             -87.348973     -256167.56
 Loop time of 5.41e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2543,7 +2543,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2559,8 +2559,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -87.126073      0             -87.126073     -269279.85    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -87.126073      0             -87.126073     -269279.85
 Loop time of 9.58e-07 on 1 procs for 0 steps with 16 atoms
 
 104.4% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2588,7 +2588,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2604,8 +2604,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -86.891513      0             -86.891513     -281866.46    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -86.891513      0             -86.891513     -281866.46
 Loop time of 7.5e-07 on 1 procs for 0 steps with 16 atoms
 
 133.3% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2633,7 +2633,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2649,8 +2649,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -86.645671      0             -86.645671     -293924.15    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -86.645671      0             -86.645671     -293924.15
 Loop time of 5.84e-07 on 1 procs for 0 steps with 16 atoms
 
 171.2% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2678,7 +2678,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2694,8 +2694,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -86.388931      0             -86.388931     -305450.17    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -86.388931      0             -86.388931     -305450.17
 Loop time of 5.83e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2723,7 +2723,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2739,8 +2739,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -86.121685      0             -86.121685     -316442.38    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -86.121685      0             -86.121685     -316442.38
 Loop time of 9.59e-07 on 1 procs for 0 steps with 16 atoms
 
 104.3% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2768,7 +2768,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2784,8 +2784,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -85.84433       0             -85.84433      -326899.23    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -85.84433       0             -85.84433      -326899.23
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2813,7 +2813,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2829,8 +2829,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -85.557268      0             -85.557268     -336819.75    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -85.557268      0             -85.557268     -336819.75
 Loop time of 6.25e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2858,7 +2858,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2874,8 +2874,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -85.260907      0             -85.260907     -346203.62    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -85.260907      0             -85.260907     -346203.62
 Loop time of 5.83e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2903,7 +2903,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2919,8 +2919,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -84.955658      0             -84.955658     -355051.14    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -84.955658      0             -84.955658     -355051.14
 Loop time of 8.34e-07 on 1 procs for 0 steps with 16 atoms
 
 119.9% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2948,7 +2948,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -2964,8 +2964,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -84.641937      0             -84.641937     -363363.26    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -84.641937      0             -84.641937     -363363.26
 Loop time of 5.41e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -2993,7 +2993,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -3009,8 +3009,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -84.320163      0             -84.320163     -371141.6     
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -84.320163      0             -84.320163     -371141.6
 Loop time of 8.34e-07 on 1 procs for 0 steps with 16 atoms
 
 119.9% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -3038,7 +3038,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -3054,8 +3054,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -83.990757      0             -83.990757     -378388.45    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -83.990757      0             -83.990757     -378388.45
 Loop time of 7.08e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -3083,7 +3083,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -3099,8 +3099,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -83.654143      0             -83.654143     -385106.75    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -83.654143      0             -83.654143     -385106.75
 Loop time of 6.67e-07 on 1 procs for 0 steps with 16 atoms
 
 149.9% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -3128,7 +3128,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -3144,8 +3144,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -83.310745      0             -83.310745     -391300.15    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -83.310745      0             -83.310745     -391300.15
 Loop time of 7.08e-07 on 1 procs for 0 steps with 16 atoms
 
 0.0% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -3173,7 +3173,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -3189,8 +3189,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -82.96099       0             -82.96099      -396972.98    
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -82.96099       0             -82.96099      -396972.98
 Loop time of 6.67e-07 on 1 procs for 0 steps with 16 atoms
 
 149.9% CPU use with 1 MPI tasks x 1 OpenMP threads
@@ -3218,7 +3218,7 @@ Total # of neighbors = 1024
 Ave neighs/atom = 64
 Neighbor list builds = 0
 Dangerous builds = 0
-            
+
 
             change_box all triclinic
 Changing box ...
@@ -3234,8 +3234,8 @@ Changing box ...
             run 0
 WARNING: No fixes with time integration, atoms won't move (src/verlet.cpp:60)
 Per MPI rank memory allocation (min/avg/max) = 77.01 | 77.01 | 77.01 Mbytes
-   Step          Temp          E_pair         E_mol          TotEng         Press     
-         1   0             -89.06089       0             -89.06089      -18.044       
+   Step          Temp          E_pair         E_mol          TotEng         Press
+         1   0             -89.06089       0             -89.06089      -18.044
 Loop time of 5.84e-07 on 1 procs for 0 steps with 16 atoms
 
 171.2% CPU use with 1 MPI tasks x 1 OpenMP threads

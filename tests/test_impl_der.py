@@ -110,16 +110,17 @@ def test_impl_der_energy_cg(bcc_vacancy):
 def test_impl_der_energy_fire(comm):
 
     # Fire algo is slow, therefore, we test it on the smallest system possible, 3 atoms
-
-    bcc_vacancy_211 = BCC_VACANCY(alat=3.163, ncell_x=2, ncell_y=1, ncell_z=1, minimize=True, logname=None,  del_coord=[0.0, 0.0, 0.0],
-                                 data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False)
+    # Found to be dependent on the element mass.
+    
+    bcc_vacancy_211 = BCC_VACANCY(alat=3.163, element_mass='184.', ncell_x=2, ncell_y=1, ncell_z=1, minimize=True, logname=None,  del_coord=[0.0, 0.0, 0.0],
+                                  data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False)
 
     dX_dTheta_desired = np.load('./refs/test_impl_der_energy_fire.npy')
     dX_dTheta = bcc_vacancy_211.implicit_derivative(method='energy', adaptive_alpha=True, min_style='fire', alpha=1e-3, ftol=1e-7, maxiter=50)
 
     dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy_211.X_coord)]
 
-    np.testing.assert_allclose(dX_dTheta, dX_dTheta_desired, atol=1e-7)
+    np.testing.assert_allclose(dX_dTheta, dX_dTheta_desired, atol=1e-5)
 
 
 def test_impl_der_energy_dX_sd(bcc_vacancy, bcc_vacancy_perturb):

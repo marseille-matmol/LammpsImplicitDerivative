@@ -1,0 +1,10 @@
+# SNAP parameters for W
+# Generated on April 18, 2024  15:53 by snap.py
+
+rcutfac 5.0
+twojmax 8
+rfac0 0.99363
+rmin0 0
+bzeroflag 0
+quadraticflag 0
+bnormflag 0

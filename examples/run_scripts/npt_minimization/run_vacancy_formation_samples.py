@@ -48,8 +48,8 @@ def main():
     sample_last = int(sys.argv[4])
 
     alat0 = 3.18
-    snapcoeff_filename = 'W_NEW.snapcoeff'
-    snapparam_filename = 'W_NEW.snapparam'
+    snapcoeff_filename = 'W_REF.snapcoeff'
+    snapparam_filename = 'W_REF.snapparam'
 
     mpi_print(f'{ncell_x = }', comm=comm)
 

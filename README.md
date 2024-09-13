@@ -40,7 +40,15 @@ from lammps_implicit_der.systems import BCC
 
 # Examples
 
-In the `./examples` folder, you will find several Jupyter notebooks that showcase the package's use cases. They are arranged in the recommended order for reviewing.
+In the `./examples` folder, you will find several Jupyter notebooks that demonstrate how to use the package to compute the inhomogeneous and homogeneous implicit derivatives in different atomic systems.
+The files are arranged in the recommended order for reviewing:
+
+| No. | Title              | Description                                                                 |
+|-----|--------------------|-----------------------------------------------------------------------------|
+| 01 | Getting Started     | Basic properties of the Lammps-Implicit Diff. wrapper classes (`LammpsImplicitDer`) for different systems (`BCC`, `HCP`, etc.) and basic atomic system properties (energy, force, pressure, etc.).    |
+| 02 | Implicit Diff Inhom.| Inhomogeneous implicit derivative calculation - the **core functionality of the package**.|
+| 03 | Implicit Diff Hom.  | Homogeneous implicit derivative calculation - the **core functionality of the package**.|
+| 04 | Inverse Design      | Inverse design application of the inhomogeneous implicit derivative. |
 
 # Tests
 

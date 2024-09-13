@@ -40,7 +40,7 @@ def main():
         pickle.dump(Theta_ens_NEW, file)
 
     system_tmp = BCC(alat=4.0, ncell_x=2, minimize=False, logname=None,
-                         snapcoeff_filename='W_NEW.snapcoeff', verbose=False)
+                         snapcoeff_filename='W_REF.snapcoeff', verbose=False)
 
     system_tmp.pot.Theta_dict['W']['Theta'] = Theta_average
     system_tmp.pot.Theta_dict['W']['beta0'] = 0.0

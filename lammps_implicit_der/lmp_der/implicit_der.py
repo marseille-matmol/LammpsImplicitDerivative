@@ -31,35 +31,78 @@ class LammpsImplicitDer:
                  minimize_ftol=1e-8,
                  minimize_maxiter=1000,
                  minimize_maxeval=1000,
-                 comm=None,
-                 logname='none',
-                 fix_sel='all',
                  fix_box_relax=False,
                  box_relax_vmax=0.001,
                  box_relax_iso=True,
                  zbl_dict=None,
+                 logname='none',
+                 fix_sel='all',
                  dump_lmp_cmd=True,
                  lmp_cmd_filename='commands.lammps',
+                 comm=None,
                  verbose=True):
         """Set of methods for implicit derivative. Parent class.
 
         Parameters
         ----------
 
-        data_path : str
-            Path to the data files: potentials and hard constraints.
-            If not specified, the default path is used: 'lammps_implicit_der/data_files', NOT the current directory.
+        snapcoeff_filename : str, optional
+            SNAP coefficients filename, e.g. 'W.snapcoeff'.
 
-        datafile : str
-            LAMMPS data file, data_path IS NOT prepended
+        snapparam_filename : str, optional
+            SNAP parameters filename, e.g. 'W.snapparam'.
 
-        minimize_algo : str
-            Minimization algorithm for energy minimization, NOT the implicit derivative.
+        datafile : str, optional
+            Data file for LAMMPS. Default None.
 
-        Attributes
-        ----------
+        input_script : str, optional
+            Input script for LAMMPS. Default None.
 
-        """
+        data_path : str, optional
+            Path to the potential files.
+
+        minimize : bool, optional
+            Minimize the energy of the system with the fixed box.
+
+        minimize_algo : str, optional
+            Minimization algorithm.
+
+        minimize_ftol : float, optional
+            Minimization force tolerance.
+
+        minimize_maxiter : int, optional
+            Minimization maximum number of iterations.
+
+        minimize_maxeval : int, optional
+            Minimization maximum number of force evaluations.
+
+        fix_box_relax : bool, optional
+            Relax the box during minimization.
+
+        box_relax_vmax : float, optional
+            Maximum volume change during box relaxation (LAMMPS parameter).
+
+        box_relax_iso : bool, optional
+            Isotropic box relaxation.
+
+        zbl_dict : dict, optional
+            Paramaters for the ZBL potential. EXPERIMENTAL.
+
+        logname : str, optional
+            LAMMPS log file name.
+
+        fix_sel : str, optional
+            Selection for the addforce command. EXPERIMENTAL.
+
+        dump_lmp_cmd : bool, optional
+            Dump LAMMPS commands to a file.
+
+        lmp_cmd_filename : str, optional
+            Filename containing all the LAMMPS commands sent to LAMMPS for an object.
+
+        comm : MPI communicator, optional
+            mpi4py MPI communicator.
+       """
 
         if logname is None:
             logname = 'none'
@@ -155,11 +198,13 @@ class LammpsImplicitDer:
         """)
 
     def __del__(self):
-        """Destructor"""
-        pass
-        #self.lmp.close()
+        """Destructor. Not finished."""
+        self.lmp.close()
 
     def __str__(self):
+        """
+        Print out the object information.
+        """
 
         out_str = 'LAMMPSImplicitDer object:\n'
         if self.Natom is not None:
@@ -173,18 +218,13 @@ class LammpsImplicitDer:
         return out_str
 
     def lmp_commands_string(self, commands):
+        """Send a string of LAMMPS commands to LAMMPS"""
 
         self.lmp.commands_string(commands)
 
         if self.dump_lmp_cmd and self.rank == 0:
             with open(self.lmp_cmd_filename, 'a') as f:
                 f.write(commands+'\n')
-
-    def copy(self):
-        """Return a copy of the object.
-        Does not work because of the LAMMPS object.
-        """
-        return copy.deepcopy(self)
 
     def print_run_info(self):
         mpi_print('\n'+'-'*80, comm=self.comm, verbose=self.verbose)
@@ -197,6 +237,7 @@ class LammpsImplicitDer:
                   f'force norm: {np.linalg.norm(self.f0):.3e}', verbose=self.verbose, comm=self.comm)
 
     def to_dict(self):
+        """Return some of the object attributes as a dictionary. EXPERIMENTAL."""
 
         out_dict = {
             'X_coord': self._X_coord,

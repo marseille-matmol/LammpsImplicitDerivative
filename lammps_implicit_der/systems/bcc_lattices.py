@@ -21,14 +21,40 @@ class BCC(LammpsImplicitDer):
                  ncell_y=None,
                  ncell_z=None,
                  alat=3.1855,
+                 element_mass=183.84,
                  setup_snap=True,
                  *args, **kwargs):
+        """
+        Child class of LammpsImplicitDer for BCC lattices.
+
+        Parameters
+        ----------
+
+        ncell_x : int
+            Number of unit cells in x-direction.
+
+        ncell_y : int
+            Number of unit cells in y-direction. If None, ncell_y = ncell_x.
+
+        ncell_z : int
+            Number of unit cells in z-direction. If None, ncell_z = ncell_x.
+
+        alat : float
+            Lattice constant in Angstrom.
+
+        setup_snap : bool
+            If True, setup the SNAP potential at initialization.
+
+        element_mass : float
+            Element mass in a.m.u.
+        """
 
         super().__init__(*args, **kwargs)
 
         self.binary = False
         self.ncell_x = ncell_x
         self.alat = alat
+        self.element_mass = element_mass
 
         self.ncell_y = ncell_y if ncell_y is not None else ncell_x
         self.ncell_z = ncell_z if ncell_z is not None else ncell_x
@@ -70,7 +96,7 @@ class BCC(LammpsImplicitDer):
             read_data {self.datafile}
             """)
 
-        self.lmp_commands_string(f'mass * 45.')
+        self.lmp_commands_string(f'mass * {self.element_mass}')
 
         self.run_init(setup_snap=setup_snap)
 
@@ -85,6 +111,21 @@ class BCC_BINARY(LammpsImplicitDer):
                  specie_B_concentration=0.5,
                  setup_snap=True,
                  *args, **kwargs):
+        """
+        Child class of LammpsImplicitDer for BCC binary lattices. EXPERIMENTAL.
+        Parameters are hardcoded for Mo.
+
+        Parameters
+        ----------
+
+        See BCC class for the common parameters.
+
+        specie_B_concentration : float
+            Concentration of the B species in the binary lattice. Specie A concentration is 1 - specie_B_concentration.
+
+        setup_snap : bool
+            If True, setup the SNAP potential at initialization.
+        """
 
         super().__init__(*args, **kwargs)
 
@@ -132,6 +173,7 @@ class BCC_BINARY(LammpsImplicitDer):
             read_data {self.datafile}
             """)
 
+        # Not important for the molecular statics
         self.lmp_commands_string(f'mass * 45.')
 
         self.run_init(setup_snap=setup_snap)
@@ -144,14 +186,30 @@ class BCC_VACANCY(LammpsImplicitDer):
                  ncell_y=None,
                  ncell_z=None,
                  alat=3.1855,
+                 element_mass=183.84,
                  del_coord=None,
                  del_id=None,
                  *args, **kwargs):
+        """
+        Child class of LammpsImplicitDer for BCC lattices with one vacancy.
+
+        Parameters
+        ----------
+
+        See BCC class for the common parameters.
+
+        del_coord : list
+            Coordinates of the atom to be deleted. If None, del_id must be specified.
+
+        del_id : int
+            ID of the atom to be deleted. If None, del_coord must be specified.
+        """
 
         super().__init__(*args, **kwargs)
 
         self.ncell_x = ncell_x
         self.alat = alat
+        self.element_mass = element_mass
 
         self.ncell_y = ncell_y if ncell_y is not None else ncell_x
         self.ncell_z = ncell_z if ncell_z is not None else ncell_x
@@ -201,7 +259,7 @@ class BCC_VACANCY(LammpsImplicitDer):
         """)
 
         # W mass in a.m.u.
-        self.lmp_commands_string(f'mass * 184.')
+        self.lmp_commands_string(f'mass * {self.element_mass}')
 
         self.run_init()
 
@@ -217,6 +275,25 @@ class BCC_BINARY_VACANCY(LammpsImplicitDer):
                  specie_B_concentration=0.5,
                  del_id=10,
                  *args, **kwargs):
+        """
+        Child class of LammpsImplicitDer for BCC binary lattices with one vacancy.
+        EXPERIMENTAL.
+
+        Parameters
+        ----------
+
+        See BCC class for the common parameters.
+
+        custom_create_script : str
+            Custom LAMMPS script to create the system.
+
+        specie_B_concentration : float
+            Concentration of the B species in the binary lattice. Specie A concentration is 1 - specie_B_concentration.
+
+        del_id : int
+            ID of the atom to be deleted.
+        """
+
 
         super().__init__(*args, **kwargs)
 
@@ -270,6 +347,7 @@ class BCC_BINARY_VACANCY(LammpsImplicitDer):
             read_data {self.datafile}
             """)
 
+        # Not important for the molecular statics
         self.lmp_commands_string(f'mass * 45.')
 
         self.run_init()
@@ -285,14 +363,30 @@ class BCC_SIA(LammpsImplicitDer):
                  ncell_y=None,
                  ncell_z=None,
                  alat=3.1855,
+                 element_mass=183.84,
                  SIA_pos=None,
                  origin_pos=0.01,
                  *args, **kwargs):
+        """
+        Child class of LammpsImplicitDer for BCC lattices with a self-interstitial atom.
+
+        Parameters
+        ----------
+
+        See BCC class for the common parameters.
+
+        SIA_pos : list
+            Coordinates of the self-interstitial atom. If None, the default position is 0.25 + origin_pos.
+
+        origin_pos : float
+            Origin position of the lattice.
+        """
 
         super().__init__(*args, **kwargs)
 
         self.ncell_x = ncell_x
         self.alat = alat
+        self.element_mass = element_mass
 
         self.ncell_y = ncell_y if ncell_y is not None else ncell_x
         self.ncell_z = ncell_z if ncell_z is not None else ncell_x
@@ -339,6 +433,6 @@ class BCC_SIA(LammpsImplicitDer):
             """)
 
         # W mass in a.m.u.
-        self.lmp_commands_string(f'mass * 184.')
+        self.lmp_commands_string(f'mass * {self.element_mass}')
 
         self.run_init()

@@ -1,6 +1,6 @@
-*.pdf
-*.pkl
-minim_output
-*.snapcoeff
-*.snapparam
+*.data
+*.xyz
 *.log
+*.lammps-data
+*.lammps
+minim_output/

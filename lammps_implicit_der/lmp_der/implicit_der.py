@@ -13,7 +13,8 @@ from lammps import lammps
 from lammps import LMP_TYPE_SCALAR, LMP_STYLE_GLOBAL
 
 # local imports
-from ..tools.utils import mpi_print, get_default_data_path
+from ..tools.utils import mpi_print, get_default_data_path, get_matrix_basis, matrix_3x3_from_Voigt, \
+                          matrices_3x3_from_Voigt
 from ..tools.timing import TimingGroup, measure_runtime_and_calls
 
 
@@ -35,6 +36,7 @@ class LammpsImplicitDer:
                  fix_sel='all',
                  fix_box_relax=False,
                  box_relax_vmax=0.001,
+                 box_relax_iso=True,
                  zbl_dict=None,
                  dump_lmp_cmd=True,
                  lmp_cmd_filename='commands.lammps',
@@ -83,6 +85,7 @@ class LammpsImplicitDer:
         # Apply an external pressure tensor with the "fix box/relax" command
         self.fix_box_relax = fix_box_relax
         self.box_relax_vmax = box_relax_vmax
+        self.box_relax_iso = box_relax_iso
 
         self.snapcoeff_filename = snapcoeff_filename
         self.snapparam_filename = snapparam_filename
@@ -123,6 +126,10 @@ class LammpsImplicitDer:
 
         # Volume
         self._volume = None
+
+        # Pressure tensor and scalar
+        self.pressure_tensor = None
+        self.pressure = None
 
         if data_path is None:
             self.data_path = get_default_data_path()
@@ -271,9 +278,14 @@ class LammpsImplicitDer:
         # Fix box relax if specified
         # {'fix 1 all box/relax aniso 0.0 dilate partial' if False else ''}
         if self.fix_box_relax:
-            self.lmp_commands_string(f"""
-            fix boxrelax all box/relax iso 0.0 vmax {self.box_relax_vmax}
-            """)
+            if self.box_relax_iso:
+                self.lmp_commands_string(f"""
+                fix boxrelax all box/relax iso 0.0 vmax {self.box_relax_vmax}
+                """)
+            else:
+                self.lmp_commands_string(f"""
+                fix boxrelax all box/relax aniso 0.0 dilate partial
+                """)
 
         # Minimization
         self.lmp_commands_string(f"""
@@ -423,7 +435,7 @@ class LammpsImplicitDer:
     def compute_virial(self):
         """Compute virial"""
 
-        # Check that pot must be defined
+        # Check that potential is defined
         if self.pot is None:
             raise RuntimeError('Potential must be defined')
 
@@ -450,16 +462,23 @@ class LammpsImplicitDer:
         virial = self.lmp.gather("c_virial", 1, 6 * self.Ndesc)
         self.virial = np.ctypeslib.as_array(virial).reshape(-1, 6, self.Ndesc)
 
-    def get_pressure_from_virial(self):
+    def get_pressure_tensor_from_virial(self):
         """
-            Return pressure from virial as the trace of the virial tensor contracted with the potential parameters.
+            Get the pressure tensor from virial.
         """
 
         if self.Theta is None or self.virial is None:
             raise RuntimeError('Theta and virial must be set to calculate pressure')
 
-        pressure_tensor = np.dot(np.sum(self.virial, axis=0), self.Theta)
-        self.pressure = np.sum(pressure_tensor[:3]) / 3.0
+        self.pressure_tensor = np.dot(np.sum(self.virial, axis=0), self.Theta)
+
+    def get_pressure_from_virial(self):
+        """
+            Get the pressure from virial as the trace of the virial tensor contracted with the potential parameters.
+        """
+
+        self.get_pressure_tensor_from_virial()
+        self.pressure = np.sum(self.pressure_tensor[:3]) / 3.0
 
     @measure_runtime_and_calls
     def run_init(self, setup_snap=True):
@@ -499,6 +518,10 @@ class LammpsImplicitDer:
         # Compute the descriptors and their derivatives
         self.gather_D_dD()
 
+        # Virial
+        self.compute_virial()
+        self.gather_virial()
+
         # Setup hard constraints
         hard_constraints_path = os.path.join(self.data_path, f'{self.pot.elmnts}_constraints.txt')
         if os.path.exists(hard_constraints_path):
@@ -522,17 +545,18 @@ class LammpsImplicitDer:
         self.cell[0][1] = xy
         self.cell[0][2] = xz
         self.cell[1][2] = yz
+
+        self.cell[1][0] = xy
+        self.cell[2][0] = xz
+        self.cell[2][1] = yz
+
         self.inv_cell = np.linalg.inv(self.cell)
 
     @measure_runtime_and_calls
-    def apply_strain(self, cell, update_system=True):
+    def change_box(self, cell, update_system=True):
         """
         Apply strain to the system
         """
-
-        # Update the self.cell matrix
-        #self.get_cell()
-        #C = np.dot(self.cell, (np.eye(3) + epsilon))
 
         C = cell.copy()
 
@@ -543,11 +567,14 @@ class LammpsImplicitDer:
             run 0
             """)
         except Exception as e:
-            mpi_print(f'Error in apply_strain: {e}', verbose=self.verbose, comm=self.comm)
+            mpi_print(f'Error in change_box: {e}', verbose=self.verbose, comm=self.comm)
 
         if update_system:
             self.gather_D_dD()
             self.get_cell()
+            self.gather_virial()
+            self.get_pressure_tensor_from_virial()
+            self.get_pressure_from_virial()
             self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
 
     def minimum_image(self, X_vector):
@@ -566,19 +593,24 @@ class LammpsImplicitDer:
         Evaluate forces for given position
         Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
         """
-        # update positions
-        X_tmp = self.X_coord.copy() #+ alpha * dX_vector.flatten()
-        if dX_vector is not None:
-            X_tmp += alpha * dX_vector.flatten()
 
-        # send new positions to LAMMPS
-        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_tmp))
-        self.lmp.command("run 0")
+        if dX_vector is not None:
+            # update positions
+            X_tmp = self.X_coord.copy() #+ alpha * dX_vector.flatten()
+            X_tmp += alpha * dX_vector.flatten()
+            # send new positions to LAMMPS
+            self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_tmp))
+            self.lmp.command("run 0")
 
         self.force_call_counter += 1
 
         # get the forces from LAMMPS: "f" - forces, 1 - type, LAMMPS_DOUBLE, 3 - values per atom
         force = np.ctypeslib.as_array(self.lmp.gather("f", 1, 3)).flatten()
+
+        # Scatter the initial coordinates back to LAMMPS
+        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
+        self.lmp.command("run 0")
+
         return force
 
     @measure_runtime_and_calls
@@ -1003,6 +1035,8 @@ class LammpsImplicitDer:
             # Lift the diagonal of the Hessian to avoid singularities
             hessian += np.eye(hessian.shape[0]) * 0.01 * np.diag(hessian).min()
 
+        #return np.zeros((self.Ndesc, self.Natom * 3))
+
         # Use linalg.solve to find dX_dTheta in H.dX_dTheta = C
         if hess_mask is not None:
             dX_dTheta = np.zeros_like(self.mixed_hessian)
@@ -1022,77 +1056,44 @@ class LammpsImplicitDer:
         return dX_dTheta
 
     @measure_runtime_and_calls
-    def implicit_derivative_hom(self, method='dVirial', dL=1e-3):
-        """
-        Wrapper for the homogenous implicit derivative calculation.
-        """
-
-        if method == 'dVirial':
-            dL_dTheta = self.implicit_derivative_hom_dVirial(dL=dL)
-
-        elif method == 'd2Desc':
-            dL_dTheta = self.implicit_derivative_hom_d2Desc(dL=dL)
-
-        else:
-            raise ValueError(f'Unknown method for homogenous implicit derivative: {method}')
-
-        self.dL_dTheta = dL_dTheta.copy()
-
-        return dL_dTheta
-
-    def implicit_derivative_hom_d2Desc(self, dL=1e-3):
+    def implicit_derivative_hom_iso(self, delta_Strain=1e-5):
         """
         Compute the homogenous implicit derivative with finite differences applied
-        to the first and second derivatives of descriptor verctors.
+        to the virial derivative.
+        Isotropic strain.
 
-        strain_pred = dTheta @ dL_dTheta,
-        where strain_pred is the predicted strain.
-
-        Pressure P, volume V, energy E, strain L:
-        P = -dE/dV, V=L^3, P(V) = 0; P(V+dV) = 0 -> P(L+dL) = 0
-
-        E = D @ Theta, where D is the descriptor matrix
-        P = -dD/dV @ Theta, dV = 3L^2 dL, L != 0
-
-        dL_dTheta = - (dD/dL) / [ (d^2L/dL^2) @ Theta ]
-
-        Compute with the finite difference method:
-        dD/dL = D(L+dL) - D(L-dL) / 2*dL
-        d^2L/dL^2 = (D(L+dL) - 2D(L) + D(L-dL)) / dL^2
+        dStrain_dTheta_j = - Virial_j / [ (dVirial/dStrain) @ Theta ]
         """
-
         cell0 = self.cell.copy()
 
-        # Compute D(L)
-        self.gather_D_dD()
-        Desc0 = self.dU_dTheta.copy()
+        self.gather_virial()
 
-        # Compute D(L+dL)
-        cell_plus = cell0 + np.eye(3) * dL
-        self.apply_strain(cell_plus)
-        self.gather_D_dD()
-        Desc_plus = self.dU_dTheta.copy()
+        virial_trace0 = np.sum(self.virial, axis=0)
+        virial_trace0 = np.sum(virial_trace0[:3, :], axis=0) / 3.0
 
-        # Compute D(L-dL)
-        cell_minus = cell0 - np.eye(3) * dL
-        self.apply_strain(cell_minus)
-        self.gather_D_dD()
-        Desc_minus = self.dU_dTheta.copy()
+        # Compute the virial derivative
+        strain_matrix = np.eye(3) * (1.0 + delta_Strain)
+        # Check the ORDER: cell0 @strain_matrix OR strain_matrix @ cell0
+        cell_plus = cell0 @ strain_matrix
 
-        # Compute derivatives
-        dD_dL = (Desc_plus - Desc_minus) / (2.0 * dL)
-        d2L_dL2 = (Desc_plus + Desc_minus - 2.0 * Desc0) / (dL**2)
+        # change box RENAME
+        self.change_box(cell_plus, update_system=True)
+        # Sum over atoms
+        virial_trace_plus = np.sum(self.virial, axis=0)
+        # Take first 3 elements of the virial tensor
+        virial_trace_plus = np.sum(virial_trace_plus[:3, :], axis=0) / 3.0
+
+        dVirial_dStrain = (virial_trace_plus - virial_trace0) / delta_Strain
 
         # Compute the homogenous implicit derivative
-        dL_dTheta = -dD_dL / np.dot(self.Theta, d2L_dL2)
+        dStrain_dTheta = - virial_trace0 / np.dot(self.Theta, dVirial_dStrain)
 
         # Set to the original cell
-        self.apply_strain(cell0)
-        self.gather_D_dD()
+        self.change_box(cell0)
 
-        return dL_dTheta
+        return dStrain_dTheta
 
-    def implicit_derivative_hom_dVirial(self, dL=1e-3):
+    def implicit_derivative_hom_dVirial_dL(self, delta_L=1e-3):
         """
         Compute the homogenous implicit derivative with finite differences applied
         to the virial derivative.
@@ -1101,43 +1102,94 @@ class LammpsImplicitDer:
         """
         cell0 = self.cell.copy()
 
-        if self.virial is None:
-            self.compute_virial()
-            self.gather_virial()
+        self.gather_virial()
 
         virial_trace0 = np.sum(self.virial, axis=0)
         virial_trace0 = np.sum(virial_trace0[:3, :], axis=0) / 3.0
 
         # Compute the virial derivative
-        cell_plus = cell0 + np.eye(3) * dL
+        cell_plus = cell0 + np.eye(3) * delta_L
 
-        self.apply_strain(cell_plus)
-        self.gather_virial()
+        self.change_box(cell_plus, update_system=True)
+        # Sum over atoms
         virial_trace_plus = np.sum(self.virial, axis=0)
+        # Take first 3 elements of the virial tensor
         virial_trace_plus = np.sum(virial_trace_plus[:3, :], axis=0) / 3.0
 
-        cell_minus = cell0 - np.eye(3) * dL
-        self.apply_strain(cell_minus)
-        self.gather_virial()
-        virial_trace_minus = np.sum(self.virial, axis=0)
-        virial_trace_minus = np.sum(virial_trace_minus[:3, :], axis=0) / 3.0
-
-        dVirial_dL = (virial_trace_plus - virial_trace_minus) / (2.0 * dL)
+        dVirial_dL = (virial_trace_plus - virial_trace0) / delta_L
 
         # Compute the homogenous implicit derivative
         dL_dTheta = - virial_trace0 / np.dot(self.Theta, dVirial_dL)
 
         # Set to the original cell
-        self.apply_strain(cell0)
+        self.change_box(cell0)
 
         return dL_dTheta
+
+    def implicit_derivative_hom_aniso(self, delta_L=1e-3):
+        """
+        Homogeneous implicit derivative, general case: fully anisotropic system.
+        """
+
+        # Cell and pressure tensor at zero strain
+        cell0 = self.cell.copy()
+
+        self.gather_virial()
+
+        self.get_pressure_tensor_from_virial()
+        pressure_tensor0 = matrix_3x3_from_Voigt(self.pressure_tensor)
+
+        # Matrix-valued basis vectors
+        basis_E = get_matrix_basis()
+
+        # Virial, summed over atoms, shape: (Ndesc, 6)
+        virial_Nd_6 = np.sum(self.virial, axis=0).T
+        # Convert to shape (Ndesc, 3, 3) using the Voigt notation
+        virial_Nd_3x3 = matrices_3x3_from_Voigt(virial_Nd_6[:, :])
+
+        # Compute the double dot product between virial and 6 matrix-valued basis vectors
+        # (Ndesc, 3, 3) : (Ndesc, 3, 3, 6) -> (Ndesc, 6)
+        virial_basis_prod = np.zeros((self.Ndesc, 6), dtype=float)
+        for iTheta in range(self.Ndesc):
+            for idx_n in range(6):
+                virial_basis_prod[iTheta, idx_n] = np.tensordot(virial_Nd_3x3[iTheta, :, :], basis_E[idx_n, :, :])
+
+        # Compute the S-matrix: S_mn = E_m : d sigma / dC : E_n, shape: (6, 6)
+        S_matrix = np.zeros((6, 6), dtype=float)
+
+        weights = np.array([1.0, 1.0, 1.0, 2.0, 2.0, 2.0])
+
+        for idx_m in range(6):
+            cell_perturb = cell0 + delta_L * basis_E[idx_m]
+
+            self.change_box(cell_perturb)
+            pressure_tensor_3x3 = matrix_3x3_from_Voigt(self.pressure_tensor)
+            #perturb_Em = 1.0 / ( weights[idx_m] * delta_L ) * (pressure_tensor_3x3 - pressure_tensor0)
+            perturb_Em = 1.0 / delta_L * (pressure_tensor_3x3 - pressure_tensor0)
+
+            for idx_n in range(6):
+                S_matrix[idx_m, idx_n] = np.tensordot(perturb_Em, basis_E[idx_n])
+
+        self.change_box(cell0)
+
+        # Pseudoinverse of the S-matrix
+        S_matrix_inv = np.linalg.pinv(S_matrix)
+
+        # Compute the matrix product between virial_basis_prod and S_matrix_inv, shape: (Ndesc, 6)
+        # l: Ndesc, m: 6, n: 6
+        virial_S_prod = np.einsum('lm, mn -> ln', virial_basis_prod, S_matrix_inv)
+
+        # The final expression dC/dTheta = - sum_{m=1}^{6} virial_S_prod_m * E_m
+        dCell_dTheta = - np.einsum('lm, mab -> lab', virial_S_prod[:, :], basis_E[:, :, :])
+
+        return dCell_dTheta
 
     def energy_expansion(self, dTheta):
         """
         Taylor energy expansion up to the second order in dX
         """
 
-        raise NotImplemented('Not Implemented')
+        raise NotImplemented('Analytic energy expansion is not Implemented')
 
         if self.dU_dTheta is None:
             self.compute_D_dD()

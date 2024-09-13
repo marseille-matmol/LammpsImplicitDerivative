@@ -4,20 +4,20 @@ Tests of the inhomogeneous implicit derivative.
 import pytest
 import numpy as np
 
-from lammps_implicit_der.systems import BccVacancy
+from lammps_implicit_der.systems import BCC_VACANCY
 from lammps_implicit_der.tools import generate_masks
 
 
-# To save time, compute the BccVacancy object only once
+# To save time, compute the BCC_VACANCY object only once
 @pytest.fixture(scope="module")
 def bcc_vacancy(comm):
-    return BccVacancy(alat=3.163, ncell_x=2, minimize=True, logname=None, del_coord=[0.0, 0.0, 0.0],
+    return BCC_VACANCY(alat=3.163, ncell_x=2, minimize=True, logname=None, del_coord=[0.0, 0.0, 0.0],
                       data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
 
 @pytest.fixture(scope="module")
 def bcc_vacancy_perturb(comm):
-    return BccVacancy(alat=3.163, ncell_x=2, minimize=True, logname=None,
+    return BCC_VACANCY(alat=3.163, ncell_x=2, minimize=True, logname=None,
                       data_path='./refs/', snapcoeff_filename='W_perturb.snapcoeff', snapparam_filename='W.snapparam', verbose=False, comm=comm)
 
 
@@ -111,7 +111,7 @@ def test_impl_der_energy_fire(comm):
 
     # Fire algo is slow, therefore, we test it on the smallest system possible, 3 atoms
 
-    bcc_vacancy_211 = BccVacancy(alat=3.163, ncell_x=2, ncell_y=1, ncell_z=1, minimize=True, logname=None,  del_coord=[0.0, 0.0, 0.0],
+    bcc_vacancy_211 = BCC_VACANCY(alat=3.163, ncell_x=2, ncell_y=1, ncell_z=1, minimize=True, logname=None,  del_coord=[0.0, 0.0, 0.0],
                                  data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False)
 
     dX_dTheta_desired = np.load('./refs/test_impl_der_energy_fire.npy')

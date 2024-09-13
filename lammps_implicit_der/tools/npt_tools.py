@@ -39,7 +39,7 @@ def compute_energy_volume(system, epsilon_array, compute_forces=False):
 
         cell = np.dot(initial_cell, (np.eye(3) + M))
 
-        system.apply_strain(cell)
+        system.change_box(cell)
 
         volume = np.linalg.det(cell)
         volume_array[i] = volume
@@ -63,7 +63,7 @@ def compute_energy_volume(system, epsilon_array, compute_forces=False):
             force_array[i, :] = system.compute_forces()
 
     # Reapply the original cell
-    system.apply_strain(initial_cell)
+    system.change_box(initial_cell)
 
     energy_array /= system.ncell_x**3
 
@@ -84,7 +84,8 @@ def compute_energy_volume(system, epsilon_array, compute_forces=False):
 
 
 def create_perturbed_system(Theta_perturb, LammpsClass, snapcoeff_filename, snapparam_filename=None,
-                            data_path=None, alat=3.185, ncell_x=2, logname='perturb.log', fix_box_relax=False, minimize=True, verbose=False, comm=None):
+                            data_path=None, alat=3.185, ncell_x=2, logname='perturb.log', fix_box_relax=False, minimize=True,
+                            verbose=False, comm=None, **kwargs):
     """
     Create an instance of LammpsClass with  potential parameters from Theta_perturb numpy array.
     """
@@ -115,7 +116,7 @@ def create_perturbed_system(Theta_perturb, LammpsClass, snapcoeff_filename, snap
     # Create the perturbed system with the new potential
     system_perturb = LammpsClass(ncell_x=ncell_x, alat=alat, logname=logname, minimize=False, verbose=verbose, minimize_maxiter=500,
                                  snapcoeff_filename=f'{prefix}.snapcoeff', snapparam_filename=f'{prefix}.snapparam', fix_box_relax=fix_box_relax,
-                                 data_path='.', comm=comm)
+                                 data_path='.', comm=comm, **kwargs)
 
     if comm is not None:
         comm.Barrier()
@@ -139,9 +140,9 @@ def create_perturbed_system(Theta_perturb, LammpsClass, snapcoeff_filename, snap
 
 def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
                                 snapcoeff_filename, snapparam_filename,
-                                dX_dTheta_inhom, dL_dTheta_hom, force_der0=None, virial_der0=None,
+                                dX_dTheta_inhom, dStrain_dTheta, force_der0=None, virial_der0=None,
                                 data_path=None, comm=None, trun=None,
-                                log_box_relax='s_box_relax.log', log_pred='s_pred.log'):
+                                log_box_relax='s_box_relax.log', log_pred='s_pred.log', **kwargs):
 
     if trun is None:
         trun = TimingGroup('NPT implicit derivative')
@@ -154,7 +155,8 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
         # For the ground truth - fix box/relax. Theta1
         s_box_relax = create_perturbed_system(Theta_perturb, LammpsClass, logname=log_box_relax,
                                               data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
-                                              alat=alat, ncell_x=ncell_x, fix_box_relax=True, minimize=True, verbose=False, comm=comm)
+                                              alat=alat, ncell_x=ncell_x, fix_box_relax=True, minimize=True,
+                                              verbose=False, comm=comm, **kwargs)
 
         if comm is not None:
             comm.Barrier()
@@ -169,7 +171,8 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
     with trun.add('NVT minimization'):
         # For full implicit derivative. Theta0
         s_pred = LammpsClass(alat=alat, ncell_x=ncell_x, minimize=True, logname=log_pred,
-                             data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename, verbose=False, comm=comm)
+                             data_path=data_path, snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
+                             verbose=False, comm=comm, **kwargs)
         if comm is not None:
             comm.Barrier()
 
@@ -197,13 +200,11 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
     with trun.add('volume prediction'):
 
         # Finite diff Virial presdiction
-        #dL_dTheta = s_pred.implicit_derivative_hom(method='dVirial')
+        #dL_dTheta = s_pred.implicit_derivative_hom_iso(method='dVirial')
         #dL_pred = dTheta @ dL_dTheta # dL_dTheta_hom
-        dL_pred = dTheta @ dL_dTheta_hom
-        L0 = volume0**(1.0/3.0)
-        V_pred = (L0 + dL_pred)**3
-        strain_pred = ((V_pred) / volume0)**(1.0/3.0)
-        cell_pred = np.dot(cell0, np.eye(3) * strain_pred)
+        Strain_pred = dTheta @ dStrain_dTheta
+        cell_pred = cell0 @ (np.eye(3) * (1.0 + Strain_pred))
+        V_pred = np.linalg.det(cell_pred)
 
         # Inhomogeneous correction to volume that requires the derivative of the forces
         if force_der0 is not None:
@@ -213,10 +214,10 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
     # Homogeneous contribution: scale the system with the predicted volume change
     # And then return to the original volume with cell0
     with trun.add('homogeneous'):
-        s_pred.apply_strain(cell_pred, update_system=True)
+        s_pred.change_box(cell_pred, update_system=True)
         energy_hom_pred = s_pred.dU_dTheta @ Theta_pert
         coord_error_hom = coord_error(X_coord_true, s_pred.X_coord)
-        s_pred.apply_strain(cell0, update_system=True)
+        s_pred.change_box(cell0, update_system=True)
 
     # Inhomogeneous contribution
     with trun.add('inhomogeneous'):
@@ -239,10 +240,10 @@ def run_npt_implicit_derivative(LammpsClass, alat, ncell_x, Theta_perturb,
     # Full prediction
     with trun.add('full prediction'):
         # virial volume prediction
-        s_pred.apply_strain(cell_pred, update_system=True)
+        s_pred.change_box(cell_pred, update_system=True)
         energy_full_pred = s_pred.dU_dTheta @ Theta_pert
         coord_error_full = coord_error(X_coord_true, s_pred.X_coord)
-        s_pred.apply_strain(cell0, update_system=True)
+        s_pred.change_box(cell0, update_system=True)
 
     trun.timings[total_tag].stop()
 

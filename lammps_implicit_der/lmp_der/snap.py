@@ -236,6 +236,8 @@ class SNAP():
         info = '\n'
 
         info += f'{"SNAP coefficients for:":>40} {" ".join(self.elem_list)}\n'
+        # quadraticflag
+        info += f'{"quadraticflag:":>40} {self.snapparam_dict["quadraticflag"]}\n'
         # info += f'{"Number of elements:":>40} {self.num_el}\n'
         # info += f'{"Path to SNAP coefficients:":>40}\n{self.snapcoeff_path}\n'
         # info += f'{"Path to SNAP parameters:":>40}\n{self.snapparam_path}\n'

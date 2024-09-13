@@ -72,11 +72,11 @@ This class contains SNAP data for a given system, can be multielement.
 
 Currently implemented systems are:
 
-1. Bcc vacancy (W), `BccVacancy(LammpsImplicitDer)` class, `bcc_vacancy.py` file. Size of the systems can be changed with a `num_cells` parameter
+1. BCC vacancy (W), `BCC_VACANCY(LammpsImplicitDer)` class, `bcc_vacancy.py` file. Size of the systems can be changed with a `num_cells` parameter
 
-2. Bcc binary vacancy (Ni Mo), `BccBinaryVacancy(LammpsImplicitDer)` class, `bcc_vacancy.py` file
+2. BCC binary vacancy (Ni Mo), `BCC_BINARY_VACANCY(LammpsImplicitDer)` class, `bcc_vacancy.py` file
 
-3. Dislocation (W, easy core), `Dislo(LammpsImplicitDer)` class, `dislo.py` file
+3. Dislocation (W, easy core), `DISLO(LammpsImplicitDer)` class, `dislo.py` file
 
 # Inverse design: minimization function
 
@@ -90,7 +90,7 @@ $$
 
 ### Important parameters:
 
-* `sim` - `BccVacancy`, `BccBinaryVacancy`, or `Dislo` instance, **non-perturbed**
+* `sim` - `BCC_VACANCY`, `BCC_BINARY_VACANCY`, or `DISLO` instance, **non-perturbed**
 * `X_target` - `ndarray`, target positions
 * `step` - gradient descent step size, by default 0.01. If adaptive_step is `True`, step is ignored
 * `adaptive_step` - Use adaptive step size, by default `True`
@@ -102,7 +102,7 @@ The minimization data will be written into a `minim_dict_<der_method>.pkl` file 
 
 ### Running minimization
 
-For the three systems implemented, `BccVacancy`, `BccBinaryVacancy`, and `Dislo`, there are three corresponding Python scripts for the minimization runs: `run_bcc_vacancy.py`, `run_bcc_binary_vacancy.py`, and `run_dislo.py`.
+For the three systems implemented, `BCC_VACANCY`, `BCC_BINARY_VACANCY`, and `DISLO`, there are three corresponding Python scripts for the minimization runs: `run_bcc_vacancy.py`, `run_bcc_binary_vacancy.py`, and `run_dislo.py`.
 
 There, we create a non-perturbed system and a perturbed one, take the target positions from the perturbed system and call the minimize_loss function.
 

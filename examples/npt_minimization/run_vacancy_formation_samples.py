@@ -14,7 +14,7 @@ from scipy.interpolate import CubicSpline
 from lammps_implicit_der import LammpsImplicitDer, SNAP
 from lammps_implicit_der.tools import mpi_print, initialize_mpi, TimingGroup, plot_tools, \
                                       compute_energy_volume, create_perturbed_system, run_npt_implicit_derivative
-from lammps_implicit_der.systems import BccVacancy, Bcc
+from lammps_implicit_der.systems import BCC_VACANCY, BCC
 
 
 def get_min(en_vol_dict, ncell_x):
@@ -56,16 +56,16 @@ def main():
     run_dict = {}
     run_dict['ncell_x'] = ncell_x
 
-    mpi_print('Computing lattice parameters for Bcc and BccVacancy systems...', comm=comm)
+    mpi_print('Computing lattice parameters for BCC and BCC_VACANCY systems...', comm=comm)
     with trun.add('find alat min'):
 
         # Find alat from fix box/relax
 
-        bcc_pure_box_relax = Bcc(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc.log',
+        bcc_pure_box_relax = BCC(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc.log',
                                  snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
                                  verbose=False, fix_box_relax=True)
 
-        bcc_vac_box_relax = BccVacancy(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc_vac.log',
+        bcc_vac_box_relax = BCC_VACANCY(alat=alat0, ncell_x=ncell_x, minimize=True, logname='bcc_vac.log',
                                        snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
                                        verbose=False, fix_box_relax=True)
 
@@ -75,11 +75,11 @@ def main():
         alat = volume_pure_true**(1/3) / ncell_x
         alat_vac = volume_vac_true**(1/3) / ncell_x
 
-        bcc_pure = Bcc(alat=alat, ncell_x=ncell_x, minimize=True, logname='bcc.log', # alat=alat0
+        bcc_pure = BCC(alat=alat, ncell_x=ncell_x, minimize=True, logname='bcc.log', # alat=alat0
                        snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
                        verbose=False)
 
-        bcc_vac = BccVacancy(alat=alat_vac, ncell_x=ncell_x, minimize=True, logname='bcc_vac.log', # alat=alat0
+        bcc_vac = BCC_VACANCY(alat=alat_vac, ncell_x=ncell_x, minimize=True, logname='bcc_vac.log', # alat=alat0
                              snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename,
                              verbose=False)
 
@@ -131,8 +131,8 @@ def main():
         dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method=impl_der_method)
 
     with trun.add('dL_dTheta hom'):
-        dL_dTheta_pure_hom = bcc_pure.implicit_derivative_hom(method='dVirial')
-        dL_dTheta_vac_hom = bcc_vac.implicit_derivative_hom(method='dVirial')
+        dL_dTheta_pure_hom = bcc_pure.implicit_derivative_hom_iso(method='dVirial')
+        dL_dTheta_vac_hom = bcc_vac.implicit_derivative_hom_iso(method='dVirial')
 
     with trun.add('sample loop', level=1):
 
@@ -192,11 +192,11 @@ def main():
                 mpi_print('   Eergy-volume curves...', comm=comm)
                 with trun.add('en.-vol. curves'):
 
-                    bcc_pure_tmp = create_perturbed_system(Theta_perturb, Bcc, logname='vac_tmp.log',
+                    bcc_pure_tmp = create_perturbed_system(Theta_perturb, BCC, logname='vac_tmp.log',
                                                            snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename, comm=comm,
                                                            alat=alat, ncell_x=ncell_x, fix_box_relax=False, minimize=True, verbose=False)
 
-                    bcc_vac_tmp = create_perturbed_system(Theta_perturb, BccVacancy, logname='vac_tmp.log',
+                    bcc_vac_tmp = create_perturbed_system(Theta_perturb, BCC_VACANCY, logname='vac_tmp.log',
                                                           snapcoeff_filename=snapcoeff_filename, snapparam_filename=snapparam_filename, comm=comm,
                                                           alat=alat_vac, ncell_x=ncell_x, fix_box_relax=False, minimize=True, verbose=False)
 
@@ -215,7 +215,7 @@ def main():
                 mpi_print('   NPT minimization...', comm=comm)
                 with trun.add('npt'):
 
-                    pure_dict = run_npt_implicit_derivative(Bcc, alat, ncell_x, Theta_perturb,
+                    pure_dict = run_npt_implicit_derivative(BCC, alat, ncell_x, Theta_perturb,
                                                             snapcoeff_filename, snapparam_filename,
                                                             dX_dTheta_pure_inhom, dL_dTheta_pure_hom, virial_der0=virial_der_pure0,
                                                             comm=comm, trun=trun_npt)
@@ -223,7 +223,7 @@ def main():
                     if comm is not None:
                         comm.Barrier()
 
-                    vac_dict = run_npt_implicit_derivative(BccVacancy, alat_vac, ncell_x, Theta_perturb,
+                    vac_dict = run_npt_implicit_derivative(BCC_VACANCY, alat_vac, ncell_x, Theta_perturb,
                                                            snapcoeff_filename, snapparam_filename,
                                                            dX_dTheta_vac_inhom, dL_dTheta_vac_hom, virial_der0=virial_der_vac0,
                                                            force_der0=force_der_vac0, comm=comm, trun=trun_npt)

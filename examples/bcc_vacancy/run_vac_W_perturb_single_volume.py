@@ -6,7 +6,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lammps_implicit_der.systems import VacW, BccVacancyConcentration, BccVacancy
+from lammps_implicit_der.systems import VacW, BccVacancyConcentration, BCC_VACANCY
 from lammps_implicit_der.tools import mpi_print, initialize_mpi, TimingGroup, plot_tools, error_tools, get_size
 
 
@@ -41,7 +41,7 @@ def main():
         }
 
     # Non-perturbed system
-    vac0 = BccVacancy(snapcoeff_filename='W.snapcoeff',
+    vac0 = BCC_VACANCY(snapcoeff_filename='W.snapcoeff',
                       snapparam_filename='W.snapparam',
                       data_path='.',
                       comm=comm,
@@ -78,7 +78,7 @@ def main():
         mpi_print('*'*30+f'Running for sample {sample}'+'*'*30, comm=comm)
 
         # Perturbed system
-        vac_perturb = BccVacancy(snapcoeff_filename=f'W_perturb_{sample}.snapcoeff',
+        vac_perturb = BCC_VACANCY(snapcoeff_filename=f'W_perturb_{sample}.snapcoeff',
                                  snapparam_filename='W.snapparam',
                                  data_path='.',
                                  comm=comm,

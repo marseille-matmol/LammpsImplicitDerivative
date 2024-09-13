@@ -6,13 +6,13 @@ import yaml
 
 # local imports
 from lammps_implicit_der.tools import initialize_mpi, mpi_print, error_tools, TimingGroup, minimize_loss
-from lammps_implicit_der.systems import DisloSub, Dislo
+from lammps_implicit_der.systems import DisloSub, DISLO
 from lammps_implicit_der.tools.io import setup_minimization_dict
 
 
 def run_minimization(param_dict, comm=None):
 
-    trun = TimingGroup('Minimize Dislo')
+    trun = TimingGroup('Minimize DISLO')
     trun.add('total', level=2).start()
 
     # Unpack the parameter dictionary
@@ -38,18 +38,18 @@ def run_minimization(param_dict, comm=None):
     snapcoeff_filename = param_dict['system']['snapcoeff_filename']
     sub_element = param_dict['system']['sub_element']
 
-    mpi_print('Dislo start initial relaxation...', comm=comm)
+    mpi_print('DISLO start initial relaxation...', comm=comm)
     with trun.add('start init'):
-        dislo_start = Dislo(snapcoeff_filename=snapcoeff_filename,
+        dislo_start = DISLO(snapcoeff_filename=snapcoeff_filename,
                                datafile=datafile_path_start,
                                logname='dislo_start.log',
                                minimize=True,
                                comm=comm,
                                verbose=True)
 
-    mpi_print('Dislo target initialization (no relaxation)...', comm=comm)
+    mpi_print('DISLO target initialization (no relaxation)...', comm=comm)
     with trun.add('target init'):
-        dislo_target = Dislo(snapcoeff_filename=snapcoeff_filename,
+        dislo_target = DISLO(snapcoeff_filename=snapcoeff_filename,
                                 datafile=datafile_path_target,
                                 logname='dislo_target.log',
                                 minimize=False,

@@ -3,7 +3,7 @@
 import numpy as np
 
 # local imports
-from . import BccBinary
+from . import BCC_BINARY
 
 
 def get_perturbed_Theta_alloy(Theta1, Theta2, delta):
@@ -63,8 +63,8 @@ def get_bcc_alloy_A_delta_B(delta, ncell_x=2, minimize=False, datafile=None, spe
 
     Returns
     -------
-    bcc_alloy_A_delta_B : BccBinary
-        BccBinary instance of the perturbed alloy A-delta-B.
+    bcc_alloy_A_delta_B : BCC_BINARY
+        BCC_BINARY instance of the perturbed alloy A-delta-B.
     """
 
     if comm is None:
@@ -74,7 +74,7 @@ def get_bcc_alloy_A_delta_B(delta, ncell_x=2, minimize=False, datafile=None, spe
 
     # Create a normal bcc alloy of A and B elements from AB.snapcoeff
     # No minimization at this stage
-    bcc_alloy_A_B_tmp = BccBinary(datafile=datafile,
+    bcc_alloy_A_B_tmp = BCC_BINARY(datafile=datafile,
                                   comm=comm,
                                   snapcoeff_filename=f'{element_A}{element_B}.snapcoeff',
                                   ncell_x=ncell_x,
@@ -107,8 +107,8 @@ def get_bcc_alloy_A_delta_B(delta, ncell_x=2, minimize=False, datafile=None, spe
     if comm is not None:
         comm.Barrier()
 
-    # Setup a new instance of BccBinary with the perturbed SNAP potential
-    bcc_alloy_A_delta_B = BccBinary(datafile=datafile,
+    # Setup a new instance of BCC_BINARY with the perturbed SNAP potential
+    bcc_alloy_A_delta_B = BCC_BINARY(datafile=datafile,
                                     comm=comm,
                                     logname='bcc_alloy_tmp.log',
                                     minimize_algo='cg', # 'sd', 'fire', 'hftn', 'cg'

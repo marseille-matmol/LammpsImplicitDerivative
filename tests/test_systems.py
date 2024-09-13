@@ -99,7 +99,7 @@ def test_hcp_box_relax(comm):
     hcp_W_box_relax = HCP(alat=alat_hcp, ncell_x=1,
                           minimize=True, fix_box_relax=True, minimize_maxiter=1000, box_relax_iso=False,
                           data_path='./refs/', snapcoeff_filename='W.snapcoeff',
-                          verbose=True, comm=comm)
+                          verbose=False, comm=comm)
 
     np.testing.assert_allclose(hcp_W_box_relax.energy, -20.554598258667664)
     np.testing.assert_allclose(hcp_W_box_relax.cell[0, 0], 2.8054015915512567)

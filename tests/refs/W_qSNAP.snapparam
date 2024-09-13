@@ -1,0 +1,13 @@
+# SNAP parameters for W
+# Generated on July 24, 2024, 16:46 by snap.py, lammps_implicit_der
+
+quadraticflag 1
+rcutfac 4.812302818
+twojmax 8
+rfac0 0.99363
+rmin0 0.0
+bzeroflag 1
+wselfallflag 0
+chemflag 0
+bnormflag 0
+switchinnerflag 0

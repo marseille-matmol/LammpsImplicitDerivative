@@ -99,7 +99,7 @@ def test_D_dD_binary(comm):
         pytest.skip("Test is disabled when run with MPI. Wrong species generation.")
 
     bcc_binary = BCC_BINARY(alat=3.13, ncell_x=2, minimize=True, logname=None,
-                           data_path='./refs/', snapcoeff_filename='NiMo.snapcoeff', verbose=False, comm=comm)
+                            data_path='./refs/', snapcoeff_filename='NiMo.snapcoeff', verbose=False, comm=comm)
 
     dU_dTheta_desired = np.load('./refs/test_system_props_dU_dTheta_binary.npy')
     mixed_hessian_desired = np.load('./refs/test_system_props_mixed_hessian_binary.npy')
@@ -115,6 +115,17 @@ def test_scatter_coord(comm):
 
 
 def test_forces(comm):
+
+    bcc = BCC_VACANCY(alat=2.0, ncell_x=2, minimize=False, logname=None, data_path='./refs/',
+                      snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
+
+    force_array = bcc.compute_forces()
+
+    np.testing.assert_allclose(np.max(force_array), 25.543912547402897)
+    np.testing.assert_allclose(np.sum(np.abs(force_array)), 613.0539011376685)
+
+
+def test_forces_dX(comm):
 
     bcc_system_tmp = BCC(alat=3.163, ncell_x=1, minimize=False, logname=None,
                          data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
@@ -170,3 +181,14 @@ def test_pressure(comm):
     bcc_system.get_pressure_from_virial()
 
     np.testing.assert_allclose(bcc_system.pressure, 13.510282306996439)
+
+
+def test_qSNAP(comm):
+
+    bcc_system_qSNAP = BCC(alat=3.163, ncell_x=2, minimize=False, logname=None,
+                           data_path='./refs/', snapcoeff_filename='W_qSNAP.snapcoeff', verbose=False, comm=comm)
+
+    np.testing.assert_allclose(bcc_system_qSNAP.energy, -133.8171661106873)
+    np.testing.assert_equal(len(bcc_system_qSNAP.pot.Theta_dict['W']['Theta']), 1595)
+    np.testing.assert_equal(bcc_system_qSNAP.Ndesc, 1595)
+    np.testing.assert_equal(bcc_system_qSNAP.pot.snapparam_dict['quadraticflag'], 1)

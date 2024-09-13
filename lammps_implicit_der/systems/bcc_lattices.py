@@ -145,7 +145,7 @@ class BCC_VACANCY(LammpsImplicitDer):
                  ncell_z=None,
                  alat=3.1855,
                  del_coord=None,
-                 id_del=None,
+                 del_id=None,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -159,8 +159,8 @@ class BCC_VACANCY(LammpsImplicitDer):
         if self.snapcoeff_filename is None:
             raise RuntimeError('snapcoeff_filename must be specified for BCC_VACANCY')
 
-        if del_coord is not None and id_del is not None:
-            raise RuntimeError('BCC_VACANCY: id_del and del_coord cannot be both specified')
+        if del_coord is not None and del_id is not None:
+            raise RuntimeError('BCC_VACANCY: del_id and del_coord cannot be both specified')
 
 
         # Load the SNAP potential instance
@@ -188,15 +188,15 @@ class BCC_VACANCY(LammpsImplicitDer):
         if del_coord is not None:
             assert len(del_coord) == 3
             X_3D = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).reshape(-1, 3)
-            id_del = np.argmin(np.linalg.norm(X_3D-del_coord, axis=1))+1
+            del_id = np.argmin(np.linalg.norm(X_3D-del_coord, axis=1))+1
         else:
-            id_del = 10
+            del_id = 1
 
-        self.id_del = id_del
+        self.del_id = del_id
         self.lmp_commands_string(f"""
         # delete one atom
         # Create a group called 'del' with the atom to be deleted
-        group del id {id_del}
+        group del id {del_id}
         delete_atoms group del
         """)
 
@@ -215,7 +215,7 @@ class BCC_BINARY_VACANCY(LammpsImplicitDer):
                  alat=3.13,
                  custom_create_script=None,
                  specie_B_concentration=0.5,
-                 id_del=10,
+                 del_id=10,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -257,7 +257,7 @@ class BCC_BINARY_VACANCY(LammpsImplicitDer):
                 set group all type/fraction 2 {specie_B_concentration} 12393
                 # delete one atom
                 # Create a group called 'del' with the atom to be deleted
-                group del id {id_del}
+                group del id {del_id}
                 delete_atoms group del
                 """)
             else:

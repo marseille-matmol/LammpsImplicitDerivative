@@ -6,7 +6,7 @@ we do not need to store position or the impl. der. matrix for these tests in con
 import pytest
 import numpy as np
 
-from lammps_implicit_der.systems import BCC_VACANCY
+from lammps_implicit_der.systems import BCC_VACANCY, HCP
 
 # To save time, compute the BCC_VACANCY object only once
 @pytest.fixture(scope="module")
@@ -55,3 +55,37 @@ def test_impl_der_hom_iso(bcc_vacancy, bcc_vacancy_perturb):
     np.testing.assert_allclose(Strain_true, Strain_true_desired, atol=1e-8)
     np.testing.assert_allclose(volume_pred, volume_pred_desired, atol=1e-8)
     np.testing.assert_allclose(Strain_pred, Strain_pred_desired, atol=1e-8)
+
+
+def test_impl_der_hom_iso_hcp(comm):
+
+    alat_hcp = 2.89082627
+
+    hcp_W = HCP(alat=alat_hcp, ncell_x=1,
+                minimize=True, fix_box_relax=False, logname=None,
+                data_path='./refs/', snapcoeff_filename='W.snapcoeff',
+                verbose=False, comm=comm)
+
+    hcp_W_perturb = HCP(alat=alat_hcp, ncell_x=1,
+                        minimize=True, fix_box_relax=False, logname=None,
+                        data_path='./refs/', snapcoeff_filename='W_perturb2.snapcoeff', snapparam_filename='W.snapparam',
+                        verbose=False, comm=comm)
+
+    cell0 = hcp_W.cell.copy()
+    volume0 = hcp_W.volume
+
+    dTheta = hcp_W_perturb.Theta - hcp_W.Theta
+
+    dStrain_dTheta = hcp_W.implicit_derivative_hom_iso()
+
+    Strain_pred = dTheta @ dStrain_dTheta
+    cell_pred = cell0 @ (np.eye(3) * (1.0 + Strain_pred))
+    volume_pred = np.linalg.det(cell_pred)
+
+    Strain_pred_desired = 0.00011244071585598834
+    volume0_desired = 68.32992931626956
+    volume_pred_desired = 68.35298110653517
+
+    np.testing.assert_allclose(Strain_pred, Strain_pred_desired, atol=1e-8)
+    np.testing.assert_allclose(volume0, volume0_desired, atol=1e-8)
+    np.testing.assert_allclose(volume_pred, volume_pred_desired, atol=1e-8)

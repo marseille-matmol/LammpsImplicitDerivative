@@ -593,14 +593,14 @@ class LammpsImplicitDer:
         Evaluate forces for given position
         Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
         """
-        # update positions
-        X_tmp = self.X_coord.copy() #+ alpha * dX_vector.flatten()
-        if dX_vector is not None:
-            X_tmp += alpha * dX_vector.flatten()
 
-        # send new positions to LAMMPS
-        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_tmp))
-        self.lmp.command("run 0")
+        if dX_vector is not None:
+            # update positions
+            X_tmp = self.X_coord.copy() #+ alpha * dX_vector.flatten()
+            X_tmp += alpha * dX_vector.flatten()
+            # send new positions to LAMMPS
+            self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_tmp))
+            self.lmp.command("run 0")
 
         self.force_call_counter += 1
 

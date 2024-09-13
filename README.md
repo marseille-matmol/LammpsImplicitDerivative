@@ -1,6 +1,6 @@
 # Implicit differentiation with LAMMPS
 
-Compute the implicit derivative $\nabla_{\mathbf{\Theta}}\mathbf{X}^*$ of stationary atomic minima positions $\mathbf{X}^*$ with respect to interatomic potential parameters $\mathbf{\Theta}$ with LAMMPS.
+Implicit differentiation of stationary atomic minima positions with respect to interatomic potential parameters with LAMMPS.
 
 ![Implicit Diff](examples/images/implicit_diff.png)
 

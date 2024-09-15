@@ -8,7 +8,7 @@ import numpy as np
 import datetime
 
 # local imports
-from ..tools.utils import mpi_print
+from ..tools.utils import mpi_print, get_default_data_path
 
 
 class SNAP():
@@ -73,9 +73,7 @@ class SNAP():
                    ):
 
         if data_path is None:
-            script_path = os.path.abspath(__file__)
-            script_dir = os.path.dirname(script_path)
-            data_path = os.path.join(script_dir, 'data_files')
+            data_path = get_default_data_path()
 
         if snapcoeff_filename is None:
             raise RuntimeError('snapcoeff_filename must be provided')

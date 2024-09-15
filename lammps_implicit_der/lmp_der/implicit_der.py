@@ -233,8 +233,8 @@ class LammpsImplicitDer:
         mpi_print(' '.join(self.cmdargs)+'\n', verbose=self.verbose, comm=self.comm)
 
     def print_system_info(self):
-        mpi_print(f'Number of atoms: {self.Natom}, largest force value: {np.abs(self.f0).max():.3e}, '
-                  f'force norm: {np.linalg.norm(self.f0):.3e}', verbose=self.verbose, comm=self.comm)
+        mpi_print(f'Number of atoms: {self.Natom}, largest force value: {np.abs(self.force0).max():.3e}, '
+                  f'force norm: {np.linalg.norm(self.force0):.3e}', verbose=self.verbose, comm=self.comm)
 
     def to_dict(self):
         """Return some of the object attributes as a dictionary. EXPERIMENTAL."""
@@ -391,20 +391,41 @@ class LammpsImplicitDer:
 
         mpi_print(self.pot, verbose=self.verbose, comm=self.comm)
 
-    def scatter_coord(self, X_coord=None):
+    def scatter_coord(self, X_coord=None, verbose=False):
         """
         Send the coordinates to LAMMPS
+
+        Parameters
+        ----------
+
+        X_coord : numpy array, optional
+            Coordinates to scatter. If None, the internal coordinates self.X_coord are used.
+
+        verbose : bool, optional
+            Print the scatter message as a comment to lmp_cmd_filename.
         """
-        if X_coord is None:
-            X_coord = self.X_coord.copy()
+
+        if X_coord is not None:
+            X_scatter = X_coord
         else:
-            self.X_coord = X_coord
+            X_scatter = self.X_coord
 
         try:
-            self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_coord))
+            self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_scatter))
             self.lmp.command("run 0")
+
+            if verbose:
+                self.lmp_commands_string("# Scattered X_coord to LAMMPS")
+
         except Exception as e:
             mpi_print(f'Error in scatter_coord: {e}', verbose=self.verbose, comm=self.comm)
+
+    def gather_coord(self):
+        """Gather the coordinates from LAMMPS and store them internally in self.X_coord.
+        Minimum image convention is applied automatically to self.X_coord.
+        """
+
+        self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
 
     @measure_runtime_and_calls
     def compute_D_dD(self):
@@ -538,16 +559,14 @@ class LammpsImplicitDer:
 
         self.compute_D_dD()
 
-        self.f0 = np.ctypeslib.as_array(self.lmp.gather("f", 1, 3)).flatten()
+        self.force0 = self.compute_forces()
 
         # Gather coordinates and apply minimum image
-        self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
+        self.gather_coord()
+        # Send the coordinates back to LAMMPS with minimum image applied
+        self.scatter_coord()
 
         self.atom_name_list = list(np.array(self.pot.elem_list)[self.species-1])
-
-        # Send the coordinates back to LAMMPS
-        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
-        self.lmp.command("run 0")
 
         # Number of atoms x 3
         self.N = self._X_coord.size
@@ -616,7 +635,7 @@ class LammpsImplicitDer:
             self.gather_virial()
             self.get_pressure_tensor_from_virial()
             self.get_pressure_from_virial()
-            self.X_coord = np.ctypeslib.as_array(self.lmp.gather("x", 1, 3)).flatten()
+            self.gather_coord()
 
     def minimum_image(self, X_vector):
         """Compute the minimum image of a vector X_vector (applying pbc)"""
@@ -640,19 +659,18 @@ class LammpsImplicitDer:
             X_tmp = self.X_coord.copy() #+ alpha * dX_vector.flatten()
             X_tmp += alpha * dX_vector.flatten()
             # send new positions to LAMMPS
-            self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_tmp))
-            self.lmp.command("run 0")
+            self.scatter_coord(X_coord=X_tmp, verbose=False)
 
         self.force_call_counter += 1
 
         # get the forces from LAMMPS: "f" - forces, 1 - type, LAMMPS_DOUBLE, 3 - values per atom
-        force = np.ctypeslib.as_array(self.lmp.gather("f", 1, 3)).flatten()
+        force_array = np.ctypeslib.as_array(self.lmp.gather("f", 1, 3)).flatten()
 
         # Scatter the initial coordinates back to LAMMPS
-        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
-        self.lmp.command("run 0")
+        if dX_vector is not None:
+            self.scatter_coord(verbose=False)
 
-        return force
+        return force_array
 
     @measure_runtime_and_calls
     def compute_hessian(self, dx=0.001, hess_mask=None, store_internally=True):
@@ -824,9 +842,6 @@ class LammpsImplicitDer:
             `calls' : number of force calls during iteration
             `err' : residue from lstsq fit
         """
-        #self.scatter_coord()
-        self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
-
         # Compute the force at the initial position,
         # Analytically, it must be zero, but for numerical reasons, it is small
         dX0 = np.zeros_like(self._X_coord)
@@ -931,7 +946,7 @@ class LammpsImplicitDer:
                 mpi_print(f'{"Parameter index idesc":>30}: {idesc:3d}', comm=self.comm)
 
             # reset the positions to the initial minimum configuration
-            self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(self._X_coord))
+            self.scatter_coord(verbose=False)
 
             # count the number of force calls as the number of time steps
             self.lmp.command("reset_timestep 0")

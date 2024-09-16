@@ -787,15 +787,50 @@ class LammpsImplicitDer:
                             hess_mask=None):
         """A wrapper for implicit derivative calculation
 
-        Returns
-        -------
+        General expression for the implicit derivative:
+        impl_der = - mixed_hessian @ pseudoinverse(position_hessian)
 
-        min_style : str
-            Minimization algorithm for implicit derivative. Applies to the energy method only.
+        Parameters
+        ----------
+
+        method: str
+            Method for implicit derivative calculation.
+            Options:
+                - inverse: straightforward Moore-Penrose inverse of the Hessian matrix, `np.linalg.pinv()`
+                - dense: pseudoinverse from the system of linear equations, `np.linalg.solve(hessian, mixed_hessian)`
+                - sparse: sparse linear method, solve for each potential parameter $\Theta_l$ separately
+                - energy: constraint energy minimization in LAMMPS with additional force and energy terms
+                          that correspond to a given parameter $\Theta_l$
+
+        min_style: str
+            LAMMPS minimization algorithm. Applies to the energy method only.
             Options: fire, cg, sd, htfn
 
-        dX_dTheta : numpy array
-            Implicit derivative. Shape: (Ndesc, 3Natom)
+        adaptive_alpha: bool
+            Adaptive scaling factor alpha for implicit derivative calculation with sparse and energy methods.
+
+        alpha: float
+            Scaling factor alpha for implicit derivative calculation with sparse and energy methods.
+            If adaptive_alpha is True, alpha is the prefactor for the adaptive scaling.
+
+        atol: float
+            Absolute tolerance for implicit derivative calculation with sparse method for the lgmres solver.
+
+        ftol: float
+            Force tolerance for implicit derivative calculation with energy method.
+
+        maxiter: int
+            Maximum number of iterations for implicit derivative calculation with sparse and energy methods.
+
+        hess_mask: numpy array
+            Mask for the Hessian calculation. Currently, applies only to the dense method.
+            None for the full Hessian. Can be generated with tools.generate_masks() utility.
+            Shape: (3 * Natom,)
+
+        Returns
+        -------
+        dX_dTheta: numpy array
+            Implicit derivative. Shape: (Ndesc, 3 * Natom)
         """
 
         if self.mixed_hessian is None:
@@ -839,28 +874,8 @@ class LammpsImplicitDer:
                                    maxiter=100,
                                    adaptive_alpha=True):
         """
-        Evaluation of implicit position derivative
-        via sparse linear methods.
-
-        Parameters
-        ----------
-        alpha : float, optional
-            Numerical parameter in expansion [F(X+alpha*dX_dTheta)-F(X)]/alpha->hessian.dX_dTheta,
-            exact as alpha->0, but too small causes finite difference errors.
-            Default 0.05
-        atol : float, optional
-            tolerance for least squares minimization, by default 1e-5
-        maxiter : int, optional
-            maximum iteration for , by default 100
-        return_values : bool, optional
-            return value or only store internally, by default True
-
-        Returns
-        -------
-        res_dict: dictionary
-            `dX_dTheta' : numpy array (Ndesc,3N) implicit derivative
-            `calls' : number of force calls during iteration
-            `err' : residue from lstsq fit
+        Evaluation of implicit position derivative via sparse linear methods.
+        See the description of the parameters in the implicit_derivative() method.
         """
         # Compute the force at the initial position,
         # Analytically, it must be zero, but for numerical reasons, it is small

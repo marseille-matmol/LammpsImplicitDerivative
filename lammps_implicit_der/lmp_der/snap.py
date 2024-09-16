@@ -202,6 +202,12 @@ class SNAP():
             else:
                 raise RuntimeError(f'File {snapcoeff_path} already exists. '
                                    'To overwrite, set overwrite=True.')
+        if os.path.exists(snapparam_path):
+            if overwrite:
+                mpi_print(f'Overwriting {snapparam_path}', verbose=verbose, comm=self.comm)
+            else:
+                raise RuntimeError(f'File {snapparam_path} already exists. '
+                                   'To overwrite, set overwrite=True.')
 
         with open(snapcoeff_path, 'w') as f:
             f.write(f"# SNAP coeffs for {' '.join(self.elem_list)}\n")

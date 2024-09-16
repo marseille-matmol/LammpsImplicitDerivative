@@ -200,6 +200,7 @@ class BCC_VACANCY(LammpsImplicitDer):
 
         del_coord : list
             Coordinates of the atom to be deleted. If None, del_id must be specified.
+            Shape: (3,)
 
         del_id : int
             ID of the atom to be deleted. If None, del_coord must be specified.
@@ -408,7 +409,10 @@ class BCC_SIA(LammpsImplicitDer):
         """)
 
         if SIA_pos is None:
-            SIA_pos = 0.25 + origin_pos
+            SIA_pos_x = 0.25 + origin_pos
+            SIA_pos = np.array([SIA_pos_x, SIA_pos_x, SIA_pos_x])
+        self.SIA_pos_lat_units = np.array(SIA_pos)
+        SIA_pos_str = ' '.join(map(str, SIA_pos))
 
         # Setup the coordinates from scratch
         if self.datafile is None:
@@ -422,7 +426,7 @@ class BCC_SIA(LammpsImplicitDer):
             create_atoms 1 region C
 
             # create a self-interstitial atom
-            create_atoms 1 single {SIA_pos} {SIA_pos} {SIA_pos} units lattice
+            create_atoms 1 single {SIA_pos_str} units lattice
             """)
 
         # Read from a datafile

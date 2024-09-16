@@ -2,11 +2,9 @@
 """
 Plotting tools.
 """
-
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-
 
 # Set common figure parameters
 plotparams = {'figure.figsize': (10, 8),
@@ -42,7 +40,6 @@ def plot_coords(axes, X_coord, color_legend=None, **kwargs):
         raise ValueError('X_coord must be 2D')
     if X_coord.shape[1] != 3:
         raise ValueError('X_coord must have shape (N, 3)')
-
 
     # Check the size of axes
     if len(axes) != 3:

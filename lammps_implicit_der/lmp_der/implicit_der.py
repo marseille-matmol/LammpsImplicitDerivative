@@ -188,12 +188,13 @@ class LammpsImplicitDer:
         self.print_run_info()
         # Initialize LAMMPS simulation
         self.lmp = lammps(cmdargs=self.cmdargs, comm=self.comm)
+        self.check_lmp_cmd_file()
         self.lmp_commands_string("""
-        # Reset simulation state
+        # INITIALIZATION
         clear
         # Configure how atoms are mapped to store and access
         atom_modify map array sort 0 0.0
-        # metal units: Angstroms, eV, ps, etc.
+        # metal units: lenfth: Angstroms, energy: eV, time: ps, force: eV/Angstrom, temperture: K
         units metal
         """)
 
@@ -224,7 +225,22 @@ class LammpsImplicitDer:
 
         if self.dump_lmp_cmd and self.rank == 0:
             with open(self.lmp_cmd_filename, 'a') as f:
-                f.write(commands+'\n')
+                # Split a multiline string into a list of strings
+                for line in commands.splitlines():
+                    f.write(line.strip()+'\n')
+
+    def check_lmp_cmd_file(self):
+        """Check if lmp_cmd_filename exists, rename the old one if necessary"""
+
+        if self.dump_lmp_cmd and self.rank == 0:
+            if os.path.exists(self.lmp_cmd_filename):
+                if self.verbose:
+                    mpi_print(f'WARNING: {self.lmp_cmd_filename} already exists, renaming it to {self.lmp_cmd_filename}.old', comm=self.comm)
+                os.rename(self.lmp_cmd_filename, self.lmp_cmd_filename + '.old')
+
+            # Touch lmp_cmd_filename
+            with open(self.lmp_cmd_filename, 'w') as f:
+                pass
 
     def print_run_info(self):
         mpi_print('\n'+'-'*80, comm=self.comm, verbose=self.verbose)
@@ -311,7 +327,7 @@ class LammpsImplicitDer:
         mpi_print(f'ftol: {ftol}, maxiter: {maxiter}, maxeval: {maxeval}, algo: {algo}, fix_box_relax: {self.fix_box_relax} \n',
                   verbose=self.verbose, comm=self.comm)
 
-        self.lmp.command("reset_timestep 0")
+        self.lmp_commands_string("reset_timestep 0")
 
         #e0 = self.lmp.get_thermo("pe")
         f0_max, f0_norm = self.lmp.get_thermo("fmax"), self.lmp.get_thermo("fnorm")
@@ -356,7 +372,7 @@ class LammpsImplicitDer:
 
     def write_data(self, filename):
         """Write the current configuration to a data file"""
-        self.lmp.command(f'write_data {filename}')
+        self.lmp_commands_string(f'write_data {filename}')
 
     def setup_snap_potential(self):
         """Set up the potential in LAMMPS
@@ -412,7 +428,7 @@ class LammpsImplicitDer:
 
         try:
             self.lmp.scatter("x", 1, 3, np.ctypeslib.as_ctypes(X_scatter))
-            self.lmp.command("run 0")
+            self.lmp_commands_string("run 0")
 
             if verbose:
                 self.lmp_commands_string("# Scattered X_coord to LAMMPS")
@@ -548,7 +564,7 @@ class LammpsImplicitDer:
         Initial LAMMPS run and initialization of basic properties
         """
 
-        self.lmp.command("run 0")
+        self.lmp_commands_string("run 0")
         self.species = np.ctypeslib.as_array(self.lmp.gather("type", 0, 1)).flatten()
 
         if setup_snap:
@@ -949,10 +965,10 @@ class LammpsImplicitDer:
             self.scatter_coord(verbose=False)
 
             # count the number of force calls as the number of time steps
-            self.lmp.command("reset_timestep 0")
+            self.lmp_commands_string("reset_timestep 0")
 
             # compute the 3N vector of displacements X - X0 taking into account pbc
-            self.lmp.command("compute deltaX all displace/atom")
+            self.lmp_commands_string("compute deltaX all displace/atom")
 
             if adaptive_alpha:
                 alpha_factor = alpha / np.max(np.abs(Cl))

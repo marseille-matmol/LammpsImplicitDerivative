@@ -54,6 +54,7 @@ class BccVacancyConcentration(LammpsImplicitDer):
                  alat=3.1855,
                  vac_conc=0.2,
                  *args, **kwargs):
+        """BCC lattice with vacancies, with a specified vacancy concentration."""
 
         super().__init__(*args, **kwargs)
 

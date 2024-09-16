@@ -152,7 +152,7 @@ def test_from_data(comm):
         with open('test.data', 'w') as f:
             f.write(data)
 
-    system = FromData(datafile='test.data', data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False)
+    system = FromData(datafile='test.data', data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     if comm is not None:
         comm.Barrier()
@@ -177,7 +177,7 @@ def test_from_data_input_script(comm):
         mass * 184.
     """
 
-    system = FromData(input_script=input_script, data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False)
+    system = FromData(input_script=input_script, data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     np.testing.assert_allclose(system.energy, -22.258870715899455)
     np.testing.assert_equal(system.Natom, 4)

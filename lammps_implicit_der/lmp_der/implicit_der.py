@@ -236,7 +236,11 @@ class LammpsImplicitDer:
             if os.path.exists(self.lmp_cmd_filename):
                 if self.verbose:
                     mpi_print(f'WARNING: {self.lmp_cmd_filename} already exists, renaming it to {self.lmp_cmd_filename}.old', comm=self.comm)
-                os.rename(self.lmp_cmd_filename, self.lmp_cmd_filename + '.old')
+                try:
+                    os.rename(self.lmp_cmd_filename, f'{self.lmp_cmd_filename}.old')
+                except FileNotFoundError as e:
+                    mpi_print(f'Error in check_lmp_cmd_file: {e}', comm=self.comm)
+                    mpi_print('This might happen when a system is initialized with an MPI communicator, but ran with mpirun.', comm=self.comm)
 
             # Touch lmp_cmd_filename
             with open(self.lmp_cmd_filename, 'w') as f:

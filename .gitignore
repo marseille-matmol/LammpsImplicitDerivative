@@ -1,6 +1,9 @@
 # Vim 
 *.swp
 
+# LAMMPS commands
+*commands.lammps*
+
 # 
 .DS_Store
 

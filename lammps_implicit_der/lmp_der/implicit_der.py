@@ -1256,7 +1256,10 @@ class LammpsImplicitDer:
         virial_S_prod = np.einsum('lm, mn -> ln', virial_basis_prod, S_matrix_inv)
 
         # The final expression dC/dTheta = - sum_{m=1}^{6} virial_S_prod_m * E_m
-        dCell_dTheta = - np.einsum('lm, mab -> lab', virial_S_prod[:, :], basis_E[:, :, :])
+        # DIVIDE by weights for m
+        virial_S_prod_weighted = np.einsum('lm, m -> lm', virial_S_prod, 1.0 / weights)
+        #dCell_dTheta = - np.einsum('lm, mab -> lab', virial_S_prod[:, :], basis_E[:, :, :])
+        dCell_dTheta = - np.einsum('lm, mab -> lab', virial_S_prod_weighted[:, :], basis_E[:, :, :])
 
         return dCell_dTheta
 

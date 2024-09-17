@@ -775,11 +775,10 @@ class LammpsImplicitDer:
 
         return hessian
 
-    @measure_runtime_and_calls
     def implicit_derivative(self,
                             method='energy',
                             min_style='fire',
-                            alpha0=0.5,
+                            alpha0=1e-2,
                             adaptive_alpha=True,
                             atol=1e-5,
                             ftol=1e-8,
@@ -817,7 +816,7 @@ class LammpsImplicitDer:
             Absolute tolerance for implicit derivative calculation with sparse method for the lgmres solver.
 
         ftol: float
-            Force tolerance for implicit derivative calculation with energy method.
+            Force tolerance for constrained LAMMPS minimization with energy method.
 
         maxiter: int
             Maximum number of iterations for implicit derivative calculation with sparse and energy methods.
@@ -868,6 +867,7 @@ class LammpsImplicitDer:
 
         return dX_dTheta
 
+    @measure_runtime_and_calls
     def implicit_derivative_sparse(self,
                                    alpha0=0.01,
                                    atol=1e-5,
@@ -909,6 +909,7 @@ class LammpsImplicitDer:
 
         return dX_dTheta
 
+    @measure_runtime_and_calls
     def implicit_derivative_energy(self,
                                    alpha0=0.5,
                                    adaptive_alpha=True,
@@ -1092,6 +1093,7 @@ class LammpsImplicitDer:
 
         return dX_dTheta
 
+    @measure_runtime_and_calls
     def implicit_derivative_inverse(self):
         """Compute implicit derivative from Hessian inverse
 
@@ -1111,6 +1113,7 @@ class LammpsImplicitDer:
 
         return dX_dTheta
 
+    @measure_runtime_and_calls
     def implicit_derivative_dense(self, hessian=None, hess_mask=None):
         """Compute implicit derivative from Hessian inverse
 

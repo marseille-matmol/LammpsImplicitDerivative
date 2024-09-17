@@ -668,16 +668,16 @@ class LammpsImplicitDer:
         return X_vector - (correction * self.periodicity).flatten()
 
     @measure_runtime_and_calls
-    def compute_forces(self, dX_vector=None, alpha=0.05):
+    def compute_forces(self, dX_vector=None, alpha0=0.05):
         """
         Evaluate forces for given position
-        Uses [F(X+alpha * dX_dTheta)-F(X) ] /alpha -> hessian.dX_dTheta as alpha -> 0
+        Uses [F(X+alpha0 * dX_dTheta)-F(X) ] /alpha0 -> hessian.dX_dTheta as alpha0 -> 0
         """
 
         if dX_vector is not None:
             # update positions
-            X_tmp = self.X_coord.copy() #+ alpha * dX_vector.flatten()
-            X_tmp += alpha * dX_vector.flatten()
+            X_tmp = self.X_coord.copy() #+ alpha0 * dX_vector.flatten()
+            X_tmp += alpha0 * dX_vector.flatten()
             # send new positions to LAMMPS
             self.scatter_coord(X_coord=X_tmp, verbose=False)
 
@@ -749,16 +749,16 @@ class LammpsImplicitDer:
             # displace posotion i by dx
             dX_vector[i] = dx
 
-            # compute forces: F(X + alpha * dX_dTheta)
-            hessian[i, :] = -self.compute_forces(dX_vector=dX_vector, alpha=1.0)
+            # compute forces: F(X + alpha0 * dX_dTheta)
+            hessian[i, :] = -self.compute_forces(dX_vector=dX_vector, alpha0=1.0)
             # Memory-efficient
-            # hessian[i,:] = -self.compute_forces(dX_vector, alpha=1.0)[self.mask]
+            # hessian[i,:] = -self.compute_forces(dX_vector, alpha0=1.0)[self.mask]
 
-            # compute forces: F(X - alpha * dX_dTheta) and subtract
+            # compute forces: F(X - alpha0 * dX_dTheta) and subtract
             dX_vector[i] = -dx
-            hessian[i, :] -= -self.compute_forces(dX_vector=dX_vector, alpha=1.0)
+            hessian[i, :] -= -self.compute_forces(dX_vector=dX_vector, alpha0=1.0)
             # Memory-efficient
-            # hessian[i,:] -= -self.compute_forces(dX_vector, alpha=1.0)[self.mask]
+            # hessian[i,:] -= -self.compute_forces(dX_vector, alpha0=1.0)[self.mask]
 
             dX_vector[i] = 0.0
 
@@ -779,7 +779,7 @@ class LammpsImplicitDer:
     def implicit_derivative(self,
                             method='energy',
                             min_style='fire',
-                            alpha=0.5,
+                            alpha0=0.5,
                             adaptive_alpha=True,
                             atol=1e-5,
                             ftol=1e-8,
@@ -807,11 +807,11 @@ class LammpsImplicitDer:
             Options: fire, cg, sd, htfn
 
         adaptive_alpha: bool
-            Adaptive scaling factor alpha for implicit derivative calculation with sparse and energy methods.
+            Adaptive scaling factor alpha0 for implicit derivative calculation with sparse and energy methods.
 
-        alpha: float
-            Scaling factor alpha for implicit derivative calculation with sparse and energy methods.
-            If adaptive_alpha is True, alpha is the prefactor for the adaptive scaling.
+        alpha0: float
+            Scaling factor alpha0 for implicit derivative calculation with sparse and energy methods.
+            If adaptive_alpha is True, alpha0 is the prefactor for the adaptive scaling.
 
         atol: float
             Absolute tolerance for implicit derivative calculation with sparse method for the lgmres solver.
@@ -840,14 +840,14 @@ class LammpsImplicitDer:
 
         # TODO: adjust sparse return format similarly to energy
         if method == 'energy':
-            dX_dTheta = self.implicit_derivative_energy(alpha=alpha,
+            dX_dTheta = self.implicit_derivative_energy(alpha0=alpha0,
                                                         adaptive_alpha=adaptive_alpha,
                                                         ftol=ftol,
                                                         maxiter=maxiter,
                                                         min_style=min_style)
 
         elif method == 'sparse':
-            dX_dTheta = self.implicit_derivative_sparse(alpha=alpha,
+            dX_dTheta = self.implicit_derivative_sparse(alpha0=alpha0,
                                                         adaptive_alpha=adaptive_alpha,
                                                         atol=atol,
                                                         maxiter=maxiter)
@@ -869,7 +869,7 @@ class LammpsImplicitDer:
         return dX_dTheta
 
     def implicit_derivative_sparse(self,
-                                   alpha=0.01,
+                                   alpha0=0.01,
                                    atol=1e-5,
                                    maxiter=100,
                                    adaptive_alpha=True):
@@ -895,12 +895,12 @@ class LammpsImplicitDer:
 
             # determine the alpha_factor
             if adaptive_alpha:
-                alpha_factor = alpha / np.max(np.abs(Cl))
+                alpha_factor = alpha0 / np.max(np.abs(Cl))
             else:
-                alpha_factor = alpha
+                alpha_factor = alpha0
 
             # define linear operator with matrix-vector product matvec()
-            matvec = lambda dX: (F0-self.compute_forces(dX_vector=dX, alpha=alpha_factor)) / alpha_factor
+            matvec = lambda dX: (F0-self.compute_forces(dX_vector=dX, alpha0=alpha_factor)) / alpha_factor
             linop = LinearOperator((self.N, self.N), matvec=matvec, rmatvec=matvec)
 
             # perform iterative linear solution routine LGMRES: Ax = b, solve for x
@@ -910,7 +910,7 @@ class LammpsImplicitDer:
         return dX_dTheta
 
     def implicit_derivative_energy(self,
-                                   alpha=0.5,
+                                   alpha0=0.5,
                                    adaptive_alpha=True,
                                    min_style='fire',
                                    ftol=1e-10,
@@ -920,9 +920,9 @@ class LammpsImplicitDer:
 
         Parameters
         ----------
-        alpha : float, optional
-            Numerical parameter in expansion [F(X+alpha*dX_dTheta)-F(X)]/alpha->hessian.dX_dTheta,
-            exact as alpha->0, but too small causes finite difference errors.
+        alpha0 : float, optional
+            Numerical parameter in expansion [F(X+alpha0*dX_dTheta)-F(X)]/alpha0->hessian.dX_dTheta,
+            exact as alpha0->0, but too small causes finite difference errors.
             Default 0.01 (0.5 for adaptive)
         ftol : float, optional
             force tolerance for  minimization, by default 1e-10
@@ -937,9 +937,9 @@ class LammpsImplicitDer:
         # declare an array of size N x 3 to be stored in the simulation
         # fix x all ... : add per atom property "x" to all atoms
         # "d_" means it is a float
-        # alphaCl = alpha * d/dT_l (dU/dX), N x 3 vector
-        # alphaClx = alpha * d/dT_l (dU/dx), N vector
-        # alphaCly = alpha * d/dT_l (dU/dy)
+        # alphaCl = alpha0 * d/dT_l (dU/dX), N x 3 vector
+        # alphaClx = alpha0 * d/dT_l (dU/dx), N vector
+        # alphaCly = alpha0 * d/dT_l (dU/dy)
         # The alphaClx, alphaCly, and alphaClz names are defined here
         self.lmp_commands_string(f"""
             fix mixedHessianRow all property/atom d_alphaClx d_alphaCly d_alphaClz
@@ -990,9 +990,9 @@ class LammpsImplicitDer:
             self.lmp_commands_string("compute deltaX all displace/atom")
 
             if adaptive_alpha:
-                alpha_factor = alpha / np.max(np.abs(Cl))
+                alpha_factor = alpha0 / np.max(np.abs(Cl))
             else:
-                alpha_factor = alpha
+                alpha_factor = alpha0
 
             self.impl_der_stats['energy']['alpha_array'] += [alpha_factor]
 
@@ -1001,11 +1001,11 @@ class LammpsImplicitDer:
             # The names alphaClx must be the same as above in "fix"
             for i, LAMMPS_aCl_i in enumerate(["d_alphaClx", "d_alphaCly", "d_alphaClz"]):
                 # i is x, y, or z
-                # alpha C_l = alpha * d/dT_l (dU/dX)
+                # alpha0 C_l = alpha0 * d/dT_l (dU/dX)
                 # Take only the i-th component of l-th vector
                 alphaCl_i = Cl.reshape((-1, 3))[:, i].astype(np.float64)
 
-                # Multiply by a small parameter alpha
+                # Multiply by a small parameter alpha0
                 alphaCl_i *= alpha_factor
 
                 # send the vector to LAMMPS
@@ -1016,19 +1016,19 @@ class LammpsImplicitDer:
             # build the energy and force function
             self.lmp_commands_string(f"""
 
-                # Retrieve alpha * C_l
+                # Retrieve alpha0 * C_l
                 compute alphaCl all property/atom d_alphaClx d_alphaCly d_alphaClz
 
-                # Turn alpha * C_l into variables
+                # Turn alpha0 * C_l into variables
                 # c_ means compute
 
-                # alpha * d/dT_l dU/dx
+                # alpha0 * d/dT_l dU/dx
                 variable aClx atom c_alphaCl[1]
 
-                # alpha * d/dT_l dU/dy
+                # alpha0 * d/dT_l dU/dy
                 variable aCly atom c_alphaCl[2]
 
-                # alpha * d/dT_l dU/dz
+                # alpha0 * d/dT_l dU/dz
                 variable aClz atom c_alphaCl[3]
 
                 # additional term in energy:
@@ -1038,7 +1038,7 @@ class LammpsImplicitDer:
                 variable addEnergy atom v_aClx*c_deltaX[1]+v_aCly*c_deltaX[2]+v_aClz*c_deltaX[3]
 
                 # additional force to the system
-                # fx = alpha * d/dT_l dU/dx, etc
+                # fx = alpha0 * d/dT_l dU/dx, etc
                 fix addForce {self.fix_sel} addforce v_aClx v_aCly v_aClz energy v_addEnergy
 
                 # blank iteration to make sure everything works

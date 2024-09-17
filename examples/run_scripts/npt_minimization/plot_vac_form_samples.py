@@ -553,10 +553,10 @@ def plot_formation_energy_error_bins(ax, bin_error_dict, method_plot_dict, fill=
             if spline_fill:
                 dE_grid, bin_16_interp = interpolate(dE_bin_centers, bin_perc_16)
                 dE_grid, bin_84_interp = interpolate(dE_bin_centers, bin_perc_84)
-                ax.fill_between(dE_grid, bin_16_interp, bin_84_interp, alpha=0.2,
+                ax.fill_between(dE_grid, bin_16_interp, bin_84_interp, alpha0=0.2,
                                 color=method_plot_dict['formation'][en_key]['c'])
             else:
-                ax.fill_between(dE_bin_centers, bin_perc_16, bin_perc_84, alpha=0.2,
+                ax.fill_between(dE_bin_centers, bin_perc_16, bin_perc_84, alpha0=0.2,
                                 color=method_plot_dict['formation'][en_key]['c'])
 
     # axes ticklabel font size
@@ -589,9 +589,9 @@ def plot_formation_volume_error_bins(ax, bin_error_dict, method_plot_dict, splin
         if spline_fill:
             dV_grid, bin_16_interp = interpolate(dV_bin_centers, bin_perc_16)
             dV_grid, bin_84_interp = interpolate(dV_bin_centers, bin_perc_84)
-            ax.fill_between(dV_grid, bin_16_interp, bin_84_interp, alpha=0.2, color=method_plot_dict['formation'][vol_key]['c'])
+            ax.fill_between(dV_grid, bin_16_interp, bin_84_interp, alpha0=0.2, color=method_plot_dict['formation'][vol_key]['c'])
         else:
-            ax.fill_between(dV_bin_centers, bin_perc_16, bin_perc_84, color=method_plot_dict['formation'][vol_key]['c'], alpha=0.2)
+            ax.fill_between(dV_bin_centers, bin_perc_16, bin_perc_84, color=method_plot_dict['formation'][vol_key]['c'], alpha0=0.2)
 
     ax.set_xlabel('Formation Volume Change ($\mathrm{\AA}^3$)')
     ax.set_ylabel('Formation Volume Error ($\mathrm{\AA}^3$)')
@@ -630,9 +630,9 @@ def plot_formation_energy_bins(ax, run_dict, bin_energy_dict, method_plot_dict, 
         if spline_fill:
             dE_grid, bin_16_interp = interpolate(E_form_bin_centers, bin_perc_16)
             dE_grid, bin_84_interp = interpolate(E_form_bin_centers, bin_perc_84)
-            ax.fill_between(dE_grid-dE, bin_16_interp-dE, bin_84_interp-dE, alpha=0.2, color=method_plot_dict['formation'][en_key]['c'])
+            ax.fill_between(dE_grid-dE, bin_16_interp-dE, bin_84_interp-dE, alpha0=0.2, color=method_plot_dict['formation'][en_key]['c'])
         else:
-            ax.fill_between(E_form_bin_centers-dE, bin_perc_16-dE, bin_perc_84-dE, color=method_plot_dict['formation'][en_key]['c'], alpha=0.2)
+            ax.fill_between(E_form_bin_centers-dE, bin_perc_16-dE, bin_perc_84-dE, color=method_plot_dict['formation'][en_key]['c'], alpha0=0.2)
 
     if plot_diff:
         ax.set_xlabel('Formation Energy Change (eV)')
@@ -690,9 +690,9 @@ def plot_formation_volume_bins(ax, run_dict, bin_vol_dict, method_plot_dict, fil
             if spline_fill:
                 dV_grid, bin_16_interp = interpolate(atomic_volume, bin_perc_16)
                 dV_grid, bin_84_interp = interpolate(atomic_volume, bin_perc_84)
-                ax.fill_between(dV_grid, bin_16_interp, bin_84_interp, alpha=0.2, color=method_plot_dict['formation'][vol_key]['c'])
+                ax.fill_between(dV_grid, bin_16_interp, bin_84_interp, alpha0=0.2, color=method_plot_dict['formation'][vol_key]['c'])
             else:
-                ax.fill_between(atomic_volume, bin_perc_16, bin_perc_84, color=method_plot_dict['formation'][vol_key]['c'], alpha=0.2)
+                ax.fill_between(atomic_volume, bin_perc_16, bin_perc_84, color=method_plot_dict['formation'][vol_key]['c'], alpha0=0.2)
 
     # x-axis multiple locator of 0.05
     ax.xaxis.set_major_locator(MultipleLocator(0.02))
@@ -715,7 +715,7 @@ def plot_formation_energy_error_average(ax, average_dict, method_plot_dict):
 
         ax.plot(delta_array, form_error_array, **method_plot_dict['formation'][en_key])
         ax.fill_between(delta_array, form_error_array - form_error_std, form_error_array + form_error_std,
-                        color=method_plot_dict['formation'][en_key]['c'], alpha=0.2)
+                        color=method_plot_dict['formation'][en_key]['c'], alpha0=0.2)
 
     ax.set_xlabel('Perturbation Magnitude $\lambda$')
     ax.set_ylabel('Formation Energy Error (eV)')
@@ -749,11 +749,11 @@ def plot_formation_volume_error_average(ax, average_dict, method_plot_dict, av_s
         if spline_fill and vol_key == 'volume_pred':
             dE_grid, form_error_16_interp = interpolate(delta_array, form_error_16)
             dE_grid, form_error_84_interp = interpolate(delta_array, form_error_84)
-            ax.fill_between(dE_grid, form_error_16_interp, form_error_84_interp, alpha=0.2,
+            ax.fill_between(dE_grid, form_error_16_interp, form_error_84_interp, alpha0=0.2,
                             color=method_plot_dict['formation'][vol_key]['c'])
 
         elif vol_key == 'volume_pred':
-            ax.fill_between(delta_array, form_error_16_interp, form_error_84_interp, alpha=0.2,
+            ax.fill_between(delta_array, form_error_16_interp, form_error_84_interp, alpha0=0.2,
                             color=method_plot_dict['formation'][vol_key]['c'])
 
     ax.set_xlabel('Perturbation Magnitude $\lambda$')
@@ -781,10 +781,10 @@ def plot_energy_error_average(ax, average_dict, method_plot_dict):
         form_error_std = np.array([average_dict['error']['formation'][en_key][f'delta_{i}'][1] for i in range(len(delta_array))])
 
         ax.plot(delta_array, pure_error_array, **method_plot_dict['pure'][en_key])
-        #ax.fill_between(delta_array, pure_error_array - pure_error_std, pure_error_array + pure_error_std, color=color_list[i], alpha=0.2)
+        #ax.fill_between(delta_array, pure_error_array - pure_error_std, pure_error_array + pure_error_std, color=color_list[i], alpha0=0.2)
 
         ax.plot(delta_array, vac_error_array, **method_plot_dict['vac'][en_key])
-        #ax.fill_between(delta_array, vac_error_array - vac_error_std, vac_error_array + vac_error_std, color=color_list[i], alpha=0.2)
+        #ax.fill_between(delta_array, vac_error_array - vac_error_std, vac_error_array + vac_error_std, color=color_list[i], alpha0=0.2)
 
     ax.set_ylabel('Energy Error (eV)')
 
@@ -804,10 +804,10 @@ def plot_volume_error_average(ax, average_dict, method_plot_dict):
         vac_error_std = np.array([average_dict['error']['vac'][vol_key][f'delta_{i}'][1] for i in range(len(delta_array))])
 
         ax.plot(delta_array, pure_error_array, **method_plot_dict['pure'][vol_key])
-        ax.fill_between(delta_array, pure_error_array - pure_error_std, pure_error_array + pure_error_std, color=color_list[i], alpha=0.2)
+        ax.fill_between(delta_array, pure_error_array - pure_error_std, pure_error_array + pure_error_std, color=color_list[i], alpha0=0.2)
 
         ax.plot(delta_array, vac_error_array, **method_plot_dict['vac'][vol_key])
-        ax.fill_between(delta_array, vac_error_array - vac_error_std, vac_error_array + vac_error_std, color=color_list[i], alpha=0.2)
+        ax.fill_between(delta_array, vac_error_array - vac_error_std, vac_error_array + vac_error_std, color=color_list[i], alpha0=0.2)
 
     ax.set_ylabel('Volume Error ($\mathrm{\AA}^3$)')
 

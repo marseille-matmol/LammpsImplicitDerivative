@@ -15,7 +15,7 @@ def run_minimization(method,
                      error_tol=1e-5,
                      adaptive_step=True,
                      comm=None,
-                     der_alpha=0.5,
+                     der_alpha0=0.5,
                      der_adaptive_alpha=True,
                      pickle_name=None,
                      minimize_at_iters=True,
@@ -56,7 +56,7 @@ def run_minimization(method,
                                 maxiter=maxiter,
                                 der_method=method,
                                 der_adaptive_alpha=der_adaptive_alpha,
-                                der_alpha=der_alpha,
+                                der_alpha0=der_alpha0,
                                 der_maxiter=500,
                                 pickle_name=pickle_name,
                                 verbosity=3,
@@ -84,7 +84,7 @@ def main():
     adaptive_step = True
     maxiter = 30
 
-    der_alpha = 0.5
+    der_alpha0 = 0.5
     der_adaptive_alpha = True
 
     #minimize_at_iters = False
@@ -93,10 +93,10 @@ def main():
     apply_hard_constraints = True
 
     if method == 'sparse':
-        der_alpha = 1e-4
+        der_alpha0 = 1e-4
         der_adaptive_alpha = False
     elif method == 'energy':
-        der_alpha = 0.5
+        der_alpha0 = 0.5
         der_adaptive_alpha = True
 
     #one_run = False
@@ -109,7 +109,7 @@ def main():
                          step=step,
                          adaptive_step=adaptive_step,
                          maxiter=maxiter,
-                         der_alpha=der_alpha,
+                         der_alpha0=der_alpha0,
                          der_adaptive_alpha=der_adaptive_alpha,
                          minimize_at_iters=minimize_at_iters,
                          apply_hard_constraints=apply_hard_constraints,
@@ -147,7 +147,7 @@ def main():
             run_minimization(method,
                              step=step_iter,
                              maxiter=maxiter,
-                             der_alpha=der_alpha_fix,
+                             der_alpha0=der_alpha_fix,
                              der_adaptive_alpha=der_adaptive_alpha,
                              pickle_name=pickle_name)
 

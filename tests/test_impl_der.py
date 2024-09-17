@@ -81,7 +81,7 @@ def test_impl_der_dense_hess_mask(bcc_vacancy, comm):
 def test_impl_der_sparse(bcc_vacancy):
 
     dX_dTheta_desired = np.load('./refs/test_impl_der_sparse.npy')
-    dX_dTheta = bcc_vacancy.implicit_derivative(method='sparse', alpha=1e-4, adaptive_alpha=False, maxiter=20)
+    dX_dTheta = bcc_vacancy.implicit_derivative(method='sparse', alpha0=1e-4, adaptive_alpha=False, maxiter=20)
 
     dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
 
@@ -91,7 +91,7 @@ def test_impl_der_sparse(bcc_vacancy):
 def test_impl_der_energy_sd(bcc_vacancy):
 
     dX_dTheta_desired = np.load('./refs/test_impl_der_energy_sd.npy')
-    dX_dTheta = bcc_vacancy.implicit_derivative(method='energy', adaptive_alpha=True, min_style='sd', alpha=1e-6, ftol=1e-10, maxiter=200)
+    dX_dTheta = bcc_vacancy.implicit_derivative(method='energy', adaptive_alpha=True, min_style='sd', alpha0=1e-6, ftol=1e-10, maxiter=200)
 
     dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
 
@@ -101,7 +101,7 @@ def test_impl_der_energy_sd(bcc_vacancy):
 def test_impl_der_energy_cg(bcc_vacancy):
 
     dX_dTheta_desired = np.load('./refs/test_impl_der_energy_cg.npy')
-    dX_dTheta = bcc_vacancy.implicit_derivative(method='energy', adaptive_alpha=True, min_style='cg', alpha=1e-6, ftol=1e-10, maxiter=200)
+    dX_dTheta = bcc_vacancy.implicit_derivative(method='energy', adaptive_alpha=True, min_style='cg', alpha0=1e-6, ftol=1e-10, maxiter=200)
 
     dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy.X_coord)]
 
@@ -117,7 +117,7 @@ def test_impl_der_energy_fire(comm):
                                   data_path='./refs/', snapcoeff_filename='W.snapcoeff', verbose=False, comm=comm)
 
     dX_dTheta_desired = np.load('./refs/test_impl_der_energy_fire.npy')
-    dX_dTheta = bcc_vacancy_211.implicit_derivative(method='energy', adaptive_alpha=True, min_style='fire', alpha=1e-3, ftol=1e-7, maxiter=50)
+    dX_dTheta = bcc_vacancy_211.implicit_derivative(method='energy', adaptive_alpha=True, min_style='fire', alpha0=1e-3, ftol=1e-7, maxiter=50)
 
     dX_dTheta = dX_dTheta[:, sort_coord(bcc_vacancy_211.X_coord)]
 
@@ -126,7 +126,7 @@ def test_impl_der_energy_fire(comm):
 
 def test_impl_der_energy_dX_sd(bcc_vacancy, bcc_vacancy_perturb):
 
-    dX_dTheta = bcc_vacancy.implicit_derivative(method='energy', adaptive_alpha=True, min_style='sd', alpha=1e-6, ftol=1e-10, maxiter=200)
+    dX_dTheta = bcc_vacancy.implicit_derivative(method='energy', adaptive_alpha=True, min_style='sd', alpha0=1e-6, ftol=1e-10, maxiter=200)
 
     dTheta = bcc_vacancy_perturb.Theta - bcc_vacancy.Theta
 

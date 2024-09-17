@@ -20,7 +20,7 @@ def run_minimization(param_dict, comm=None):
     der_method = param_dict['implicit_derivative']['method']
     der_min_style = param_dict['implicit_derivative']['min_style']
     der_adaptive_alpha = param_dict['implicit_derivative']['adaptive_alpha']
-    der_alpha = param_dict['implicit_derivative']['alpha']
+    der_alpha0 = param_dict['implicit_derivative']['alpha0']
     der_ftol = param_dict['implicit_derivative']['ftol']
     der_maxiter = param_dict['implicit_derivative']['maxiter']
 
@@ -77,7 +77,7 @@ def run_minimization(param_dict, comm=None):
                                     der_min_style=der_min_style,
                                     der_ftol=der_ftol,
                                     der_adaptive_alpha=der_adaptive_alpha,
-                                    der_alpha=der_alpha,
+                                    der_alpha0=der_alpha0,
                                     der_maxiter=der_maxiter,
                                     verbosity=3,
                                     minimize_at_iters=minimize_at_iters,

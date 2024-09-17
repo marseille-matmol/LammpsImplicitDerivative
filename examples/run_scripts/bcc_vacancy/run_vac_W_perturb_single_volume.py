@@ -31,13 +31,13 @@ def main():
     if method == 'sparse':
         kwargs = {
             'adaptive_alpha': True,
-            'alpha': 0.01,
+            'alpha0': 0.01,
             'maxiter': 100,
         }
     elif method == 'energy':
         kwargs = {
             'adaptive_alpha': True,
-            'alpha': 0.01,
+            'alpha0': 0.01,
         }
 
     # Non-perturbed system

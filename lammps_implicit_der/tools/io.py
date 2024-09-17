@@ -38,7 +38,7 @@ def setup_default_minimization_dict():
         method: energy
         min_style: fire
         adaptive_alpha: True
-        alpha: 0.5
+        alpha0: 0.5
         ftol: 1e-4
         maxiter: 500
         apply_hess_mask: False
@@ -78,7 +78,7 @@ def setup_default_minimization_dict():
         'method': 'energy',
         'min_style': 'fire',
         'adaptive_alpha': True,
-        'alpha': 0.5,
+        'alpha0': 0.5,
         'ftol': 1e-4,
         'maxiter': 500,
         'apply_hess_mask': False,

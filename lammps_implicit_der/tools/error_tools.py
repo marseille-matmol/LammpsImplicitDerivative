@@ -93,7 +93,7 @@ def minimize_loss(sim,
                   der_method='inverse',
                   der_min_style='cg',
                   der_adaptive_alpha=True,
-                  der_alpha=1e-4,
+                  der_alpha0=1e-4,
                   der_ftol=1e-8,
                   der_atol=1e-5,
                   der_maxiter=500,
@@ -150,7 +150,7 @@ def minimize_loss(sim,
     der_ftol : float, optional
         Force tolerance for the implicit derivative, by default 1e-8.
 
-    der_alpha : float, optional
+    der_alpha0 : float, optional
         Finite difference parameter for the implicit derivative, by default 0.001.
 
     der_maxiter : int, optional
@@ -206,7 +206,7 @@ def minimize_loss(sim,
         'der_method': der_method,
         'der_min_style': der_min_style,
         'der_adaptive_alpha': der_adaptive_alpha,
-        'der_alpha': der_alpha,
+        'der_alpha0': der_alpha0,
         'der_ftol': der_ftol,
         'der_atol': der_atol,
         'der_maxiter': der_maxiter,
@@ -260,14 +260,14 @@ def minimize_loss(sim,
         if verbosity > 1:
             mpi_print(f'Computing dX/dTheta using {der_method} method.', comm=comm)
             if der_method == 'energy':
-                mpi_print(f'{der_min_style=}, {der_adaptive_alpha=}, {der_alpha=:.3e}, {der_ftol=:.3e}', comm=comm)
+                mpi_print(f'{der_min_style=}, {der_adaptive_alpha=}, {der_alpha0=:.3e}, {der_ftol=:.3e}', comm=comm)
         with trun.add('dX_dTheta') as t:
 
             try:
                 dX_dTheta = sim.implicit_derivative(
                                             method=der_method,
                                             min_style=der_min_style,
-                                            alpha=der_alpha,
+                                            alpha0=der_alpha0,
                                             adaptive_alpha=der_adaptive_alpha,
                                             maxiter=der_maxiter,
                                             atol=der_atol,

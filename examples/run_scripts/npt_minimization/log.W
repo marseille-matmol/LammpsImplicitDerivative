@@ -144,7 +144,7 @@ Minimization stats:
       -89.060889667491   -89.060889667491   -89.060889667491
   Force two-norm initial, final = 3.9534553e-14 4.305488e-14
   Force max component initial, final = 1.0214052e-14 1.1768364e-14
-  Final line search alpha, max atom move = 1 1.1768364e-14
+  Final line search alpha0, max atom move = 1 1.1768364e-14
   Iterations, force evaluations = 1 2
 
 MPI task timing breakdown:
@@ -288,7 +288,7 @@ Minimization stats:
       -89.060889667491   -89.060889667491   -89.060889667491
   Force two-norm initial, final = 4.305488e-14 3.6520053e-14
   Force max component initial, final = 1.1768364e-14 1.110223e-14
-  Final line search alpha, max atom move = 1 1.110223e-14
+  Final line search alpha0, max atom move = 1 1.110223e-14
   Iterations, force evaluations = 1 2
 
 MPI task timing breakdown:

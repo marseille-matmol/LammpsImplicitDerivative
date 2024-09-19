@@ -89,7 +89,7 @@ class BccVacancyConcentration(LammpsImplicitDer):
             # Tungsten mass
             mass 1 184.0
 
-            # Create *very* large vac concentration (20%!) "123" is a random number seed
+            # Create *very* large vac concentration "123" is a random number seed
             delete_atoms random fraction {vac_conc} yes all box 123
 
             # Setup output

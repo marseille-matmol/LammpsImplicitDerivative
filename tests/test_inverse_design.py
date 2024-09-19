@@ -37,7 +37,7 @@ def test_minimze(bcc_vacancy, bcc_vacancy_target, comm):
                                         X_target,
                                         'W',
                                         comm=comm,
-                                        step=2e-3,
+                                        fixed_step=2e-3,
                                         adaptive_step=True,
                                         maxiter=10,
                                         error_tol=5e-2,

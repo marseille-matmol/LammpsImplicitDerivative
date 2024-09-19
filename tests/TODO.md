@@ -1,4 +1,4 @@
-energy and force calls
-minimum image convention
-descriptor array
-lmp_commands_string and lammps commands
+Inverse design example
+Fix the run_scripts in examples (paths, variable names)
+Create a git tag
+

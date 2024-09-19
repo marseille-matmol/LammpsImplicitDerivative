@@ -90,7 +90,7 @@ def minimize_loss(sim,
                   X_target,
                   sub_element,
                   # Implicit derivative parameters
-                  der_method='inverse',
+                  der_method='dense',
                   der_min_style='cg',
                   der_adaptive_alpha=True,
                   der_alpha0=1e-4,
@@ -100,7 +100,7 @@ def minimize_loss(sim,
                   der_hess_mask=None,
                   # Minimization parameters
                   maxiter=100,
-                  step=0.01,
+                  fixed_step=0.01,
                   adaptive_step=True,
                   error_tol=1e-6,
                   minimize_at_iters=True,
@@ -108,7 +108,6 @@ def minimize_loss(sim,
                   # io parameters
                   verbosity=2,
                   pickle_name='minim_dict.pkl',
-                  binary=False,
                   output_folder='minim_output',
                   comm=None,
                   ):
@@ -126,47 +125,79 @@ def minimize_loss(sim,
     ----------
 
     sim : simulation object
-        Instance of the ImplicitDerivative class (child classes: BCC_VACANCY, DISLO, ...)
+        Instance of the LammpsImplicitDer class (child classes: BCC_VACANCY, DISLO, ...), with initial positions.
+        Warning: the positions will be modified in place.
 
     X_target : numpy array
-        Target positions.
-
-    step : float, optional
-        Gradient descent step size, by default 0.01.
-        If adaptive_step is True, step is ignored.
+        Target positions. Shape: (Natoms, 3).
 
     sub_element : str
         Element name for which the potential parameters will be optimized.
 
-    adaptive_step : bool, optional
-        Use adaptive step size, by default True.
+    der_method : str, optional
+        Method to compute the inhomogeneous implicit derivative.
 
-    error_tol : float, optional
-        Error tolerance for the minimization algorithm, by default 1e-6.
+    der_min_style : str, optional
+        LAMMPS minimization style for the implicit derivative (for the 'energy' method only).
 
-    maxiter : int, optional
-        Maximum number of iterations, by default 100.
-
-    der_ftol : float, optional
-        Force tolerance for the implicit derivative, by default 1e-8.
+    der_adaptive_alpha : bool, optional
+        Adaptive scaling factor alpha0 for implicit derivative calculation with sparse and energy methods.
 
     der_alpha0 : float, optional
-        Finite difference parameter for the implicit derivative, by default 0.001.
+        Scaling factor alpha0 for implicit derivative calculation with sparse and energy methods.
+        If adaptive_alpha is True, alpha0 is the prefactor for the adaptive scaling.
+
+    der_ftol : float, optional
+        Force tolerance for constrained LAMMPS minimization with energy method.
+
+    der_atol : float, optional
+        Absolute tolerance for implicit derivative calculation with sparse method for the lgmres solver.
 
     der_maxiter : int, optional
-        Maximum number of iterations for the implicit derivative, by default 500.
+        Maximum number of iterations for implicit derivative calculation with sparse and energy methods.
+
+    der_hess_mask : numpy array, optional
+        Mask for the Hessian calculation. Currently, applies only to the dense method.
+        None for the full Hessian. Can be generated with tools.generate_masks() utility.
+        Shape: (3 * Natom,)
+
+    maxiter : int, optional
+        Maximum number of iterations for the Loss minimization.
+
+    fixed_step : float, optional
+        Frixed step size for the minimization algorithm.
+
+    adaptive_step: bool, optional
+        Use adaptive step size for Loss minimization. If True, fixed_step is ignored.
+
+    error_tol : float, optional
+        Error tolerance for the Loss minimization algorithm. Stop when the error is below this value.
+
+    minimize_at_iters : bool, optional
+        Perform a LAMMPS minimization at each iteration of the Loss minimization.
+
+    apply_hard_constraints : bool, optional
+        Apply hard constraints during the minimization algorithm. Requires the system to have the A_hard attribute.
 
     verbosity : int, optional
-        Verbosity level, by default 2.
+        Verbosity level. 0 - no output, 1 - minimal output, 2 - full output.
+
+    pickle_name : str, optional
+        Name of the pickle file to store the minimization dictionary.
+
+    output_folder : str, optional
+        Folder to store the output files.
+
+    comm : MPI communicator, optional
 
     Returns
     -------
 
-    X_final : numpy array
-        Final positions.
+    sim : LammpsImplicitDer object
+        Instance of the LammpsImplicitDer class with optimized potential parameters and positions.
 
-    Theta_final : numpy array
-        Final potential parameters.
+    minim_dict : dict
+        Dictionary with the minimization results.
     """
 
     os.makedirs(output_folder, exist_ok=True)
@@ -190,6 +221,10 @@ def minimize_loss(sim,
             raise ValueError('The system does not have hard constraints')
 
         P_matrix = get_projection(sim.A_hard, sim.Ndesc)
+
+    step = fixed_step
+    if adaptive_step:
+        mpi_print('Using adaptive step size. fixed_step will be ignored', comm=comm, verbose=verbosity > 0)
 
     minim_dict = {
         'converged': False,
@@ -309,6 +344,8 @@ def minimize_loss(sim,
             dX_2 -= dX_2.mean(0)
             dot_prod = dX @ dX_2
             step = - dot_prod / (dX**2).sum()
+        else:
+            step = fixed_step
 
         dTheta *= step
         dX *= step
@@ -459,6 +496,7 @@ def minimize_loss(sim,
     minim_dict['loop_completed'] = True
     minim_dict['numiter'] = i
     minim_dict['error_array'] = error_array[:i+1]
+    minim_dict['step_array'] = step_array[:i+1]
 
     minim_dict['X_final'] = min_X
     minim_dict['Theta_final'] = min_Theta

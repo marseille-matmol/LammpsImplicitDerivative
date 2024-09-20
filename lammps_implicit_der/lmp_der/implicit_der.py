@@ -199,13 +199,11 @@ class LammpsImplicitDer:
         """)
 
     def __del__(self):
-        """Destructor. Not finished."""
+        """Destructor"""
         self.lmp.close()
 
     def __str__(self):
-        """
-        Print out the object information.
-        """
+        """Print out the object information."""
 
         out_str = 'LAMMPSImplicitDer object:\n'
         if self.Natom is not None:

@@ -10,6 +10,7 @@ from lammps_implicit_der.systems import SCREW_DISLO
 from lammps_implicit_der.tools.io import setup_default_minimization_dict, load_parameters, print_parameters
 from lammps_implicit_der.tools.generate_masks import generate_mask_dX, generate_mask_radius, plot_mask
 
+
 def run_minimization(param_dict, comm=None):
 
     trun = TimingGroup('Minimize DISLO')
@@ -26,7 +27,7 @@ def run_minimization(param_dict, comm=None):
 
     # Minimization parameters
     maxiter = param_dict['minimization']['maxiter']
-    step = param_dict['minimization']['step']
+    fixed_step = param_dict['minimization']['fixed_step']
     adaptive_step = param_dict['minimization']['adaptive_step']
     error_tol = param_dict['minimization']['error_tol']
     minimize_at_iters = param_dict['minimization']['minimize_at_iters']
@@ -48,23 +49,7 @@ def run_minimization(param_dict, comm=None):
     mpi_print('DISLO start initial relaxation...', comm=comm)
     with trun.add('start init'):
         dislo_start = SCREW_DISLO(snapcoeff_filename=snapcoeff_filename,
-                                 datafile=datafile_path_start,
-                                 sub_element=sub_element,
-                                 fixed_cyl_axis=fixed_cyl_axis,
-                                 fixed_cyl_x1=fixed_cyl_x1,
-                                 fixed_cyl_x2=fixed_cyl_x2,
-                                 fixed_cyl_r=fixed_cyl_r,
-                                 fixed_cyl_lo=fixed_cyl_lo,
-                                 fixed_cyl_hi=fixed_cyl_hi,
-                                 logname='dislo_start.log',
-                                 minimize=True,
-                                 comm=comm,
-                                 verbose=True)
-
-    mpi_print('DISLO target initialization (no relaxation)...', comm=comm)
-    with trun.add('target init'):
-        dislo_target = SCREW_DISLO(snapcoeff_filename=snapcoeff_filename,
-                                  datafile=datafile_path_target,
+                                  datafile=datafile_path_start,
                                   sub_element=sub_element,
                                   fixed_cyl_axis=fixed_cyl_axis,
                                   fixed_cyl_x1=fixed_cyl_x1,
@@ -72,10 +57,26 @@ def run_minimization(param_dict, comm=None):
                                   fixed_cyl_r=fixed_cyl_r,
                                   fixed_cyl_lo=fixed_cyl_lo,
                                   fixed_cyl_hi=fixed_cyl_hi,
-                                  logname='dislo_target.log',
-                                  minimize=False,
+                                  logname='dislo_start.log',
+                                  minimize=True,
                                   comm=comm,
                                   verbose=True)
+
+    mpi_print('DISLO target initialization (no relaxation)...', comm=comm)
+    with trun.add('target init'):
+        dislo_target = SCREW_DISLO(snapcoeff_filename=snapcoeff_filename,
+                                   datafile=datafile_path_target,
+                                   sub_element=sub_element,
+                                   fixed_cyl_axis=fixed_cyl_axis,
+                                   fixed_cyl_x1=fixed_cyl_x1,
+                                   fixed_cyl_x2=fixed_cyl_x2,
+                                   fixed_cyl_r=fixed_cyl_r,
+                                   fixed_cyl_lo=fixed_cyl_lo,
+                                   fixed_cyl_hi=fixed_cyl_hi,
+                                   logname='dislo_target.log',
+                                   minimize=False,
+                                   comm=comm,
+                                   verbose=True)
 
     X_target = dislo_target.X_coord
 
@@ -113,7 +114,7 @@ def run_minimization(param_dict, comm=None):
                                     X_target,
                                     sub_element,
                                     comm=comm,
-                                    step=step,
+                                    fixed_step=fixed_step,
                                     adaptive_step=adaptive_step,
                                     maxiter=maxiter,
                                     error_tol=error_tol,

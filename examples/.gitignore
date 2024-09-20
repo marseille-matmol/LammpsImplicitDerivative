@@ -1,4 +1,6 @@
 *_new*
+*.snapcoeff
+*.snapparam
 *.data
 *.xyz
 *.log

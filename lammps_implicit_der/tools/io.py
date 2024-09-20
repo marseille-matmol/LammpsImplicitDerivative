@@ -64,7 +64,7 @@ def setup_default_minimization_dict():
     }
 
     param_dict['minimization'] = {
-        'step': 1e-3,
+        'fixed_step': 1e-3,
         'minimize_at_iters': True,
         'apply_hard_constraints': False,
         'adaptive_step': True,

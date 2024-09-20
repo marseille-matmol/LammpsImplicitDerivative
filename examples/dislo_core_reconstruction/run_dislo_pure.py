@@ -41,11 +41,11 @@ def run_minimization(param_dict, comm=None):
     mpi_print('DISLO start initial relaxation...', comm=comm)
     with trun.add('start init'):
         dislo_start = DISLO(snapcoeff_filename=snapcoeff_filename,
-                               datafile=datafile_path_start,
-                               logname='dislo_start.log',
-                               minimize=True,
-                               comm=comm,
-                               verbose=True)
+                            datafile=datafile_path_start,
+                            logname='dislo_start.log',
+                            minimize=True,
+                            comm=comm,
+                            verbose=True)
 
     mpi_print('DISLO target initialization (no relaxation)...', comm=comm)
     with trun.add('target init'):

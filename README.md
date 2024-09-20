@@ -43,6 +43,12 @@ from lammps_implicit_der.systems import BCC
 In the `./examples` folder, you will find several Jupyter notebooks that demonstrate how to use the package to compute the inhomogeneous and homogeneous implicit derivatives in different atomic systems.
 The files are arranged in the recommended order for reviewing.
 
+To clean the output files from the examples, in the `./examples` folder, run:
+
+```bash
+make clean
+```
+
 # Tests
 
 Running tests is recommended after installation and when new implementations are made.

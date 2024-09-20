@@ -4,11 +4,13 @@
 # clean command definition
 clean:
 	@echo "Cleaning up..."
-	rm -f *_new*               # Remove all files containing with '_new'
-	rm -f *.data               # Remove all .data files
-	rm -f *.xyz                # Remove all .xyz files
-	rm -f *.log                # Remove all .log files
-	rm -f *.lammps-data        # Remove all .lammps-data files
-	rm -f *.lammps*            # Remove all .lammps files
-	rm -rf minim_output/       # Remove the minim_output directory and its contents
+	rm -f *_new*                
+	rm -f *.snapcoeff           
+	rm -f *.snapparam           
+	rm -f *.data                
+	rm -f *.xyz                 
+	rm -f *.log                 
+	rm -f *.lammps-data         
+	rm -f *.lammps*             
+	rm -rf minim_output/        
 	@echo "Cleaning completed."

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
-Example of a parallel MPI run for inhomogeneous implicit derivative calculation.
+Example of a parallel MPI run for inhomogeneous implicit derivative calculation (requires mpi4py installed).
 
-run:
+Run with MPI:
 mpirun -n 8 ./07-MPI-Parallel-Inhom.py
+
+OpenMP parallelization is also supported by LAMMPS. One can set the number of OpenMP threads as:
+export OMP_NUM_THREADS=8
 
 Parameters to change:
 - ncell_x: Number of unit cells in each direction.

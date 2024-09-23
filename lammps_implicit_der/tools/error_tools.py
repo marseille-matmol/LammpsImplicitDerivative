@@ -76,6 +76,9 @@ def loss_function(min_image_func, X1, X2, **kwargs):
     """
     Loss function for the minimization algorithm.
 
+    .. math::
+        L = 1/2 (X1 - X2)^2
+
     Possible change: add the Theta distance as a penalty term.
     + 0.5 * lambda_param * ((Theta - Theta0)**2).sum()
 
@@ -494,7 +497,7 @@ def minimize_loss(sim,
     mpi_print('='*80+'\n', comm=comm, verbose=verbosity > 0)
 
     minim_dict['loop_completed'] = True
-    minim_dict['numiter'] = i
+    minim_dict['numiter'] = i + 1
     minim_dict['error_array'] = error_array[:i+1]
     minim_dict['step_array'] = step_array[:i+1]
 

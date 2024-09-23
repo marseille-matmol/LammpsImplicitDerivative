@@ -59,8 +59,8 @@ def test_run_npt(comm):
     Theta_perturb = pot_perturb.Theta_dict['W']['Theta'].copy()
 
     bcc_vac = BCC_VACANCY(alat=alat, ncell_x=ncell_x, minimize=True, logname=None, data_path='./refs/',
-                         del_coord=[0.0, 0.0, 0.0],
-                         snapcoeff_filename=snapcoeff_filename, verbose=False, comm=comm)
+                          del_coord=[0.0, 0.0, 0.0],
+                          snapcoeff_filename=snapcoeff_filename, verbose=False, comm=comm)
 
     dX_dTheta_vac_inhom = bcc_vac.implicit_derivative(method='dense')
     dX_dTheta_vac_inhom = dX_dTheta_vac_inhom[:, sort_coord(bcc_vac.X_coord)]

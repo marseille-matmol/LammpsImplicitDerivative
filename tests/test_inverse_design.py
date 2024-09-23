@@ -52,7 +52,7 @@ def test_minimze(bcc_vacancy, bcc_vacancy_target, comm):
     if comm is None or comm.rank == 0:
         shutil.rmtree('minim_output')
 
-    numiter_desired = 1
+    numiter_desired = 2
     error_array_desired = np.array([0.0325912346, 0.0256618410])
     loop_completed_desired = True
     converged_desired = True

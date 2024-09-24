@@ -2,29 +2,44 @@
 """
 Utils for the sparse solver.
 """
-import pynvml
 import psutil
 import yaml
 import numpy as np
-import datetime
 import os
 from scipy.linalg import orth
+
+try:
+    from mpi4py import MPI
+except ImportError:
+    MPI = None
 
 
 def initialize_mpi():
     """
     Initialize MPI communicator.
     """
-    try:
-        from mpi4py import MPI
+    if MPI is not None:
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
-    except ModuleNotFoundError:
-        print('mpi4py not found')
+
+        #if comm.Get_size() == 1:
+        #    print('WARNING: initialize_mpi() was called, but MPI communicator has only one task.')
+    else:
+        print('initialize_mpi() was called, but mpi4py package not found, MPI will not be used')
         comm = None
         rank = 0
 
     return comm, rank
+
+
+def finalize_mpi():
+    """
+    Finalize MPI communicator.
+    """
+    if MPI is not None:
+        MPI.Finalize()
+    else:
+        print('finalize_mpi() was called, but mpi4py package not found')
 
 
 def mpi_print(*args, comm=None, verbose=True, **kwargs):
@@ -91,8 +106,13 @@ def get_ram_memory_usage():
 def get_gpu_memory_usage():
 
     try:
-        pynvml.nvmlInit()
+        import pynvml
+    except ImportError:
+        print('nvml package not found.')
+        return None
 
+    try:
+        pynvml.nvmlInit()
     except pynvml.NVMLError_LibraryNotFound:
         print('nvml report was not created. NVML Shared Library was not found on the system.')
         return None

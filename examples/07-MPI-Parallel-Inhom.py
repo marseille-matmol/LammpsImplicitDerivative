@@ -25,7 +25,8 @@ import matplotlib.pyplot as plt
 # Package imports
 from lammps_implicit_der import SNAP
 from lammps_implicit_der.systems import BCC_VACANCY
-from lammps_implicit_der.tools import plot_tools, initialize_mpi, TimingGroup, mpi_print
+from lammps_implicit_der.tools import plot_tools, initialize_mpi, finalize_mpi, \
+                                      TimingGroup, mpi_print
 
 plotparams = plot_tools.plotparams.copy()
 plotparams['font.size'] = 16
@@ -123,15 +124,19 @@ def main():
     mpi_print(trun, comm=comm)
 
     if comm is None or rank == 0:
-        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-        plt.subplots_adjust(left=0.18, right=0.95, top=0.95, bottom=0.11)
-        ax.plot(dX_true, dX_pred, ls='', marker='o', label='Predicted')
-        ax.plot([dX_true.min(), dX_true.max()], [dX_true.min(), dX_true.max()], ls='--', color='gray', label='Ideal')
-        ax.set_xlabel(r'True Position Change ($\mathrm{\AA}$)')
-        ax.set_ylabel(r'Predicted Position Change ($\mathrm{\AA}$)')
-        ax.legend()
+        fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+        plt.subplots_adjust(left=0.26, right=0.95, top=0.95, bottom=0.14)
+        ax.plot(dX_true, dX_pred, ls='', marker='o', label='Predicted', ms=14)
+        ax.plot([dX_true.min(), dX_true.max()], [dX_true.min(), dX_true.max()], ls='--', color='black', label='Ideal')
+        ax.set_xlabel(r'True $\Delta \mathbf{X}$ ($\mathrm{\AA}$)', fontsize=24)
+        ax.set_ylabel(r'Predicted $\Delta \mathbf{X}$ ($\mathrm{\AA}$)', fontsize=24)
+        ax.grid()
+        ax.xaxis.set_major_locator(plt.MultipleLocator(0.01))
+        #ax.legend()
         plt.show()
 
+    finalize_mpi()
+    
 
 if __name__ == '__main__':
     main()

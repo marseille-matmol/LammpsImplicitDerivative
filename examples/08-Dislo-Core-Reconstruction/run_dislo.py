@@ -5,7 +5,8 @@ import numpy as np
 import yaml
 
 # local imports
-from lammps_implicit_der.tools import initialize_mpi, mpi_print, error_tools, TimingGroup, minimize_loss
+from lammps_implicit_der.tools import initialize_mpi, finalize_mpi, \
+                            mpi_print, error_tools, TimingGroup, minimize_loss
 from lammps_implicit_der.systems import SCREW_DISLO
 from lammps_implicit_der.tools.io import setup_default_minimization_dict, load_parameters, print_parameters
 from lammps_implicit_der.tools.generate_masks import generate_mask_dX, generate_mask_radius, plot_mask
@@ -144,6 +145,8 @@ def main():
     print_parameters(param_dict, comm=comm)
 
     run_minimization(param_dict, comm=comm)
+
+    finalize_mpi()
 
 
 if __name__ == '__main__':

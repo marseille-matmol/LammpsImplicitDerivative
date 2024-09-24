@@ -21,7 +21,6 @@ setup(
         'PyYAML',
         'matplotlib',
         'psutil',
-        'pynvml',
         'tqdm'
     ],
 )

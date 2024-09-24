@@ -8,6 +8,13 @@ For a detailed description of the formalism and derivations used in this project
 
 [I. Maliyov, P. Grigorev, T.D. Swinburne, _Exploring parameter dependence of atomic minima with implicit differentiation_, arXiv:2407.02414](https://arxiv.org/abs/2407.02414)
 
+# Supported features
+
+* calculation of the inhomogeneous implicit derivative with inverse and sparse methods $\nabla_{\boldsymbol{\Theta}} \tilde{\mathbf{X}}^*_{\boldsymbol{\Theta}} \in \mathbb{R}^{N_D\times 3N}$
+* calculation of homogeneous implicit derivative of strain (isotropic case): $\nabla_\mathbf{\Theta} \epsilon^*_\mathbf{\Theta} \in \mathbb{R}^{N_D}$
+* loss minimization for inverse design applications
+* support of MPI and OpenMP parallelization via LAMMPS
+
 # Installation
 
 ## Requirements
